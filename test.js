@@ -53,8 +53,9 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw}={})=>new
  ok('IA enviou só 1 imagem válida + texto',global.__aiBody.messages[0].content.filter(c=>c.type==='image').length===1&&global.__aiBody.messages[0].content.some(c=>c.type==='text'));
  // Gemini
  process.env.GEMINI_API_KEY='g';
- global.fetch=async(u,o)=>{if(String(u).includes('generativelanguage.googleapis.com')){global.__gb=JSON.parse(o.body);global.__gh=o.headers;return{ok:true,status:200,json:async()=>({candidates:[{content:{parts:[{text:'{"name":"Gê","items":[]}'}]}}]})}}return realFetch(u,o)};
+ global.fetch=async(u,o)=>{if(String(u).includes('generativelanguage.googleapis.com')){if(String(u).includes('gemini-3.8-flash')&&!global.__try){global.__try=1;return{ok:false,status:404,json:async()=>({error:{message:'gone'}})}}global.__gb=JSON.parse(o.body);global.__gh=o.headers;return{ok:true,status:200,json:async()=>({candidates:[{content:{parts:[{text:'{"name":"Gê","items":[]}'}]}}]})}}return realFetch(u,o)};
  r=await rq('/api/ai',{method:'POST',cookie:ck,body:{prompt:'extraia',images:['data:image/png;base64,iVBOR']}});
+ ok('Gemini cai para o próximo modelo quando o primeiro dá 404',global.__try===1);
  ok('Gemini devolve JSON',r.j&&r.j.value&&r.j.value.name==='Gê',r.t);
  ok('Gemini recebeu imagem + JSON mode + chave no header',global.__gb.contents[0].parts[0].inline_data&&global.__gb.generationConfig.responseMimeType==='application/json'&&global.__gh['x-goog-api-key']==='g');
  delete process.env.GEMINI_API_KEY;

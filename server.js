@@ -165,13 +165,19 @@ async function main() {
       const imgs = (Array.isArray(req.body.images) ? req.body.images : []).slice(0, 4).map(u => /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/=]+)$/.exec(String(u))).filter(Boolean).filter(m => m[2].length < 7e6);
       let txt = '';
       if (GKEY) { // Gemini (plano gratuito do Google AI Studio)
-        const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-        const url = process.env.GEMINI_URL || 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent';
+        const models = [process.env.GEMINI_MODEL, 'gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-flash'].filter((m, i, a) => m && a.indexOf(m) === i);
         const parts = [...imgs.map(m => ({ inline_data: { mime_type: m[1], data: m[2] } })), { text: prompt }];
-        const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': GKEY }, body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 4000, temperature: 0.2 } }) });
-        const j = await r.json();
-        if (!r.ok) { console.error('gemini', r.status, JSON.stringify(j).slice(0, 300)); return res.status(r.status === 429 ? 429 : 502).json({ error: 'ia' }); }
-        txt = (((j.candidates || [])[0] || {}).content || { parts: [] }).parts.map(p => p.text || '').join('');
+        const body = JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 4000, temperature: 0.2 } });
+        let lastStatus = 502;
+        for (const model of models) {
+          const url = process.env.GEMINI_URL || 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent';
+          const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': GKEY }, body });
+          const j = await r.json();
+          if (r.ok) { txt = (((j.candidates || [])[0] || {}).content || { parts: [] }).parts.map(p => p.text || '').join(''); break; }
+          lastStatus = r.status; console.error('gemini', model, r.status, JSON.stringify(j).slice(0, 200));
+          if (r.status !== 404 && r.status !== 400) break; // só tenta o próximo modelo se este não existir
+        }
+        if (!txt) return res.status(lastStatus === 429 ? 429 : 502).json({ error: 'ia' });
       } else { // Anthropic (pago)
         const content = [...imgs.map(m => ({ type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } })), { type: 'text', text: prompt }];
         const r = await fetch(process.env.ANTHROPIC_URL || 'https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': AKEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: MODEL, max_tokens: 4000, messages: [{ role: 'user', content }] }) });
