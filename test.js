@@ -46,6 +46,31 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/api/bookings?site=bk0001',{});ok('lista de agendamentos exige login',r.s===401,r.s);
  r=await rq('/api/bookings?site=bk0001',{cookie:ck});ok('admin lista agendamentos',r.s===200&&JSON.parse(r.t).items.some(x=>x.t==='09:30'&&x.n==='Maria'),r.t);
  r=await rq('/api/bookings/cancel',{method:'POST',cookie:ck,body:{site:'bk0001',d:D,t:'09:30'}});r=await rq('/api/book',{host:bh,method:'POST',body:{d:D,t:'09:30',n:'Ana'},ct:'text/plain'});ok('cancelar libera o horário',r.s===200,r.s);
+ // ---- usuários: admin e cliente
+ r=await rq('/api/admin/clients',{method:'POST',body:{name:'Maria',email:'maria@ex.com',plan:'free'}});ok('criar cliente sem login 401',r.s===401,r.s);
+ r=await rq('/api/admin/clients',{method:'POST',cookie:ck,body:{name:'Maria Silva',email:'maria@ex.com',plan:'free'}});const cpw=r.j&&r.j.password,cid=r.j&&r.j.user&&r.j.user.id;ok('admin cria cliente com senha gerada',r.s===200&&cpw&&cpw.length>=10&&cid,r.t);
+ r=await rq('/api/admin/clients',{method:'POST',cookie:ck,body:{name:'Outra',email:'MARIA@ex.com'}});ok('e-mail duplicado 409',r.s===409,r.s);
+ r=await rq('/login',{method:'POST',raw:'email=maria%40ex.com&password=errada123'});ok('cliente senha errada 401',r.s===401,r.s);
+ r=await rq('/login',{method:'POST',raw:'email=maria%40ex.com&password='+encodeURIComponent(cpw)});const ck2=(r.h.get('set-cookie')||'').split(';')[0];ok('cliente loga com a senha gerada',r.s===302&&ck2.startsWith('ap_s='),r.s);
+ r=await rq('/api/me',{cookie:ck2});ok('/api/me do cliente',r.s===200&&r.j.role==='client'&&r.j.plan.maxSites===1&&r.j.tmp===true,r.t);
+ r=await rq('/api/admin/overview',{cookie:ck2});ok('cliente não acessa painel admin',r.s===401,r.s);
+ r=await rq('/api/admin/clients',{method:'POST',cookie:ck2,body:{name:'x',email:'x@x.com'}});ok('cliente não cria clientes',r.s===401,r.s);
+ r=await rq('/api/db',{method:'POST',cookie:ck2,body:{op:'set',path:'sites/cli001',data:{j:JSON.stringify({id:'cli001',name:'Loja da Maria',goal:'landing'}),name:'Loja da Maria'}}});ok('cliente publica o 1º site',r.s===200&&r.j.slug==='loja-da-maria',r.t);
+ r=await rq('/api/db',{method:'POST',cookie:ck2,body:{op:'set',path:'sites/cli002',data:{j:JSON.stringify({id:'cli002',name:'Segundo',goal:'landing'}),name:'Segundo'}}});ok('plano gratuito limita a 1 site (403)',r.s===403&&r.j.error==='limit',r.t);
+ r=await rq('/api/db',{method:'POST',cookie:ck2,body:{op:'set',path:'sites/abc123',data:{j:JSON.stringify({id:'abc123',name:'Invadido'}),name:'Invadido'}}});ok('cliente não sobrescreve site de outro (403)',r.s===403,r.s);
+ r=await rq('/api/db',{method:'POST',cookie:ck2,body:{op:'delete',path:'sites/abc123'}});ok('cliente não apaga site de outro (403)',r.s===403,r.s);
+ r=await rq('/api/stats',{cookie:ck2});ok('stats do cliente só com os próprios sites',r.s===200&&r.j.sites.length===1&&r.j.sites[0].id==='cli001',r.t.slice(0,200));
+ r=await rq('/api/stats',{cookie:ck});ok('stats do admin vê todos',r.s===200&&r.j.sites.length>=2,r.s);
+ r=await rq('/api/admin/overview',{cookie:ck});ok('overview do admin traz clientes e KPIs',r.s===200&&r.j.clients.some(c=>c.email==='maria@ex.com'&&c.sites===1)&&r.j.kpi.clients>=1,r.t.slice(0,200));
+ r=await rq('/api/bookings?site=bk0001',{cookie:ck2});ok('cliente não vê agendamentos de site alheio',r.s===403,r.s);
+ r=await rq('/api/account',{method:'POST',cookie:ck2,body:{oldPassword:cpw,newPassword:'curta'}});ok('senha nova curta rejeitada',r.s===400,r.s);
+ r=await rq('/api/account',{method:'POST',cookie:ck2,body:{oldPassword:cpw,newPassword:'NovaSenha123'}});ok('cliente troca a senha',r.s===200,r.t);
+ r=await rq('/login',{method:'POST',raw:'email=maria%40ex.com&password=NovaSenha123'});ok('login com a nova senha',r.s===302,r.s);
+ r=await rq('/api/admin/clients/update',{method:'POST',cookie:ck,body:{id:cid,status:'blocked'}});r=await rq('/api/me',{cookie:ck2});ok('cliente bloqueado perde a sessão',r.s===401,r.s);
+ r=await rq('/login',{method:'POST',raw:'email=maria%40ex.com&password=NovaSenha123'});ok('cliente bloqueado não loga (403)',r.s===403,r.s);
+ r=await rq('/api/admin/clients/update',{method:'POST',cookie:ck,body:{id:cid,status:'active',plan:'pro',resetPassword:true}});const pw2=r.j&&r.j.password;ok('admin reativa, muda plano e reseta senha',r.s===200&&pw2&&r.j.user.plan.key==='pro',r.t);
+ r=await rq('/api/admin/clients/delete',{method:'POST',cookie:ck,body:{id:cid}});r=await rq('/',{host:'loja-da-maria.kattalo.online'});ok('excluir cliente remove seus sites',r.s===404,r.s);
+ r=await rq('/login',{method:'POST',raw:'email=maria%40ex.com&password='+encodeURIComponent(pw2)});ok('cliente excluído não loga',r.s===401,r.s);
  // site por subdomínio
  r=await rq('/',{host:'pizzaria-do-ze.kattalo.online'});ok('subdomínio serve o site sem login',r.s===200&&r.t.includes('window.__SITE_ID="abc123"')&&!r.t.includes('type=password'),r.s);
  r=await rq('/',{host:'inexistente.kattalo.online'});ok('subdomínio inexistente 404',r.s===404);

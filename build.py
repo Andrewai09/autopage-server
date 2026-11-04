@@ -30,5 +30,14 @@ r("P={id:Date.now().toString(36),name:nm,","P={id:Date.now().toString(36),name:(
 r("phone:r.ph?'+'+r.ph:DEFPHS,","phone:r.ph?'+'+r.ph:(META&&META.phone&&META.phone.replace(/\\D/g,'').length>=10?'+'+(META.phone.replace(/\\D/g,'').length<=11?'55':'')+META.phone.replace(/\\D/g,''):DEFPHS),logo:(META&&META.logo)||'',")
 # const nm precisa ser let
 s=s.replace("n=sel||guess(r.hd+' '+$('#c-bio').value),nm=","n=sel||guess(r.hd+' '+$('#c-bio').value);let nm=",1) if False else s
+# painéis Admin/Cliente
+ui=open('hosted/ui.html').read();uj=open('hosted/ui.js').read()
+r('<section id="v-create">',ui+'<section id="v-create">')
+r("['create','proc','edit','dash'].forEach","['create','proc','edit','dash','home','cli'].forEach")
+r("if(v==='dash'){dash();evs()}","if(v==='dash'){dash();evs()}if(window.HX)HX(v);")
+i=s.rindex("</script>\n</body>");s=s[:i]+uj+"\n"+s[i:]
+# rascunhos locais por usuário
+r("localStorage.getItem('ap_sites')","localStorage.getItem('ap_sites_'+((window.__U&&window.__U.id)||'x'))")
+r("localStorage.setItem('ap_sites',","localStorage.setItem('ap_sites_'+((window.__U&&window.__U.id)||'x'),")
 open('public/app.html','w').write(s)
 print('ok',len(s))

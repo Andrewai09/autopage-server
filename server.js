@@ -24,7 +24,14 @@ const safeEq = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(Str
 const mkToken = (obj, ttlMs) => { const p = Buffer.from(JSON.stringify({ ...obj, exp: Date.now() + ttlMs })).toString('base64url'); return p + '.' + sign(p); };
 const readToken = (t) => { try { const [p, s] = String(t).split('.'); if (!p || !s || !safeEq(sign(p), s)) return null; const o = JSON.parse(Buffer.from(p, 'base64url').toString()); return o.exp > Date.now() ? o : null; } catch (e) { return null; } };
 const cookies = (req) => Object.fromEntries(String(req.headers.cookie || '').split(';').map(c => c.trim().split('=')).filter(a => a[0]).map(a => [a[0], a.slice(1).join('=')]));
-const isAdmin = (req) => !!readToken(cookies(req).ap_s);
+const isAdmin = (req) => !!(req.u && req.u.role === 'admin');
+const isAuth = (req) => !!req.u;
+const PLANS = { free: { name: 'Gratuito', maxSites: 1, ai: 10 }, basic: { name: 'Básico', maxSites: 3, ai: 30 }, pro: { name: 'Pro', maxSites: 10, ai: 80 }, premium: { name: 'Premium', maxSites: 30, ai: 200 } };
+const planOf = (u) => { const p = PLANS[u.plan] || PLANS.free; return { key: PLANS[u.plan] ? u.plan : 'free', name: p.name, maxSites: u.maxSites > 0 ? u.maxSites : p.maxSites, ai: p.ai }; };
+const pwHash = (pw) => { const salt = crypto.randomBytes(16).toString('hex'); return salt + ':' + crypto.scryptSync(String(pw), salt, 32).toString('hex'); };
+const pwCheck = (pw, h) => { try { const [salt, hx] = String(h).split(':'); return safeEq(crypto.scryptSync(String(pw), salt, 32).toString('hex'), hx); } catch (e) { return false; } };
+const genPw = () => { const al = 'abcdefghjkmnpqrstuvwxyzACDEFGHJKLMNPQRSTUVWXYZ23456789'; let o = ''; for (const b of crypto.randomBytes(10)) o += al[b % al.length]; return o; };
+const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,200}\.[^\s@]{2,}$/;
 const hostOf = (req) => String(req.headers.host || '').toLowerCase().replace(/:\d+$/, '');
 function kind(host) {
   if (host === APP_HOST) return { t: 'app' };
@@ -60,6 +67,18 @@ async function main() {
     next();
   });
 
+  app.use(async (req, res, next) => {
+    req.u = null;
+    try {
+      const t = readToken(cookies(req).ap_s);
+      if (t) {
+        if (t.a || t.r === 'admin') req.u = { id: 'admin', role: 'admin', name: 'Admin' };
+        else if (t.r === 'client' && t.u) { const u = await store.get('users/' + t.u); if (u && u.status === 'active') req.u = { id: u.id, role: 'client', name: u.name, user: u }; }
+      }
+    } catch (e) { /* sem sessão */ }
+    next();
+  });
+
   const page = (req, res, extra) => {
     const html = APP_HTML.replace('<script>', '<script>' + extra + SHIM + '</script><script>');
     res.setHeader('Cache-Control', 'no-store');
@@ -72,14 +91,23 @@ async function main() {
   app.all('/meta/data-deletion', (req, res) => res.json({ url: 'https://' + APP_HOST + '/privacidade', confirmation_code: crypto.randomBytes(6).toString('hex') }));
 
   // ---- login
-  const loginPage = (msg) => '<!doctype html><html lang=pt-BR><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>AutoPage.ai · Entrar</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;color:#e8ecff;font:16px system-ui"><form method=post action=/login style="width:min(340px,90vw);background:#141a33;padding:28px;border-radius:16px;display:grid;gap:12px"><h2 style="margin:0">🪄 AutoPage.ai</h2>' + (msg ? '<div style="color:#fca5a5">' + esc(msg) + '</div>' : '') + '<input type=password name=password placeholder=Senha autofocus required style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><button style="padding:12px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-weight:700">Entrar</button></form></html>';
-  app.post('/login', (req, res) => {
+  const loginPage = (msg) => '<!doctype html><html lang=pt-BR><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>AutoPage.ai · Entrar</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;color:#e8ecff;font:16px system-ui"><form method=post action=/login style="width:min(340px,90vw);background:#141a33;padding:28px;border-radius:16px;display:grid;gap:12px"><h2 style="margin:0">🪄 AutoPage.ai</h2>' + (msg ? '<div style="color:#fca5a5">' + esc(msg) + '</div>' : '') + '<input type=email name=email placeholder="E-mail (admin: pode deixar em branco)" autocomplete=username style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><input type=password name=password placeholder=Senha autofocus required style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><button style="padding:12px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-weight:700">Entrar</button></form></html>';
+  app.post('/login', async (req, res) => {
     if (kind(hostOf(req)).t !== 'app') return res.status(404).end();
     if (limited('login:' + ipOf(req), 8, 15 * 60e3)) return res.status(429).type('html').send(loginPage('Muitas tentativas. Aguarde 15 minutos.'));
-    if (!ADMIN_PASSWORD || !safeEq(req.body.password || '', ADMIN_PASSWORD)) return res.status(401).type('html').send(loginPage('Senha incorreta.'));
+    const email = String(req.body.email || '').trim().toLowerCase().slice(0, 200), pw = String(req.body.password || '').slice(0, 200);
     const secure = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
-    res.setHeader('Set-Cookie', 'ap_s=' + mkToken({ a: 1 }, 7 * 864e5) + '; HttpOnly; SameSite=Lax; Path=/; Max-Age=' + 7 * 86400 + secure);
-    res.redirect('/');
+    const setC = (tok) => res.setHeader('Set-Cookie', 'ap_s=' + tok + '; HttpOnly; SameSite=Lax; Path=/; Max-Age=' + 7 * 86400 + secure);
+    const idx = email ? await store.get('uemail/' + email) : null, usr = idx ? await store.get('users/' + idx.id) : null;
+    if (usr) {
+      if (limited('loginE:' + email, 8, 15 * 60e3)) return res.status(429).type('html').send(loginPage('Muitas tentativas. Aguarde 15 minutos.'));
+      if (!pwCheck(pw, usr.pw)) return res.status(401).type('html').send(loginPage('E-mail ou senha incorretos.'));
+      if (usr.status !== 'active') return res.status(403).type('html').send(loginPage('Acesso bloqueado. Fale com o suporte.'));
+      usr.lastLogin = Date.now(); await store.set('users/' + usr.id, usr);
+      setC(mkToken({ r: 'client', u: usr.id }, 7 * 864e5)); return res.redirect('/');
+    }
+    if (!ADMIN_PASSWORD || !safeEq(pw, ADMIN_PASSWORD)) return res.status(401).type('html').send(loginPage('E-mail ou senha incorretos.'));
+    setC(mkToken({ r: 'admin', u: 'admin' }, 7 * 864e5)); res.redirect('/');
   });
   app.post('/logout', (req, res) => { res.setHeader('Set-Cookie', 'ap_s=; HttpOnly; Path=/; Max-Age=0'); res.redirect('/'); });
 
@@ -89,8 +117,9 @@ async function main() {
     if (k.t === 'none') return res.status(404).type('text').send('Não encontrado');
     if (k.t === 'app') {
       if (!ADMIN_PASSWORD) return res.status(503).type('text').send('Defina ADMIN_PASSWORD no servidor.');
-      if (!isAdmin(req)) return res.type('html').send(loginPage(''));
-      return page(req, res, cfg({ meta: !!(META_ID && META_SECRET), site: false }));
+      if (!isAuth(req)) return res.type('html').send(loginPage(''));
+      const uu = req.u.role === 'admin' ? { id: 'admin', role: 'admin', name: 'Admin' } : { id: req.u.id, role: 'client', name: req.u.name, email: req.u.user.email };
+      return page(req, res, cfg({ meta: !!(META_ID && META_SECRET), site: false }) + 'window.__U=' + JSON.stringify(uu).replace(/</g, '\\u003c') + ';');
     }
     const ptr = await store.get('slug/' + k.slug);
     if (!ptr) return res.status(404).type('html').send('<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><body style="font:16px system-ui;display:grid;place-items:center;min-height:100vh;margin:0"><p>Site não encontrado.</p>');
@@ -108,7 +137,7 @@ async function main() {
   const ID = /^[a-z0-9]{1,16}$/;
   app.post('/api/db', async (req, res) => {
     try {
-      const b = req.body || {}; const admin = isAdmin(req); const op = b.op;
+      const b = req.body || {}; const au = isAuth(req), adm = isAdmin(req); const op = b.op;
       if (op === 'get') {
         const m = /^sites\/([a-z0-9]{1,16})$/.exec(String(b.path)); if (!m) return res.status(403).json({ error: 'forbidden' });
         const d = await store.get('sites/' + m[1]);
@@ -124,12 +153,17 @@ async function main() {
         if (Math.random() < 0.01) store.trim('events/', 20000).catch(() => {});
         return res.json({ id });
       }
-      if (!admin) return res.status(401).json({ error: 'auth' });
+      if (!au) return res.status(401).json({ error: 'auth' });
       if (op === 'set') {
         const m = /^sites\/([a-z0-9]{1,16})$/.exec(String(b.path)); const d = b.data || {};
         if (!m || typeof d.j !== 'string' || d.j.length > 1100000) return res.status(400).json({ error: 'bad' });
         let p; try { p = JSON.parse(d.j); } catch (e) { return res.status(400).json({ error: 'bad' }); }
         const prev = await store.get('sites/' + m[1]);
+        if (prev && !adm && (prev.owner || 'admin') !== req.u.id) return res.status(403).json({ error: 'forbidden' });
+        if (!prev && !adm) {
+          const rows0 = await store.list('sites/', 500, true), own = rows0.filter(x => x.data && x.data.owner === req.u.id).length, pl = planOf(req.u.user);
+          if (own >= pl.maxSites) return res.status(403).json({ error: 'limit', max: pl.maxSites });
+        }
         let slug = prev && prev.slug;
         if (!slug) {
           const base = slugify(p.name); let c = base, n = 1;
@@ -137,22 +171,24 @@ async function main() {
           slug = c;
           await store.set('slug/' + slug, { id: m[1], at: Date.now() });
         }
-        await store.set('sites/' + m[1], { j: d.j, name: String(d.name || '').slice(0, 80), at: Date.now(), slug });
+        await store.set('sites/' + m[1], { j: d.j, name: String(d.name || '').slice(0, 80), at: Date.now(), slug, owner: prev ? (prev.owner || 'admin') : req.u.id, goal: String(p.goal || '').slice(0, 20), nItems: Array.isArray(p.items) ? p.items.length : 0 });
         return res.json({ ok: true, slug });
       }
       if (op === 'delete') {
         const m = /^(sites|events)\/([a-z0-9]{1,16})$/.exec(String(b.path)); if (!m) return res.status(400).json({ error: 'bad' });
-        if (m[1] === 'sites') { const d = await store.get('sites/' + m[2]); if (d && d.slug) await store.del('slug/' + d.slug); await store.del('sites/' + m[2]); }
+        if (m[1] === 'events' && !adm) return res.status(403).json({ error: 'forbidden' });
+        if (m[1] === 'sites') { const d = await store.get('sites/' + m[2]); if (d && !adm && (d.owner || 'admin') !== req.u.id) return res.status(403).json({ error: 'forbidden' }); if (d && d.slug) await store.del('slug/' + d.slug); await store.del('sites/' + m[2]); }
         else await store.del('events/' + m[2]);
         return res.json({ ok: true });
       }
       if (op === 'list' && b.coll === 'events') {
         const lim = Math.min(3000, Math.max(1, +b.limit || 500));
-        const rows = await store.list('events/', lim, true);
+        let rows = await store.list('events/', lim, true);
+        if (!adm) { const own = new Set((await store.list('sites/', 500, true)).filter(x => x.data && x.data.owner === req.u.id).map(x => x.path.slice(6))); rows = rows.filter(x => own.has(x.data && x.data.s)); }
         return res.json({ docs: rows.map(r => ({ id: r.path.slice(7), data: r.data })) });
       }
       if (op === 'all' && b.coll === 'sites') { // lista dos sites publicados (para conferência)
-        const rows = await store.list('sites/', 500, true);
+        const rows = (await store.list('sites/', 500, true)).filter(x => adm || (x.data && x.data.owner === req.u.id));
         return res.json({ docs: rows.map(r => ({ id: r.path.slice(6), data: { name: r.data.name, slug: r.data.slug, at: r.data.at } })) });
       }
       return res.status(400).json({ error: 'op' });
@@ -161,7 +197,8 @@ async function main() {
 
   // ---- IA (Anthropic)
   app.post('/api/ai', async (req, res) => {
-    if (!isAdmin(req)) return res.status(401).json({ error: 'auth' });
+    if (!isAuth(req)) return res.status(401).json({ error: 'auth' });
+    if (!isAdmin(req) && limited('aiu:' + req.u.id, planOf(req.u.user).ai, 86400e3)) return res.status(429).json({ error: 'limite' });
     const GKEY = process.env.GEMINI_API_KEY, AKEY = process.env.ANTHROPIC_API_KEY;
     if (!GKEY && !AKEY) return res.status(503).json({ error: 'sem_chave' });
     const today = new Date().toISOString().slice(0, 10); if (aiDay.d !== today) aiDay = { d: today, n: 0 };
@@ -202,7 +239,7 @@ async function main() {
   const redirectUri = () => 'https://' + APP_HOST + '/auth/meta/callback';
   const origin = (req) => (req.headers['x-forwarded-proto'] || req.protocol) + '://' + req.headers.host;
   app.get('/auth/meta/start', (req, res) => {
-    if (kind(hostOf(req)).t !== 'app' || !isAdmin(req)) return res.status(401).type('text').send('Entre no app primeiro.');
+    if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).type('text').send('Entre no app primeiro.');
     if (!META_ID || !META_SECRET) return res.status(503).type('text').send('Meta não configurada (META_APP_ID/META_APP_SECRET).');
     const state = mkToken({ n: crypto.randomBytes(6).toString('hex') }, 10 * 60e3);
     const ru = process.env.META_REDIRECT_URI || redirectUri();
@@ -240,7 +277,7 @@ async function main() {
   app.get('/auth/meta/callback', async (req, res) => {
     const out = (data) => res.type('html').send('<!doctype html><meta charset=utf-8><body style="font:16px system-ui;padding:30px">' + (data.error ? '<p>' + esc(data.error) + '</p>' : '<p>Conectado! Pode fechar esta janela.</p>') + '<script>try{window.opener&&window.opener.postMessage({ap:"meta",data:' + JSON.stringify(data).replace(/</g, '\\u003c') + '},' + JSON.stringify(origin(req)) + ')}catch(e){}setTimeout(function(){window.close()},1200)</script>');
     try {
-      if (!isAdmin(req)) return out({ error: 'Sessão expirada. Entre no app e tente de novo.' });
+      if (!isAuth(req)) return out({ error: 'Sessão expirada. Entre no app e tente de novo.' });
       if (req.query.error) return out({ error: 'Conexão cancelada.' });
       if (!readToken(String(req.query.state || ''))) return out({ error: 'Pedido inválido ou expirado.' });
       if (!req.query.code) return out({ error: 'Código ausente.' });
@@ -298,9 +335,11 @@ async function main() {
       res.status(out).json(out === 200 ? { ok: true } : { error: out === 409 ? 'taken' : 'full' });
     } catch (e) { console.error('book', e.message); res.status(500).json({ error: 'server' }); }
   });
+  const canSite = async (req, id) => { if (isAdmin(req)) return true; const d = await store.get('sites/' + id); return !!(d && req.u && (d.owner || 'admin') === req.u.id); };
   app.get('/api/bookings', async (req, res) => {
-    if (kind(hostOf(req)).t !== 'app' || !isAdmin(req)) return res.status(401).json({ error: 'auth' });
+    if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
     const id = String(req.query.site || ''); if (!ID.test(id)) return res.status(400).json({ error: 'bad' });
+    if (!(await canSite(req, id))) return res.status(403).json({ error: 'forbidden' });
     const rows = await store.list('book/' + id + '/', 400, false);
     const today = ymd(brNow()), items = [];
     rows.forEach(r => { const d = r.path.split('/').pop(); ((r.data && r.data.items) || []).forEach(x => items.push({ d, t: x.t, n: x.n, s: x.s })); });
@@ -308,11 +347,105 @@ async function main() {
     res.json({ items: items.filter(x => x.d >= today) });
   });
   app.post('/api/bookings/cancel', async (req, res) => {
-    if (kind(hostOf(req)).t !== 'app' || !isAdmin(req)) return res.status(401).json({ error: 'auth' });
+    if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
     const b = req.body || {}, id = String(b.site || ''), d = String(b.d || ''), t = String(b.t || '');
     if (!ID.test(id) || !/^\d{4}-\d\d-\d\d$/.test(d)) return res.status(400).json({ error: 'bad' });
+    if (!(await canSite(req, id))) return res.status(403).json({ error: 'forbidden' });
     await bkRun(async () => { const key = 'book/' + id + '/' + d, doc = await store.get(key); if (!doc) return; doc.items = doc.items.filter(x => x.t !== t); if (doc.items.length) await store.set(key, doc); else await store.del(key); });
     res.json({ ok: true });
+  });
+
+  // ---- painéis: estatísticas, conta, administração de clientes
+  const dayBR = (ts) => new Date(ts - 3 * 3600e3).toISOString().slice(0, 10);
+  async function allSites() {
+    const rows = await store.list('sites/', 500, true);
+    return rows.map(x => { const d = x.data || {}; let goal = d.goal, n = d.nItems; if (goal == null) { try { const p = JSON.parse(d.j || '{}'); goal = p.goal || 'landing'; n = (p.items || []).length; } catch (e) { goal = 'landing'; n = 0; } } return { id: x.path.slice(6), name: d.name || '', slug: d.slug || '', owner: d.owner || 'admin', at: d.at || 0, goal, items: n || 0 }; });
+  }
+  async function computeStats(sites) {
+    const ids = new Set(sites.map(x => x.id)), now = Date.now(), today = dayBR(now);
+    const evr = (await store.list('events/', 3000, true)).filter(x => x.data && ids.has(x.data.s));
+    const per = {}; sites.forEach(x => { per[x.id] = { v7: 0, c7: 0, v30: 0, c30: 0 }; });
+    const ser = {}; for (let i = 13; i >= 0; i--) ser[dayBR(now - i * 864e5)] = { d: dayBR(now - i * 864e5), v: 0, c: 0 };
+    const t = { views7: 0, clicks7: 0, views30: 0, clicks30: 0 };
+    evr.forEach(e => { const a = e.data, age = (now - (a.at || 0)) / 864e5, k = a.t === 'view' ? 'v' : 'c', P = per[a.s]; if (age <= 30) { P[k + '30']++; t[(k === 'v' ? 'views' : 'clicks') + '30']++; } if (age <= 7) { P[k + '7']++; t[(k === 'v' ? 'views' : 'clicks') + '7']++; } const dk = dayBR(a.at || 0); if (ser[dk]) ser[dk][k]++; });
+    const bookings = []; let bTotal = 0;
+    for (const st of sites.filter(x => x.goal === 'booking')) {
+      const rows = await store.list('book/' + st.id + '/', 400, false);
+      rows.forEach(r2 => { const d = r2.path.split('/').pop(); if (d < today) return; ((r2.data && r2.data.items) || []).forEach(x => { bTotal++; bookings.push({ site: st.id, siteName: st.name, d, t: x.t, n: x.n, s: x.s }); }); });
+      st.bookings = bookings.filter(b => b.site === st.id).length;
+    }
+    bookings.sort((a, b) => (a.d + a.t < b.d + b.t ? -1 : 1));
+    return { totals: { sites: sites.length, ...t, bookings: bTotal }, series: Object.values(ser), sites: sites.map(x => ({ ...x, ...per[x.id] })), bookings: bookings.slice(0, 20), capped: evr.length >= 3000 };
+  }
+  app.get('/api/me', async (req, res) => {
+    if (!isAuth(req)) return res.status(401).json({ error: 'auth' });
+    if (isAdmin(req)) return res.json({ role: 'admin', name: 'Admin' });
+    const u = req.u.user, mine = (await allSites()).filter(x => x.owner === u.id);
+    res.json({ role: 'client', name: u.name, email: u.email, tmp: !!u.tmp, plan: planOf(u), usage: { sites: mine.length } });
+  });
+  app.get('/api/stats', async (req, res) => {
+    if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
+    const sites = (await allSites()).filter(x => isAdmin(req) || x.owner === req.u.id);
+    res.json(await computeStats(sites));
+  });
+  app.post('/api/account', async (req, res) => {
+    if (!isAuth(req) || isAdmin(req)) return res.status(401).json({ error: 'auth' });
+    const b = req.body || {}, u = req.u.user;
+    if (b.name != null) { const n = String(b.name).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 80); if (n) u.name = n; }
+    if (b.newPassword) {
+      if (limited('pw:' + u.id, 8, 3600e3)) return res.status(429).json({ error: 'rate' });
+      if (!pwCheck(String(b.oldPassword || ''), u.pw)) return res.status(400).json({ error: 'senha atual incorreta' });
+      if (String(b.newPassword).length < 8 || String(b.newPassword).length > 100) return res.status(400).json({ error: 'a nova senha precisa ter 8 caracteres ou mais' });
+      u.pw = pwHash(String(b.newPassword)); u.tmp = false;
+    }
+    await store.set('users/' + u.id, u); res.json({ ok: true });
+  });
+  const needAdmin = (req, res) => { if (kind(hostOf(req)).t !== 'app' || !isAdmin(req)) { res.status(401).json({ error: 'auth' }); return false; } return true; };
+  const pubUser = (u, sites) => ({ id: u.id, name: u.name, email: u.email, status: u.status, plan: planOf(u), tmp: !!u.tmp, note: u.note || '', createdAt: u.createdAt, lastLogin: u.lastLogin || 0, sites: sites.filter(x => x.owner === u.id).length });
+  app.get('/api/admin/overview', async (req, res) => {
+    if (!needAdmin(req, res)) return;
+    const sites = await allSites(), users = (await store.list('users/', 1000, true)).map(x => x.data).filter(Boolean), st = await computeStats(sites);
+    const nameOf = Object.fromEntries(users.map(u => [u.id, u.name])); nameOf.admin = 'Admin';
+    st.sites = st.sites.map(x => ({ ...x, ownerName: nameOf[x.owner] || '—' }));
+    const now = Date.now();
+    res.json({ ...st, clients: users.map(u => pubUser(u, sites)).sort((a, b) => b.createdAt - a.createdAt), kpi: { clients: users.length, active: users.filter(u => u.status === 'active').length, blocked: users.filter(u => u.status !== 'active').length, new30: users.filter(u => now - u.createdAt < 30 * 864e5).length, aiToday: aiDay.d === new Date().toISOString().slice(0, 10) ? aiDay.n : 0, aiLimit: AI_DAILY, store: store.kind }, plans: Object.fromEntries(Object.entries(PLANS).map(([k, v]) => [k, v])) });
+  });
+  app.post('/api/admin/clients', async (req, res) => {
+    if (!needAdmin(req, res)) return;
+    const b = req.body || {}, name = String(b.name || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 80), email = String(b.email || '').trim().toLowerCase().slice(0, 200);
+    if (!name || !EMAIL.test(email)) return res.status(400).json({ error: 'Informe nome e um e-mail válido.' });
+    if (await store.get('uemail/' + email)) return res.status(409).json({ error: 'Já existe um cliente com esse e-mail.' });
+    const id = crypto.randomBytes(6).toString('hex'), pw = genPw();
+    const u = { id, role: 'client', name, email, pw: pwHash(pw), status: 'active', plan: PLANS[b.plan] ? b.plan : 'free', maxSites: 0, note: String(b.note || '').slice(0, 300), tmp: true, createdAt: Date.now(), lastLogin: 0 };
+    await store.set('users/' + id, u); await store.set('uemail/' + email, { id });
+    res.json({ ok: true, user: pubUser(u, []), password: pw });
+  });
+  app.post('/api/admin/clients/update', async (req, res) => {
+    if (!needAdmin(req, res)) return;
+    const b = req.body || {}, id = String(b.id || ''); if (!ID.test(id)) return res.status(400).json({ error: 'bad' });
+    const u = await store.get('users/' + id); if (!u) return res.status(404).json({ error: 'not_found' });
+    if (b.status === 'active' || b.status === 'blocked') u.status = b.status;
+    if (b.plan && PLANS[b.plan]) u.plan = b.plan;
+    if (b.maxSites != null) u.maxSites = Math.min(500, Math.max(0, +b.maxSites || 0));
+    if (b.name) u.name = String(b.name).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 80) || u.name;
+    if (b.note != null) u.note = String(b.note).slice(0, 300);
+    let pw = null; if (b.resetPassword) { pw = genPw(); u.pw = pwHash(pw); u.tmp = true; }
+    await store.set('users/' + id, u); res.json({ ok: true, password: pw, user: pubUser(u, await allSites()) });
+  });
+  app.post('/api/admin/clients/delete', async (req, res) => {
+    if (!needAdmin(req, res)) return;
+    const id = String((req.body || {}).id || ''); if (!ID.test(id)) return res.status(400).json({ error: 'bad' });
+    const u = await store.get('users/' + id); if (!u) return res.status(404).json({ error: 'not_found' });
+    for (const st of (await allSites()).filter(x => x.owner === id)) {
+      if (st.slug) await store.del('slug/' + st.slug); await store.del('sites/' + st.id);
+      for (const r2 of await store.list('book/' + st.id + '/', 400, false)) await store.del(r2.path);
+    }
+    await store.del('uemail/' + u.email); await store.del('users/' + id); res.json({ ok: true });
+  });
+  app.post('/api/admin/sites/unpublish', async (req, res) => {
+    if (!needAdmin(req, res)) return;
+    const id = String((req.body || {}).id || ''); if (!ID.test(id)) return res.status(400).json({ error: 'bad' });
+    const d = await store.get('sites/' + id); if (d && d.slug) await store.del('slug/' + d.slug); await store.del('sites/' + id); res.json({ ok: true });
   });
 
   app.use((req, res) => res.status(404).type('text').send('Não encontrado'));
