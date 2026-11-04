@@ -213,7 +213,7 @@ async function main() {
   async function metaProfile(code) {
     const ru = process.env.META_REDIRECT_URI || redirectUri();
     const t = await gj(GRAPH + '/oauth/access_token?' + new URLSearchParams({ client_id: META_ID, client_secret: META_SECRET, redirect_uri: ru, code }));
-    const pages = await gj(GRAPH + '/me/accounts?' + new URLSearchParams({ access_token: t.access_token, limit: '10', fields: 'name,about,phone,single_line_address,hours,website,emails,instagram_business_account{username,name,biography,website,profile_picture_url,media.limit(12){caption,timestamp}}' }));
+    const pages = await gj(GRAPH + '/me/accounts?' + new URLSearchParams({ access_token: t.access_token, limit: '10', fields: 'name,about,phone,single_line_address,hours,website,emails,instagram_business_account{username,name,biography,website,profile_picture_url,media.limit(12){caption,timestamp,media_type,media_url}}' }));
     const pg = (pages.data || [])[0]; if (!pg) throw new Error('Nenhuma Página do Facebook encontrada nesta conta.');
     const ig = pg.instagram_business_account || {};
     const hrs = []; const h = pg.hours || {};
@@ -229,7 +229,13 @@ async function main() {
     if (caps.length) lines.push('Postagens recentes:\n- ' + caps.join('\n- '));
     let logo = '';
     if (ig.profile_picture_url) { try { const r = await fetch(ig.profile_picture_url); const ct = (r.headers.get('content-type') || '').split(';')[0]; const buf = Buffer.from(await r.arrayBuffer()); if (/^image\/(jpeg|png|webp)$/.test(ct) && buf.length < 180000) logo = 'data:' + ct + ';base64,' + buf.toString('base64'); } catch (e) {} }
-    return { name: String(ig.name || pg.name || '').slice(0, 60), phone: String(pg.phone || ''), text: lines.join('\n').slice(0, 5000), logo, handle: ig.username || '' };
+    const photos = [];
+    for (const m of ((ig.media && ig.media.data) || [])) {
+      if (photos.length >= 6) break;
+      if (m.media_type !== 'IMAGE' || !m.media_url) continue;
+      try { const r = await fetch(m.media_url); const ct = (r.headers.get('content-type') || '').split(';')[0]; const buf = Buffer.from(await r.arrayBuffer()); if (/^image\/(jpeg|png|webp)$/.test(ct) && buf.length < 300000) photos.push('data:' + ct + ';base64,' + buf.toString('base64')); } catch (e) { /* ignora foto */ }
+    }
+    return { name: String(ig.name || pg.name || '').slice(0, 60), phone: String(pg.phone || ''), text: lines.join('\n').slice(0, 5000), logo, photos, handle: ig.username || '' };
   }
   app.get('/auth/meta/callback', async (req, res) => {
     const out = (data) => res.type('html').send('<!doctype html><meta charset=utf-8><body style="font:16px system-ui;padding:30px">' + (data.error ? '<p>' + esc(data.error) + '</p>' : '<p>Conectado! Pode fechar esta janela.</p>') + '<script>try{window.opener&&window.opener.postMessage({ap:"meta",data:' + JSON.stringify(data).replace(/</g, '\\u003c') + '},' + JSON.stringify(origin(req)) + ')}catch(e){}setTimeout(function(){window.close()},1200)</script>');
@@ -240,6 +246,73 @@ async function main() {
       if (!req.query.code) return out({ error: 'Código ausente.' });
       out(await metaProfile(String(req.query.code)));
     } catch (e) { out({ error: 'Não foi possível ler a conta: ' + e.message }); }
+  });
+
+  // ---- agendamento público (reserva de horários por site publicado)
+  const brNow = () => new Date(Date.now() - 3 * 3600e3);
+  const ymd = (d) => d.toISOString().slice(0, 10);
+  const hmToMin = (t) => { const m = /^(\d\d):(\d\d)$/.exec(String(t || '')); return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null; };
+  async function bookingSite(req) {
+    const k = kind(hostOf(req)); if (k.t !== 'site') return null;
+    const ptr = await store.get('slug/' + k.slug); if (!ptr) return null;
+    const d = await store.get('sites/' + ptr.id); if (!d) return null;
+    let j; try { j = JSON.parse(d.j || '{}'); } catch (e) { return null; }
+    return j.goal === 'booking' ? { id: ptr.id, j } : null;
+  }
+  let bkLock = Promise.resolve();
+  const bkRun = (fn) => { const p = bkLock.then(fn, fn); bkLock = p.catch(() => {}); return p; };
+  app.all('/api/slots', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') { res.setHeader('Access-Control-Allow-Methods', 'GET,POST'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); return res.status(204).end(); }
+    try {
+      if (limited('sl:' + ipOf(req), 120, 60e3)) return res.status(429).json({ error: 'rate' });
+      const st = await bookingSite(req); const d = String(req.query.d || '');
+      if (!st || !/^\d{4}-\d\d-\d\d$/.test(d)) return res.status(400).json({ error: 'bad' });
+      const doc = await store.get('book/' + st.id + '/' + d);
+      res.json({ taken: ((doc && doc.items) || []).map(x => x.t) });
+    } catch (e) { res.status(500).json({ error: 'server' }); }
+  });
+  app.all('/api/book', async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') { res.setHeader('Access-Control-Allow-Methods', 'GET,POST'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); return res.status(204).end(); }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
+    try {
+      if (limited('bk:' + ipOf(req), 8, 3600e3)) return res.status(429).json({ error: 'rate' });
+      const st = await bookingSite(req); const b = req.body || {};
+      const d = String(b.d || ''), t = String(b.t || ''), n = String(b.n || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 80), sv = String(b.s || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 80);
+      if (!st || !/^\d{4}-\d\d-\d\d$/.test(d) || !n) return res.status(400).json({ error: 'bad' });
+      const dt = new Date(d + 'T12:00:00Z'); if (isNaN(dt)) return res.status(400).json({ error: 'bad' });
+      const now = brNow(), today = ymd(now);
+      if (d < today || d > ymd(new Date(now.getTime() + 120 * 864e5))) return res.status(400).json({ error: 'date' });
+      const dow = dt.getUTCDay(), dy = ['todos', 'semana', 'sabado'].includes(st.j.days) ? st.j.days : 'todos';
+      if (!(dy === 'todos' || (dy === 'semana' && dow > 0 && dow < 6) || (dy === 'sabado' && dow > 0))) return res.status(400).json({ error: 'closed' });
+      const op = hmToMin(st.j.open) != null ? hmToMin(st.j.open) : 540, cl = hmToMin(st.j.close) != null ? hmToMin(st.j.close) : 1080, tm = hmToMin(t);
+      if (tm == null || tm < op || tm + 30 > cl || (tm - op) % 30) return res.status(400).json({ error: 'time' });
+      if (d === today && tm <= now.getUTCHours() * 60 + now.getUTCMinutes()) return res.status(400).json({ error: 'past' });
+      const out = await bkRun(async () => {
+        const key = 'book/' + st.id + '/' + d, doc = (await store.get(key)) || { items: [] };
+        if (doc.items.some(x => x.t === t)) return 409;
+        if (doc.items.length >= 48) return 400;
+        doc.items.push({ t, n, s: sv, at: Date.now() }); await store.set(key, doc); return 200;
+      });
+      res.status(out).json(out === 200 ? { ok: true } : { error: out === 409 ? 'taken' : 'full' });
+    } catch (e) { console.error('book', e.message); res.status(500).json({ error: 'server' }); }
+  });
+  app.get('/api/bookings', async (req, res) => {
+    if (kind(hostOf(req)).t !== 'app' || !isAdmin(req)) return res.status(401).json({ error: 'auth' });
+    const id = String(req.query.site || ''); if (!ID.test(id)) return res.status(400).json({ error: 'bad' });
+    const rows = await store.list('book/' + id + '/', 400, false);
+    const today = ymd(brNow()), items = [];
+    rows.forEach(r => { const d = r.path.split('/').pop(); ((r.data && r.data.items) || []).forEach(x => items.push({ d, t: x.t, n: x.n, s: x.s })); });
+    items.sort((a, b) => (a.d + a.t < b.d + b.t ? -1 : 1));
+    res.json({ items: items.filter(x => x.d >= today) });
+  });
+  app.post('/api/bookings/cancel', async (req, res) => {
+    if (kind(hostOf(req)).t !== 'app' || !isAdmin(req)) return res.status(401).json({ error: 'auth' });
+    const b = req.body || {}, id = String(b.site || ''), d = String(b.d || ''), t = String(b.t || '');
+    if (!ID.test(id) || !/^\d{4}-\d\d-\d\d$/.test(d)) return res.status(400).json({ error: 'bad' });
+    await bkRun(async () => { const key = 'book/' + id + '/' + d, doc = await store.get(key); if (!doc) return; doc.items = doc.items.filter(x => x.t !== t); if (doc.items.length) await store.set(key, doc); else await store.del(key); });
+    res.json({ ok: true });
   });
 
   app.use((req, res) => res.status(404).type('text').send('Não encontrado'));

@@ -24,6 +24,8 @@ r("let PR=[];","""let PR=[],META=null;
 function metaConnect(){const w=window.open('/auth/meta/start','meta','width=560,height=720');if(!w){toast('Libere pop-ups para conectar');return}$('#metaSt').textContent='Aguardando autorização…'}
 addEventListener('message',e=>{if(e.origin!==location.origin||!e.data||e.data.ap!=='meta')return;const d=e.data.data||{};if(d.error){$('#metaSt').textContent=d.error;toast(d.error);return}META=d;$('#c-bio').value=String(d.text||'').slice(0,5000);if(d.handle&&!$('#url').value.trim())$('#url').value='instagram.com/'+d.handle;$('#metaSt').textContent='✅ Conectado'+(d.name?': '+d.name:'')+'. Revise e clique em Gerar site.';det&&det()});
 if(window.__CFG&&window.__CFG.meta)document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('metaBox');if(b)b.hidden=false});""")
+r("META=d;","META=d;META.p2=[];(d.photos||[]).slice(0,6).forEach(u=>{const im=new Image();im.onload=()=>{const k=Math.min(1,800/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,im.width*k);c.height=Math.max(1,im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);META.p2.push(c.toDataURL('image/jpeg',.72))};im.src=u});")
+r("pays:'',cover:'',gal:[],","pays:'',cover:(META&&META.p2&&META.p2[0])||'',gal:((META&&META.p2)||[]).slice(1,7),")
 r("P={id:Date.now().toString(36),name:nm,","P={id:Date.now().toString(36),name:(META&&META.name)||nm,")
 r("phone:r.ph?'+'+r.ph:DEFPHS,","phone:r.ph?'+'+r.ph:(META&&META.phone&&META.phone.replace(/\\D/g,'').length>=10?'+'+(META.phone.replace(/\\D/g,'').length<=11?'55':'')+META.phone.replace(/\\D/g,''):DEFPHS),logo:(META&&META.logo)||'',")
 # const nm precisa ser let

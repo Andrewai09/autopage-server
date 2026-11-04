@@ -25,7 +25,7 @@ function createApp() {
       req.on('end', () => {
         const raw = Buffer.concat(chunks).toString('utf8'), ct = String(req.headers['content-type'] || '');
         try {
-          if (ct.includes('application/json')) return ok(raw ? JSON.parse(raw) : {});
+          if (ct.includes('application/json') || ct.includes('text/plain')) return ok(raw ? JSON.parse(raw) : {});
           if (ct.includes('application/x-www-form-urlencoded')) return ok(Object.fromEntries(new URLSearchParams(raw)));
           ok({});
         } catch (e) { e.status = 400; no(e); }

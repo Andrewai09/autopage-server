@@ -6,7 +6,7 @@ const {main}=require('./server');
 let pass=0,fail=0;const ok=(n,c,x)=>{c?pass++:fail++;console.log((c?'PASS ':'FAIL ')+n+(c?'':' -> '+x))};
 const B='http://127.0.0.1:3917';
 const http=require('http');
-const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw}={})=>new Promise((ok,no)=>{const h={host};if(cookie)h.cookie=cookie;let b;if(raw){b=raw;h['content-type']='application/x-www-form-urlencoded'}else if(body){b=JSON.stringify(body);h['content-type']='application/json'}
+const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>new Promise((ok,no)=>{const h={host};if(cookie)h.cookie=cookie;let b;if(raw){b=raw;h['content-type']='application/x-www-form-urlencoded'}else if(body){b=JSON.stringify(body);h['content-type']=ct||'application/json'}
  if(b)h['content-length']=Buffer.byteLength(b);const q=http.request({host:'127.0.0.1',port:3917,path,method,headers:h},res=>{let t='';res.on('data',c=>t+=c);res.on('end',()=>{let j=null;try{j=JSON.parse(t)}catch(e){}ok({s:res.statusCode,t,j,h:{get:k=>{const v=res.headers[k.toLowerCase()];return Array.isArray(v)?v[0]:v}}})})});q.on('error',no);if(b)q.write(b);q.end()});
 (async()=>{
  const {srv}=await main();
@@ -33,6 +33,19 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw}={})=>new
  r=await rq('/?nr=1',{host:'ana-links.kattalo.online'});ok('?nr=1 mostra a página sem redirecionar',r.s===200,r.s);
  r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/lnk002',data:{j:JSON.stringify({id:'lnk002',name:'Bad Redir',goal:'links',redir:1,links:[{t:'x',u:'javascript:alert(1)'}]}),name:'Bad Redir'}}});
  r=await rq('/',{host:'bad-redir.kattalo.online'});ok('redirect só para https (javascript: ignorado)',r.s===200,r.s);
+ // agendamento com reserva
+ const dtf=new Date(Date.now()-3*3600e3+3*864e5);while([0,6].includes(dtf.getUTCDay()))dtf.setUTCDate(dtf.getUTCDate()+1);const D=dtf.toISOString().slice(0,10);
+ r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/bk0001',data:{j:JSON.stringify({id:'bk0001',name:'Studio Lara',goal:'booking',days:'semana',open:'09:00',close:'12:00'}),name:'Studio Lara'}}});
+ const bh='studio-lara.kattalo.online';
+ r=await rq('/api/book',{host:bh,method:'POST',body:{d:D,t:'09:30',n:'Maria',s:'Esmaltação'},ct:'text/plain'});ok('agendar horário livre 200',r.s===200,r.s+' '+r.t);
+ r=await rq('/api/book',{host:bh,method:'POST',body:{d:D,t:'09:30',n:'João'},ct:'text/plain'});ok('mesmo horário 409',r.s===409,r.s);
+ r=await rq('/api/slots?d='+D,{host:bh});ok('slots mostra horário ocupado',r.s===200&&JSON.parse(r.t).taken.includes('09:30'),r.t);
+ r=await rq('/api/book',{host:bh,method:'POST',body:{d:D,t:'11:45',n:'X'},ct:'text/plain'});ok('horário fora da grade 400',r.s===400,r.s);
+ r=await rq('/api/book',{host:bh,method:'POST',body:{d:D,t:'12:00',n:'X'},ct:'text/plain'});ok('depois do fechamento 400',r.s===400,r.s);
+ r=await rq('/api/book',{host:bh,method:'POST',body:{d:'2020-01-06',t:'10:00',n:'X'},ct:'text/plain'});ok('data passada 400',r.s===400,r.s);
+ r=await rq('/api/bookings?site=bk0001',{});ok('lista de agendamentos exige login',r.s===401,r.s);
+ r=await rq('/api/bookings?site=bk0001',{cookie:ck});ok('admin lista agendamentos',r.s===200&&JSON.parse(r.t).items.some(x=>x.t==='09:30'&&x.n==='Maria'),r.t);
+ r=await rq('/api/bookings/cancel',{method:'POST',cookie:ck,body:{site:'bk0001',d:D,t:'09:30'}});r=await rq('/api/book',{host:bh,method:'POST',body:{d:D,t:'09:30',n:'Ana'},ct:'text/plain'});ok('cancelar libera o horário',r.s===200,r.s);
  // site por subdomínio
  r=await rq('/',{host:'pizzaria-do-ze.kattalo.online'});ok('subdomínio serve o site sem login',r.s===200&&r.t.includes('window.__SITE_ID="abc123"')&&!r.t.includes('type=password'),r.s);
  r=await rq('/',{host:'inexistente.kattalo.online'});ok('subdomínio inexistente 404',r.s===404);
