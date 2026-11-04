@@ -155,18 +155,30 @@ async function main() {
   // ---- IA (Anthropic)
   app.post('/api/ai', async (req, res) => {
     if (!isAdmin(req)) return res.status(401).json({ error: 'auth' });
-    if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'sem_chave' });
+    const GKEY = process.env.GEMINI_API_KEY, AKEY = process.env.ANTHROPIC_API_KEY;
+    if (!GKEY && !AKEY) return res.status(503).json({ error: 'sem_chave' });
     const today = new Date().toISOString().slice(0, 10); if (aiDay.d !== today) aiDay = { d: today, n: 0 };
     if (aiDay.n >= AI_DAILY || limited('ai:' + ipOf(req), 30, 60e3)) return res.status(429).json({ error: 'limite' });
     aiDay.n++;
     try {
-      const prompt = String(req.body.prompt || '').slice(0, 20000);
+      const prompt = String(req.body.prompt || '').slice(0, 20000) + '\n\nResponda somente com JSON válido, sem texto extra.';
       const imgs = (Array.isArray(req.body.images) ? req.body.images : []).slice(0, 4).map(u => /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/=]+)$/.exec(String(u))).filter(Boolean).filter(m => m[2].length < 7e6);
-      const content = [...imgs.map(m => ({ type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } })), { type: 'text', text: prompt + '\n\nResponda somente com JSON válido, sem texto extra.' }];
-      const r = await fetch(process.env.ANTHROPIC_URL||'https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: MODEL, max_tokens: 4000, messages: [{ role: 'user', content }] }) });
-      const j = await r.json();
-      if (!r.ok) { console.error('anthropic', r.status, JSON.stringify(j).slice(0, 300)); return res.status(502).json({ error: 'ia' }); }
-      const txt = (j.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
+      let txt = '';
+      if (GKEY) { // Gemini (plano gratuito do Google AI Studio)
+        const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+        const url = process.env.GEMINI_URL || 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent';
+        const parts = [...imgs.map(m => ({ inline_data: { mime_type: m[1], data: m[2] } })), { text: prompt }];
+        const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': GKEY }, body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 4000, temperature: 0.2 } }) });
+        const j = await r.json();
+        if (!r.ok) { console.error('gemini', r.status, JSON.stringify(j).slice(0, 300)); return res.status(r.status === 429 ? 429 : 502).json({ error: 'ia' }); }
+        txt = (((j.candidates || [])[0] || {}).content || { parts: [] }).parts.map(p => p.text || '').join('');
+      } else { // Anthropic (pago)
+        const content = [...imgs.map(m => ({ type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } })), { type: 'text', text: prompt }];
+        const r = await fetch(process.env.ANTHROPIC_URL || 'https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': AKEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: MODEL, max_tokens: 4000, messages: [{ role: 'user', content }] }) });
+        const j = await r.json();
+        if (!r.ok) { console.error('anthropic', r.status, JSON.stringify(j).slice(0, 300)); return res.status(502).json({ error: 'ia' }); }
+        txt = (j.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
+      }
       const a = txt.indexOf('{'), z = txt.lastIndexOf('}');
       if (a < 0 || z < a) return res.status(502).json({ error: 'formato' });
       return res.json({ value: JSON.parse(txt.slice(a, z + 1)) });

@@ -51,6 +51,13 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw}={})=>new
  r=await rq('/api/ai',{method:'POST',cookie:ck,body:{prompt:'extraia',images:['data:image/jpeg;base64,/9j/AAAA','javascript:alert(1)']}});
  ok('IA devolve JSON extraído',r.j&&r.j.value&&r.j.value.name==='Zé'&&r.j.value.items[0].p===50,r.t);
  ok('IA enviou só 1 imagem válida + texto',global.__aiBody.messages[0].content.filter(c=>c.type==='image').length===1&&global.__aiBody.messages[0].content.some(c=>c.type==='text'));
+ // Gemini
+ process.env.GEMINI_API_KEY='g';
+ global.fetch=async(u,o)=>{if(String(u).includes('generativelanguage.googleapis.com')){global.__gb=JSON.parse(o.body);global.__gh=o.headers;return{ok:true,status:200,json:async()=>({candidates:[{content:{parts:[{text:'{"name":"Gê","items":[]}'}]}}]})}}return realFetch(u,o)};
+ r=await rq('/api/ai',{method:'POST',cookie:ck,body:{prompt:'extraia',images:['data:image/png;base64,iVBOR']}});
+ ok('Gemini devolve JSON',r.j&&r.j.value&&r.j.value.name==='Gê',r.t);
+ ok('Gemini recebeu imagem + JSON mode + chave no header',global.__gb.contents[0].parts[0].inline_data&&global.__gb.generationConfig.responseMimeType==='application/json'&&global.__gh['x-goog-api-key']==='g');
+ delete process.env.GEMINI_API_KEY;
  // Meta (mock Graph)
  r=await rq('/auth/meta/start');ok('meta start sem login 401',r.s===401);
  r=await rq('/auth/meta/start',{cookie:ck});const loc=r.h.get('location')||'';ok('meta start redireciona ao Facebook com escopos',r.s===302&&loc.includes('facebook.com')&&loc.includes('client_id=111')&&loc.includes('instagram_basic')&&loc.includes('state='),loc);
