@@ -15,7 +15,7 @@ const AI_DAILY = +process.env.AI_DAILY_LIMIT || 300;
 const META_ID = process.env.META_APP_ID || '';
 const META_SECRET = process.env.META_APP_SECRET || '';
 const GRAPH = 'https://graph.facebook.com/' + (process.env.META_GRAPH_VERSION || 'v21.0');
-const RESERVED = new Set(['app', 'www', 'api', 'admin', 'mail', 'ftp', 'cpanel', 'webmail', 'painel', 'login', 'static', 'assets', 'autopage', 'sites']);
+const RESERVED = new Set(['app', 'www', 'api', 'admin', 'mail', 'ftp', 'cpanel', 'webmail', 'painel', 'login', 'static', 'assets', 'autopage', 'sites', 'superdelivery', ...String(process.env.RESERVED_SUBS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean)]);
 const APP_HTML = fs.readFileSync(path.join(__dirname, 'public', 'app.html'), 'utf8');
 const SHIM = fs.readFileSync(path.join(__dirname, 'public', 'shim.js'), 'utf8');
 
