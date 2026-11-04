@@ -46,6 +46,7 @@ const ipOf = (req) => String(req.headers['x-forwarded-for'] || req.socket.remote
 let aiDay = { d: '', n: 0 };
 
 async function main() {
+  if (process.env.RENDER && !process.env.DATABASE_URL) throw new Error('Defina DATABASE_URL (Postgres). Sem banco, os dados se perdem a cada reinício no Render.');
   const store = await makeStore();
   const app = createApp();
   app.disable('x-powered-by');
