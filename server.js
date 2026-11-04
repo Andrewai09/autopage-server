@@ -94,6 +94,13 @@ async function main() {
     }
     const ptr = await store.get('slug/' + k.slug);
     if (!ptr) return res.status(404).type('html').send('<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><body style="font:16px system-ui;display:grid;place-items:center;min-height:100vh;margin:0"><p>Site não encontrado.</p>');
+    try {
+      if (!/[?&]nr=1/.test(req.url || '')) {
+        const sd = await store.get('sites/' + ptr.id);
+        const sj = sd && JSON.parse(sd.j || '{}');
+        if (sj && sj.goal === 'links' && sj.redir && Array.isArray(sj.links) && sj.links[0] && /^https:\/\/[^\s"'<>]+$/.test(String(sj.links[0].u || ''))) return res.redirect(String(sj.links[0].u));
+      }
+    } catch (e) { /* segue para a página normal */ }
     return page(req, res, cfg({ site: true }) + 'window.__SITE_ID=' + JSON.stringify(ptr.id) + ';');
   });
 

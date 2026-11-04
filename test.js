@@ -27,6 +27,12 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw}={})=>new
  r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/abc123',data:{j:JSON.stringify(site),name:site.name}}});ok('republicar mantém slug',r.j.slug==='pizzaria-do-ze');
  r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/../etc',data:{j:'{}'}}});ok('path inválido rejeitado',r.s===400);
  r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/zzz',data:{j:'não é json'}}});ok('json inválido rejeitado',r.s===400);
+ // redirecionamento (Link na bio)
+ r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/lnk001',data:{j:JSON.stringify({id:'lnk001',name:'Ana Links',goal:'links',redir:1,links:[{t:'Insta',u:'https://instagram.com/ana'}]}),name:'Ana Links'}}});
+ r=await rq('/',{host:'ana-links.kattalo.online'});ok('link na bio redireciona (302)',r.s===302&&r.h.get('location')==='https://instagram.com/ana',r.s+' '+r.h.get('location'));
+ r=await rq('/?nr=1',{host:'ana-links.kattalo.online'});ok('?nr=1 mostra a página sem redirecionar',r.s===200,r.s);
+ r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/lnk002',data:{j:JSON.stringify({id:'lnk002',name:'Bad Redir',goal:'links',redir:1,links:[{t:'x',u:'javascript:alert(1)'}]}),name:'Bad Redir'}}});
+ r=await rq('/',{host:'bad-redir.kattalo.online'});ok('redirect só para https (javascript: ignorado)',r.s===200,r.s);
  // site por subdomínio
  r=await rq('/',{host:'pizzaria-do-ze.kattalo.online'});ok('subdomínio serve o site sem login',r.s===200&&r.t.includes('window.__SITE_ID="abc123"')&&!r.t.includes('type=password'),r.s);
  r=await rq('/',{host:'inexistente.kattalo.online'});ok('subdomínio inexistente 404',r.s===404);
