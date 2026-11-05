@@ -612,7 +612,23 @@ async function main() {
       console.log('padrão visual aplicado a', n, 'sites');
     } catch (e) { console.error('migr visual', e.message); }
   }
-  if (require.main === module) { X.startJobs(APP_URL); migrateVisual(); }
+  // migração única: remove o horário de funcionamento dos formatos que não o usam
+  async function migrateHours() {
+    try {
+      if (await store.get('config/migr_hours1')) return;
+      const OFF = ['profile', 'resume', 'invite', 'pet', 'portfolio', 'presentation', 'capture', 'links'];
+      const rows = await store.list('sites/', 5000, true), undo = {}; let n = 0;
+      for (const x of rows) {
+        const d = x.data || {}; let p; try { p = JSON.parse(d.j || '{}'); } catch (e) { continue; }
+        if (!OFF.includes(p.goal) || !p.hours) continue;
+        undo[x.path] = p.hours; p.hours = '';
+        await store.set(x.path, { ...d, j: JSON.stringify(p) }); n++;
+      }
+      await store.set('config/migr_hours1', { at: Date.now(), n, undo });
+      console.log('horário removido de', n, 'sites');
+    } catch (e) { console.error('migr horas', e.message); }
+  }
+  if (require.main === module) { X.startJobs(APP_URL); migrateVisual().then(migrateHours); }
 
   app.use((req, res) => res.status(404).type('text').send('Não encontrado'));
   app.use((err, req, res, next) => { console.error(err.message); res.status(err.status || 500).json({ error: 'erro' }); });
