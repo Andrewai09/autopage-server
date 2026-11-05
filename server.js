@@ -235,16 +235,15 @@ async function main() {
       const docs = (Array.isArray(req.body.docs) ? req.body.docs : []).slice(0, 2).map(u => /^data:application\/pdf;base64,([A-Za-z0-9+/=]+)$/.exec(String(u))).filter(Boolean).filter(m => m[1].length < 7e6);
       let txt = '';
       if (GKEY) { // Gemini (plano gratuito do Google AI Studio)
-        const models = [process.env.GEMINI_MODEL, 'gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-flash'].filter((m, i, a) => m && a.indexOf(m) === i);
+        const models = [process.env.GEMINI_MODEL, 'gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.8-flash-lite', 'gemini-flash-lite-latest'].filter((m, i, a) => m && a.indexOf(m) === i);
         const parts = [...docs.map(m => ({ inline_data: { mime_type: 'application/pdf', data: m[1] } })), ...imgs.map(m => ({ inline_data: { mime_type: m[1], data: m[2] } })), { text: prompt }];
         const body = JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 4000, temperature: 0.2 } });
         let lastStatus = 502;
         for (const model of models) {
           const url = process.env.GEMINI_URL || 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent';
           let r, j;
-          for (let t = 0; t < 2; t++) { // modelo sobrecarregado (5xx): espera um instante e tenta de novo
-            r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': GKEY }, body });
-            j = await r.json();
+          for (let t = 0; t < 1; t++) { // modelo sobrecarregado (5xx): espera um instante e tenta de novo
+            try { r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': GKEY }, body, signal: AbortSignal.timeout(25000) }); j = await r.json(); } catch (e) { r = { status: 504, ok: false }; j = { error: String(e.message) }; }
             if (r.status < 500) break;
             console.error('gemini', model, r.status, 'tentativa', t + 1);
             await new Promise(ok => setTimeout(ok, 1500));
