@@ -23,3 +23,6 @@ Defina `MP_ACCESS_TOKEN` no Render. Na aba **Clientes → Vendas dos planos**, i
 - **Admin**: log de atividade, backups diários (3 últimos no banco; por e-mail com `RESEND_API_KEY` + `ADMIN_EMAIL`), avisos de vencimento por e-mail.
 - Variáveis: `RESEND_API_KEY`, `MAIL_FROM`, `SIGNUP`.
 - **Automação**: o workflow `.github/workflows/keepalive.yml` chama `/healthz` a cada 10 min; o servidor aproveita para rodar backup diário e avisos de vencimento (no máximo a cada 6 h).
+
+## Currículo → Perfil profissional
+Nos formatos *Perfil profissional* e *Currículo online* é possível enviar o currículo (PDF até 5 MB, Word .docx, TXT ou foto). DOCX/TXT são lidos no navegador; PDF vai para `/api/ai` como `docs` (Gemini ou Claude). A IA só usa o que está no currículo (nunca inventa) e preenche nome, título, resumo, contatos, links, competências e experiência/formação.

@@ -232,10 +232,11 @@ async function main() {
     try {
       const prompt = String(req.body.prompt || '').slice(0, 20000) + '\n\nResponda somente com JSON válido, sem texto extra.';
       const imgs = (Array.isArray(req.body.images) ? req.body.images : []).slice(0, 4).map(u => /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/=]+)$/.exec(String(u))).filter(Boolean).filter(m => m[2].length < 7e6);
+      const docs = (Array.isArray(req.body.docs) ? req.body.docs : []).slice(0, 2).map(u => /^data:application\/pdf;base64,([A-Za-z0-9+/=]+)$/.exec(String(u))).filter(Boolean).filter(m => m[1].length < 7e6);
       let txt = '';
       if (GKEY) { // Gemini (plano gratuito do Google AI Studio)
         const models = [process.env.GEMINI_MODEL, 'gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-flash'].filter((m, i, a) => m && a.indexOf(m) === i);
-        const parts = [...imgs.map(m => ({ inline_data: { mime_type: m[1], data: m[2] } })), { text: prompt }];
+        const parts = [...docs.map(m => ({ inline_data: { mime_type: 'application/pdf', data: m[1] } })), ...imgs.map(m => ({ inline_data: { mime_type: m[1], data: m[2] } })), { text: prompt }];
         const body = JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 4000, temperature: 0.2 } });
         let lastStatus = 502;
         for (const model of models) {
@@ -255,7 +256,7 @@ async function main() {
         }
         if (!txt) return res.status(lastStatus === 429 ? 429 : 502).json({ error: 'ia' });
       } else { // Anthropic (pago)
-        const content = [...imgs.map(m => ({ type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } })), { type: 'text', text: prompt }];
+        const content = [...docs.map(m => ({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: m[1] } })), ...imgs.map(m => ({ type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } })), { type: 'text', text: prompt }];
         const r = await fetch(process.env.ANTHROPIC_URL || 'https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': AKEY, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: MODEL, max_tokens: 4000, messages: [{ role: 'user', content }] }) });
         const j = await r.json();
         if (!r.ok) { console.error('anthropic', r.status, JSON.stringify(j).slice(0, 300)); return res.status(502).json({ error: 'ia' }); }
