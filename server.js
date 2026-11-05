@@ -91,7 +91,7 @@ async function main() {
   };
   const cfg = (o) => 'window.__ROOT=' + JSON.stringify(ROOT) + ';window.__CFG=' + JSON.stringify(o).replace(/</g, '\\u003c') + ';';
 
-  app.get('/healthz', (req, res) => res.json({ ok: true, store: store.kind }));
+  app.get('/healthz', (req, res) => { X.tick(APP_URL).catch(e => console.error('tick', e.message)); res.json({ ok: true, store: store.kind }); });
   app.get('/privacidade', (req, res) => res.type('html').send('<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Política de Privacidade</title><body style="font:16px/1.6 system-ui;max-width:720px;margin:40px auto;padding:0 16px"><h1>Política de Privacidade</h1><p>O AutoPage cria sites para negócios. Quando o cliente conecta o Instagram ou o Facebook, lemos somente dados públicos do perfil comercial (nome, bio, endereço, telefone, horário e legendas recentes) para montar o site. Não publicamos nada nas suas redes, não guardamos o token de acesso e não vendemos dados.</p><p>Para pedir a exclusão dos seus dados, fale com o administrador do serviço em ' + esc(ROOT) + '.</p></body>'));
   app.all('/meta/data-deletion', (req, res) => res.json({ url: 'https://' + APP_HOST + '/privacidade', confirmation_code: crypto.randomBytes(6).toString('hex') }));
 

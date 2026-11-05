@@ -357,6 +357,12 @@ module.exports = function makeExtras(base) {
     });
   };
 
+  let lastTick = 0;
+  X.tick = async (appUrl) => { // chamado pelo /healthz: roda as rotinas no máximo a cada 6 h, mesmo com o servidor dormindo entre acessos
+    if (Date.now() - lastTick < 6 * 3600e3) return;
+    lastTick = Date.now();
+    await X.expiryJob(appUrl()); await X.backupIfDue();
+  };
   X.startJobs = (appUrl) => {
     const run = () => { X.expiryJob(appUrl()).catch(e => console.error('expiryJob', e.message)); X.backupIfDue().catch(e => console.error('backup', e.message)); };
     setTimeout(run, 90e3).unref(); setInterval(run, 6 * 3600e3).unref();
