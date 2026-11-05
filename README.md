@@ -22,3 +22,4 @@ Defina `MP_ACCESS_TOKEN` no Render. Na aba **Clientes → Vendas dos planos**, i
 - **Formatos novos**: Captura de contatos e Carteirinha do pet. **Melhorar site** (checklist por formato + ideias da IA) e **cor da logo**.
 - **Admin**: log de atividade, backups diários (3 últimos no banco; por e-mail com `RESEND_API_KEY` + `ADMIN_EMAIL`), avisos de vencimento por e-mail.
 - Variáveis: `RESEND_API_KEY`, `MAIL_FROM`, `SIGNUP`.
+- **Automação**: o workflow `.github/workflows/keepalive.yml` chama `/healthz` a cada 10 min; o servidor aproveita para rodar backup diário e avisos de vencimento (no máximo a cada 6 h).
