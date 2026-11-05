@@ -60,6 +60,16 @@ async function main() {
   if (process.env.RENDER && !process.env.DATABASE_URL) throw new Error('Defina DATABASE_URL (Postgres). Sem banco, os dados se perdem a cada reinício no Render.');
   const store = await makeStore();
   const X = makeExtras({ store, ROOT, APP_HOST });
+  // contas criadas por variável de ambiente (SEED_USERS = JSON [{name,email,pw:"salt:hash scrypt",plan}]); só cria se o e-mail ainda não existe
+  try {
+    for (const x of JSON.parse(process.env.SEED_USERS || '[]')) {
+      const email = String((x && x.email) || '').trim().toLowerCase();
+      if (!EMAIL.test(email) || !/^[a-f0-9]{32}:[a-f0-9]{64}$/.test(String(x.pw || '')) || await store.get('uemail/' + email)) continue;
+      const id = crypto.randomBytes(6).toString('hex');
+      await store.set('users/' + id, { id, role: 'client', name: String(x.name || email).slice(0, 80), email, pw: x.pw, status: 'active', plan: PLANS[x.plan] ? x.plan : 'free', maxSites: 0, note: 'Conta criada pelo administrador', tmp: false, createdAt: Date.now(), lastLogin: 0 });
+      await store.set('uemail/' + email, { id }); console.log('conta criada: ' + email);
+    }
+  } catch (e) { console.error('SEED_USERS', e.message); }
   const app = createApp();
   app.disable('x-powered-by');
   app.set('trust proxy', true);
