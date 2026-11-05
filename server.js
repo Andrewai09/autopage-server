@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { makeStore } = require('./store');
+const makeExtras = require('./extras');
 
 const ROOT = (process.env.ROOT_DOMAIN || 'kattalo.online').toLowerCase();
 const APP_HOST = (process.env.APP_HOST || 'app.' + ROOT).toLowerCase();
@@ -58,6 +59,7 @@ let aiDay = { d: '', n: 0 };
 async function main() {
   if (process.env.RENDER && !process.env.DATABASE_URL) throw new Error('Defina DATABASE_URL (Postgres). Sem banco, os dados se perdem a cada reinício no Render.');
   const store = await makeStore();
+  const X = makeExtras({ store, ROOT, APP_HOST });
   const app = createApp();
   app.disable('x-powered-by');
   app.set('trust proxy', true);
@@ -94,7 +96,7 @@ async function main() {
   app.all('/meta/data-deletion', (req, res) => res.json({ url: 'https://' + APP_HOST + '/privacidade', confirmation_code: crypto.randomBytes(6).toString('hex') }));
 
   // ---- login
-  const loginPage = (msg) => '<!doctype html><html lang=pt-BR><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>AutoPage.ai · Entrar</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;color:#e8ecff;font:16px system-ui"><form method=post action=/login style="width:min(340px,90vw);background:#141a33;padding:28px;border-radius:16px;display:grid;gap:12px"><h2 style="margin:0">🪄 AutoPage.ai</h2>' + (msg ? '<div style="color:#fca5a5">' + esc(msg) + '</div>' : '') + '<input type=email name=email placeholder="E-mail (admin: pode deixar em branco)" autocomplete=username style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><input type=password name=password placeholder=Senha autofocus required style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><button style="padding:12px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-weight:700">Entrar</button><a href=/planos style="color:#a5b4fc;text-align:center;font-size:14px">Quero contratar um plano</a></form></html>';
+  const loginPage = (msg) => '<!doctype html><html lang=pt-BR><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>AutoPage.ai · Entrar</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;color:#e8ecff;font:16px system-ui"><form method=post action=/login style="width:min(340px,90vw);background:#141a33;padding:28px;border-radius:16px;display:grid;gap:12px"><h2 style="margin:0">🪄 AutoPage.ai</h2>' + (msg ? '<div style="color:#fca5a5">' + esc(msg) + '</div>' : '') + '<input type=email name=email placeholder="E-mail (admin: pode deixar em branco)" autocomplete=username style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><input type=password name=password placeholder=Senha autofocus required style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><button style="padding:12px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-weight:700">Entrar</button><a href=/cadastro style="color:#a5b4fc;text-align:center;font-size:14px">Criar conta grátis (7 dias de Pro)</a><a href=/planos style="color:#a5b4fc;text-align:center;font-size:14px">Ver planos</a></form></html>';
   app.post('/login', async (req, res) => {
     if (kind(hostOf(req)).t !== 'app') return res.status(404).end();
     const tooMany = () => res.status(429).type('html').send(loginPage('Muitas tentativas. Aguarde 15 minutos.'));
@@ -111,15 +113,18 @@ async function main() {
     }
     const AEM = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
     if (!ADMIN_PASSWORD || !safeEq(pw, ADMIN_PASSWORD) || (AEM && email !== AEM)) {
+      X.audit('anônimo', 'login.fail', 'tentativa de admin · IP ' + ipOf(req));
       return bad(401, 'E-mail ou senha incorretos.');
     }
+    X.audit('admin', 'admin.login', 'IP ' + ipOf(req));
     setC(mkToken({ r: 'admin', u: 'admin' }, 7 * 864e5)); res.redirect('/');
   });
   app.post('/logout', (req, res) => { res.setHeader('Set-Cookie', 'ap_s=; HttpOnly; Path=/; Max-Age=0'); res.redirect('/'); });
 
   // ---- páginas
   app.get('/', async (req, res) => {
-    const k = kind(hostOf(req));
+    let k = kind(hostOf(req)), cdom = null;
+    if (k.t === 'app' && hostOf(req) !== APP_HOST) { cdom = await X.siteByDomain(hostOf(req)); if (cdom) k = { t: 'site', domain: true }; }
     if (k.t === 'none') return res.status(404).type('text').send('Não encontrado');
     if (k.t === 'app') {
       if (!ADMIN_PASSWORD) return res.status(503).type('text').send('Defina ADMIN_PASSWORD no servidor.');
@@ -127,13 +132,16 @@ async function main() {
       const uu = req.u.role === 'admin' ? { id: 'admin', role: 'admin', name: 'Admin' } : { id: req.u.id, role: 'client', name: req.u.name, email: req.u.user.email };
       return page(req, res, cfg({ meta: !!(META_ID && META_SECRET), site: false }) + 'window.__U=' + JSON.stringify(uu).replace(/</g, '\\u003c') + ';');
     }
-    const ptr = await store.get('slug/' + k.slug);
+    const ptr = cdom ? { id: cdom.site } : await store.get('slug/' + k.slug);
     if (!ptr) return res.status(404).type('html').send('<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><body style="font:16px system-ui;display:grid;place-items:center;min-height:100vh;margin:0"><p>Site não encontrado.</p>');
     try {
       if (!/[?&]nr=1/.test(req.url || '')) {
         const sd = await store.get('sites/' + ptr.id);
         const sj = sd && JSON.parse(sd.j || '{}');
-        if (sj && sj.goal === 'links' && sj.redir && Array.isArray(sj.links) && sj.links[0] && /^https:\/\/[^\s"'<>]+$/.test(String(sj.links[0].u || ''))) return res.redirect(String(sj.links[0].u));
+        if (sj && sj.goal === 'links' && sj.redir && Array.isArray(sj.links) && sj.links[0] && /^https:\/\/[^\s"'<>]+$/.test(String(sj.links[0].u || ''))) {
+          if (!limited('rd:' + ipOf(req), 60, 60e3)) { const t0 = Date.now(), lb = String(sj.links[0].t || 'Link').replace(/[\u0000-\u001f\u007f<>]/g, ' ').slice(0, 30); await store.set('events/' + crypto.randomBytes(8).toString('hex'), { s: ptr.id, t: 'view', b: 'redir', at: t0 }); await store.set('events/' + crypto.randomBytes(8).toString('hex'), { s: ptr.id, t: 'click', b: 'redir', l: lb, at: t0 + 1 }); }
+          return res.redirect(String(sj.links[0].u));
+        }
       }
     } catch (e) { /* segue para a página normal */ }
     return page(req, res, cfg({ site: true }) + 'window.__SITE_ID=' + JSON.stringify(ptr.id) + ';');
@@ -155,7 +163,7 @@ async function main() {
         if (!ID.test(String(e.s)) || (e.t !== 'view' && e.t !== 'click')) return res.status(400).json({ error: 'bad' });
         if (!(await store.get('sites/' + e.s))) return res.status(400).json({ error: 'bad' });
         const id = crypto.randomBytes(8).toString('hex');
-        await store.set('events/' + id, { s: e.s, t: e.t, b: String(e.b || '').replace(/[^a-z0-9]/gi, '').slice(0, 16), at: Date.now() });
+        await store.set('events/' + id, { s: e.s, t: e.t, b: String(e.b || '').replace(/[^a-z0-9]/gi, '').slice(0, 16), l: String(e.l || '').replace(/[\u0000-\u001f\u007f<>]/g, ' ').trim().slice(0, 30), at: Date.now() });
         if (Math.random() < 0.01) store.trim('events/', 20000).catch(() => {});
         return res.json({ id });
       }
@@ -177,6 +185,7 @@ async function main() {
           slug = c;
           await store.set('slug/' + slug, { id: m[1], at: Date.now() });
         }
+        if (prev && prev.j && prev.j !== d.j) await X.keepVersion(m[1], prev);
         await store.set('sites/' + m[1], { j: d.j, name: String(d.name || '').slice(0, 80), at: Date.now(), slug, owner: prev ? (prev.owner || 'admin') : req.u.id, goal: String(p.goal || '').slice(0, 20), nItems: Array.isArray(p.items) ? p.items.length : 0 });
         return res.json({ ok: true, slug });
       }
@@ -303,8 +312,10 @@ async function main() {
   const ymd = (d) => d.toISOString().slice(0, 10);
   const hmToMin = (t) => { const m = /^(\d\d):(\d\d)$/.exec(String(t || '')); return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null; };
   async function bookingSite(req) {
-    const k = kind(hostOf(req)); if (k.t !== 'site') return null;
-    const ptr = await store.get('slug/' + k.slug); if (!ptr) return null;
+    const k = kind(hostOf(req)); let ptr;
+    if (k.t === 'site') ptr = await store.get('slug/' + k.slug);
+    else { const dd = await X.siteByDomain(hostOf(req)); ptr = dd ? { id: dd.site } : null; }
+    if (!ptr) return null;
     const d = await store.get('sites/' + ptr.id); if (!d) return null;
     let j; try { j = JSON.parse(d.j || '{}'); } catch (e) { return null; }
     return j.goal === 'booking' ? { id: ptr.id, j } : null;
@@ -394,7 +405,7 @@ async function main() {
     if (!isAuth(req)) return res.status(401).json({ error: 'auth' });
     if (isAdmin(req)) return res.json({ role: 'admin', name: 'Admin' });
     const u = req.u.user, mine = (await allSites()).filter(x => x.owner === u.id);
-    res.json({ role: 'client', name: u.name, email: u.email, tmp: !!u.tmp, plan: planOf(u), usage: { sites: mine.length }, canBuy: !!MPT() });
+    res.json({ role: 'client', name: u.name, email: u.email, tmp: !!u.tmp, plan: planOf(u), usage: { sites: mine.length }, canBuy: !!MPT(), ...(await X.meExtra(u)) });
   });
   app.get('/api/stats', async (req, res) => {
     if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
@@ -422,7 +433,8 @@ async function main() {
     st.sites = st.sites.map(x => ({ ...x, ownerName: nameOf[x.owner] || '—' }));
     const now = Date.now(), orders = (await store.list('orders/', 300, true)).map(x => x.data).filter(Boolean), paid = orders.filter(x => x.status === 'paid');
     const sales = { rev30: paid.filter(x => now - x.paidAt < 30 * 864e5).reduce((a, x) => a + x.amount, 0), count30: paid.filter(x => now - x.paidAt < 30 * 864e5).length, pending: orders.filter(x => x.status === 'pending' && now - x.at < 7 * 864e5).length, recent: orders.slice(0, 12).map(x => ({ name: x.name, email: x.email, plan: x.plan, amount: x.amount, status: x.status, at: x.paidAt || x.at })) };
-    res.json({ ...st, sales, prices: await getPrices(), mp: !!MPT(), clients: users.map(u => pubUser(u, sites)).sort((a, b) => b.createdAt - a.createdAt), kpi: { clients: users.length, active: users.filter(u => u.status === 'active').length, blocked: users.filter(u => u.status !== 'active').length, new30: users.filter(u => now - u.createdAt < 30 * 864e5).length, aiToday: aiDay.d === new Date().toISOString().slice(0, 10) ? aiDay.n : 0, aiLimit: AI_DAILY, store: store.kind }, plans: Object.fromEntries(Object.entries(PLANS).map(([k, v]) => [k, v])) });
+    const coupons = (await store.list('coupons/', 200, true)).map(x => x.data), domains = await store.count('domain/');
+    res.json({ ...st, sales, coupons, domains, mail: X.mailOn(), signup: String(process.env.SIGNUP || 'on').toLowerCase() !== 'off', prices: await getPrices(), mp: !!MPT(), clients: users.map(u => pubUser(u, sites)).sort((a, b) => b.createdAt - a.createdAt), kpi: { clients: users.length, active: users.filter(u => u.status === 'active').length, blocked: users.filter(u => u.status !== 'active').length, new30: users.filter(u => now - u.createdAt < 30 * 864e5).length, aiToday: aiDay.d === new Date().toISOString().slice(0, 10) ? aiDay.n : 0, aiLimit: AI_DAILY, store: store.kind }, plans: Object.fromEntries(Object.entries(PLANS).map(([k, v]) => [k, v])) });
   });
   app.post('/api/admin/clients', async (req, res) => {
     if (!needAdmin(req, res)) return;
@@ -432,6 +444,7 @@ async function main() {
     const id = crypto.randomBytes(6).toString('hex'), pw = genPw();
     const u = { id, role: 'client', name, email, pw: pwHash(pw), status: 'active', plan: PLANS[b.plan] ? b.plan : 'free', maxSites: 0, note: String(b.note || '').slice(0, 300), tmp: true, createdAt: Date.now(), lastLogin: 0 };
     await store.set('users/' + id, u); await store.set('uemail/' + email, { id });
+    X.audit('admin', 'client.create', email + ' · plano ' + u.plan);
     res.json({ ok: true, user: pubUser(u, []), password: pw });
   });
   app.post('/api/admin/clients/update', async (req, res) => {
@@ -444,7 +457,8 @@ async function main() {
     if (b.name) u.name = String(b.name).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 80) || u.name;
     if (b.note != null) u.note = String(b.note).slice(0, 300);
     let pw = null; if (b.resetPassword) { pw = genPw(); u.pw = pwHash(pw); u.tmp = true; }
-    await store.set('users/' + id, u); res.json({ ok: true, password: pw, user: pubUser(u, await allSites()) });
+    await store.set('users/' + id, u); X.audit('admin', 'client.update', u.email + (b.status ? ' · status ' + b.status : '') + (b.plan ? ' · plano ' + b.plan : '') + (pw ? ' · nova senha' : '') + (b.maxSites != null ? ' · limite ' + u.maxSites : ''));
+    res.json({ ok: true, password: pw, user: pubUser(u, await allSites()) });
   });
   app.post('/api/admin/clients/delete', async (req, res) => {
     if (!needAdmin(req, res)) return;
@@ -454,12 +468,12 @@ async function main() {
       if (st.slug) await store.del('slug/' + st.slug); await store.del('sites/' + st.id);
       for (const r2 of await store.list('book/' + st.id + '/', 400, false)) await store.del(r2.path);
     }
-    await store.del('uemail/' + u.email); await store.del('users/' + id); res.json({ ok: true });
+    await store.del('uemail/' + u.email); await store.del('users/' + id); X.audit('admin', 'client.delete', u.email); res.json({ ok: true });
   });
   app.post('/api/admin/sites/unpublish', async (req, res) => {
     if (!needAdmin(req, res)) return;
     const id = String((req.body || {}).id || ''); if (!ID.test(id)) return res.status(400).json({ error: 'bad' });
-    const d = await store.get('sites/' + id); if (d && d.slug) await store.del('slug/' + d.slug); await store.del('sites/' + id); res.json({ ok: true });
+    const d = await store.get('sites/' + id); if (d && d.slug) await store.del('slug/' + d.slug); await store.del('sites/' + id); X.audit('admin', 'site.unpublish', (d && d.slug) || id); res.json({ ok: true });
   });
 
   // ---- vendas: planos + Mercado Pago (pagamento libera o acesso sozinho)
@@ -474,7 +488,7 @@ async function main() {
     if (kind(hostOf(req)).t !== 'app') return res.status(404).end();
     const prices = await getPrices(), me = req.u && req.u.role === 'client' ? req.u.user : null;
     const cards = Object.entries(PLANS).filter(([k]) => prices[k] > 0).map(([k, p]) => '<label style="display:block;cursor:pointer"><input type=radio name=plan value=' + k + ' style="position:absolute;opacity:0" ' + (me && me.plan === k ? 'checked' : '') + '><div class=pc style="background:#141a33;border:2px solid #2b3566;border-radius:18px;padding:20px;height:100%;box-sizing:border-box"><b style="font-size:18px">' + esc(p.name) + '</b><div style="font-size:30px;font-weight:800;margin:6px 0">' + fmt(prices[k]) + '<small style="font-size:13px;font-weight:400;color:#93a0bb"> / 30 dias</small></div><div style="color:#b7c0dc;font-size:14px">' + p.maxSites + ' site' + (p.maxSites > 1 ? 's' : '') + ' publicado' + (p.maxSites > 1 ? 's' : '') + '<br>Leitura de perfil com IA<br>Painel com visitas e cliques<br>Endereço próprio em ' + esc(ROOT) + '</div></div></label>').join('');
-    const body = '<h1 style="text-align:center;margin:0 0 6px">🪄 AutoPage.ai</h1><p style="text-align:center;color:#b7c0dc;margin:0 0 22px">Escolha o plano e receba seu acesso assim que o pagamento for aprovado.</p>' + (cards && MPT() ? '<form id=f><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">' + cards + '</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px"><input id=n placeholder="Seu nome" required maxlength=80 value="' + esc(me ? me.name : '') + '" style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><input id=e type=email placeholder="Seu e-mail" required value="' + esc(me ? me.email : '') + '" ' + (me ? 'readonly' : '') + ' style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"></div><div id=m style="color:#fca5a5;margin-top:8px;min-height:20px"></div><button style="width:100%;margin-top:6px;padding:14px;border:0;border-radius:12px;background:#4f46e5;color:#fff;font-weight:800;font-size:16px;cursor:pointer">Pagar com Mercado Pago</button><p style="text-align:center;color:#93a0bb;font-size:13px">Pix, cartão ou boleto. Pagamento de 30 dias, sem renovação automática.</p></form><style>input[type=radio]:checked+.pc{border-color:#818cf8!important;background:#1b2350!important}</style><script>document.getElementById("f").onsubmit=async function(ev){ev.preventDefault();var m=document.getElementById("m"),p=document.querySelector("input[name=plan]:checked");if(!p){m.textContent="Escolha um plano.";return}m.textContent="Abrindo o pagamento…";try{var r=await fetch("/api/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan:p.value,name:document.getElementById("n").value,email:document.getElementById("e").value})}),j=await r.json();if(!r.ok)throw new Error(j.error||"erro");location.href=j.url}catch(x){m.textContent=x.message==="erro"?"Não foi possível iniciar o pagamento agora.":x.message}}</script>' : '<p style="text-align:center;color:#fca5a5">Vendas ainda não estão abertas. Fale com o suporte.</p>') + '<p style="text-align:center;margin-top:18px"><a href="/" style="color:#a5b4fc">Já tenho acesso: entrar</a></p>';
+    const body = '<h1 style="text-align:center;margin:0 0 6px">🪄 AutoPage.ai</h1><p style="text-align:center;color:#b7c0dc;margin:0 0 22px">Escolha o plano e receba seu acesso assim que o pagamento for aprovado.</p>' + (cards && MPT() ? '<form id=f><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">' + cards + '</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px"><input id=n placeholder="Seu nome" required maxlength=80 value="' + esc(me ? me.name : '') + '" style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><input id=e type=email placeholder="Seu e-mail" required value="' + esc(me ? me.email : '') + '" ' + (me ? 'readonly' : '') + ' style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"></div><input id=cp placeholder="Cupom de desconto (opcional)" maxlength=20 style="width:100%;box-sizing:border-box;margin-top:10px;padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff;text-transform:uppercase"><div id=m style="color:#fca5a5;margin-top:8px;min-height:20px"></div><button style="width:100%;margin-top:6px;padding:14px;border:0;border-radius:12px;background:#4f46e5;color:#fff;font-weight:800;font-size:16px;cursor:pointer">Pagar com Mercado Pago</button><p style="text-align:center;color:#93a0bb;font-size:13px">Pix, cartão ou boleto. Pagamento de 30 dias, sem renovação automática.</p></form><style>input[type=radio]:checked+.pc{border-color:#818cf8!important;background:#1b2350!important}</style><script>document.getElementById("f").onsubmit=async function(ev){ev.preventDefault();var m=document.getElementById("m"),p=document.querySelector("input[name=plan]:checked");if(!p){m.textContent="Escolha um plano.";return}m.textContent="Abrindo o pagamento…";try{var r=await fetch("/api/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan:p.value,name:document.getElementById("n").value,email:document.getElementById("e").value,coupon:document.getElementById("cp").value})}),j=await r.json();if(!r.ok)throw new Error(j.error||"erro");location.href=j.url}catch(x){m.textContent=x.message==="erro"?"Não foi possível iniciar o pagamento agora.":x.message}}</script>' : '<p style="text-align:center;color:#fca5a5">Vendas ainda não estão abertas. Fale com o suporte.</p>') + '<p style="text-align:center;margin-top:18px"><a href="/cadastro" style="color:#a5b4fc">Criar conta grátis (7 dias de Pro)</a> · <a href="/" style="color:#a5b4fc">Já tenho acesso: entrar</a></p>';
     res.type('html').send(shell('Planos · AutoPage.ai', body));
   });
   app.post('/api/checkout', async (req, res) => {
@@ -487,11 +501,14 @@ async function main() {
     const name = String(me ? me.name : b.name || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 80), email = String(me ? me.email : b.email || '').trim().toLowerCase().slice(0, 200);
     if (!name || !EMAIL.test(email)) return res.status(400).json({ error: 'Informe nome e e-mail válidos.' });
     if (!me && await store.get('uemail/' + email)) return res.status(409).json({ error: 'Esse e-mail já tem acesso. Entre para renovar ou trocar de plano.' });
+    const cp = b.coupon ? await X.couponFind(b.coupon) : null;
+    if (b.coupon && !cp) return res.status(400).json({ error: 'Cupom inválido ou expirado.' });
+    const price = X.priced(prices[plan], cp);
     const oid = crypto.randomBytes(8).toString('hex'), tok = mkToken({ o: oid }, 7 * 864e5);
-    await store.set('orders/' + oid, { id: oid, plan, name, email, uid: me ? me.id : '', amount: prices[plan], status: 'pending', at: Date.now() });
+    await store.set('orders/' + oid, { id: oid, plan, name, email, uid: me ? me.id : '', amount: price, listPrice: prices[plan], coupon: cp ? cp.code : '', status: 'pending', at: Date.now() });
     try {
       const back = APP_URL() + '/planos/obrigado?o=' + oid + '&t=' + encodeURIComponent(tok);
-      const r2 = await fetch(MPU() + '/checkout/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + MPT() }, body: JSON.stringify({ items: [{ title: 'AutoPage.ai · Plano ' + PLANS[plan].name + ' (30 dias)', quantity: 1, unit_price: prices[plan], currency_id: 'BRL' }], payer: { email, name }, external_reference: oid, notification_url: APP_URL() + '/mp/webhook', back_urls: { success: back, pending: back, failure: APP_URL() + '/planos' }, auto_return: 'approved' }) });
+      const r2 = await fetch(MPU() + '/checkout/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + MPT() }, body: JSON.stringify({ items: [{ title: 'AutoPage.ai · Plano ' + PLANS[plan].name + ' (30 dias)', quantity: 1, unit_price: price, currency_id: 'BRL' }], payer: { email, name }, external_reference: oid, notification_url: APP_URL() + '/mp/webhook', back_urls: { success: back, pending: back, failure: APP_URL() + '/planos' }, auto_return: 'approved' }) });
       const j = await r2.json();
       if (!r2.ok || !j.init_point) throw new Error('mp');
       res.json({ url: j.init_point });
@@ -516,6 +533,16 @@ async function main() {
       u.plan = o.plan; u.maxSites = 0; u.planUntil = Math.max(Date.now(), u.planUntil || 0) + 30 * 864e5;
       await store.set('users/' + u.id, u);
       o.status = 'paid'; o.paidAt = Date.now(); o.uid = u.id; o.paymentId = String(paymentId); await store.set('orders/' + o.id, o);
+      try {
+        if (o.coupon) { const cp = await store.get('coupons/' + o.coupon); if (cp) { cp.used = (cp.used || 0) + 1; await store.set('coupons/' + cp.code, cp); } }
+        if (u.refBy && !u.refPaid) {
+          const rf = await store.get('users/' + u.refBy);
+          if (rf) { const was = planOf(rf).key; rf.planUntil = Math.max(Date.now(), rf.planUntil || 0) + 7 * 864e5; if (was === 'free' && (!rf.plan || rf.plan === 'free')) rf.plan = 'basic'; rf.refRewards = (rf.refRewards || 0) + 1; await store.set('users/' + rf.id, rf); X.audit('sistema', 'referral.reward', rf.email + ' ← ' + u.email); X.sendMail({ to: rf.email, ...X.mail.reward(rf, APP_URL() + '/') }).catch(() => {}); }
+          u.refPaid = true; await store.set('users/' + u.id, u);
+        }
+        X.audit('sistema', 'order.paid', u.email + ' · ' + o.plan + ' · R$ ' + (+o.amount).toFixed(2) + (o.coupon ? ' · cupom ' + o.coupon : ''));
+        X.sendMail({ to: u.email, ...X.mail.receipt(u, o, PLANS[o.plan].name, u.planUntil, APP_URL() + '/') }).catch(() => {});
+      } catch (e) { console.error('pos-pagamento', e.message); }
       return true;
     });
   }
@@ -550,16 +577,17 @@ async function main() {
   });
   app.get('/api/admin/export', async (req, res) => {
     if (!needAdmin(req, res)) return;
-    const get = async (p) => (await store.list(p, 5000, true)).map(x => ({ path: x.path, data: x.data }));
-    const users = (await get('users/')).map(x => ({ path: x.path, data: { ...x.data, pw: undefined } }));
     res.setHeader('Content-Disposition', 'attachment; filename="autopage-backup-' + new Date().toISOString().slice(0, 10) + '.json"');
-    res.type('json').send(JSON.stringify({ at: new Date().toISOString(), users, sites: await get('sites/'), orders: await get('orders/'), config: await get('config/') }));
+    res.type('json').send(JSON.stringify(await X.exportAll()));
   });
   app.post('/api/admin/config', async (req, res) => {
     if (!needAdmin(req, res)) return;
     const pr = {}; for (const k of Object.keys(PLANS)) { const v = +((req.body.prices || {})[k]); if (v > 0 && v < 100000) pr[k] = Math.round(v * 100) / 100; }
-    await store.set('config/plans', { prices: pr }); res.json({ ok: true, prices: pr });
+    await store.set('config/plans', { prices: pr }); X.audit('admin', 'config.prices', JSON.stringify(pr)); res.json({ ok: true, prices: pr });
   });
+
+  X.routes({ app, kind, hostOf, ipOf, limited, isAdmin, isAuth, ID, PLANS, planOf, pwHash, pwCheck, mkToken, EMAIL, needAdmin, allSites, canSite, appUrl: APP_URL });
+  if (require.main === module) X.startJobs(APP_URL);
 
   app.use((req, res) => res.status(404).type('text').send('Não encontrado'));
   app.use((err, req, res, next) => { console.error(err.message); res.status(err.status || 500).json({ error: 'erro' }); });

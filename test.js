@@ -9,7 +9,7 @@ const http=require('http');
 const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>new Promise((ok,no)=>{const h={host};if(cookie)h.cookie=cookie;let b;if(raw){b=raw;h['content-type']='application/x-www-form-urlencoded'}else if(body){b=JSON.stringify(body);h['content-type']=ct||'application/json'}
  if(b)h['content-length']=Buffer.byteLength(b);const q=http.request({host:'127.0.0.1',port:3917,path,method,headers:h},res=>{let t='';res.on('data',c=>t+=c);res.on('end',()=>{let j=null;try{j=JSON.parse(t)}catch(e){}ok({s:res.statusCode,t,j,h:{get:k=>{const v=res.headers[k.toLowerCase()];return Array.isArray(v)?v[0]:v}}})})});q.on('error',no);if(b)q.write(b);q.end()});
 (async()=>{
- const {srv}=await main();
+ const {srv,store}=await main();
  const realFetch=global.fetch;
  // login
  let r=await rq('/');ok('app sem login mostra tela de login',r.s===200&&r.t.includes('type=password')&&!r.t.includes('claude.use'),r.s);
@@ -119,7 +119,7 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/api/db',{host:'x.kattalo.online',method:'POST',body:{op:'add',coll:'events',data:{s:'nao-existe',t:'view'}}});ok('evento de site inexistente rejeitado',r.s===400);
  r=await rq('/api/db',{host:'x.kattalo.online',method:'POST',body:{op:'add',coll:'events',data:{s:'abc123',t:'hack'}}});ok('tipo de evento inválido rejeitado',r.s===400);
  await rq('/api/db',{method:'POST',body:{op:'add',coll:'events',data:{s:'abc123',t:'click',b:'b1'}}});
- r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'list',coll:'events',limit:100}});ok('admin lista eventos',r.j&&r.j.docs.length===2,JSON.stringify(r.j));
+ r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'list',coll:'events',limit:100}});ok('admin lista eventos',r.j&&r.j.docs.filter(d=>d.data.s==='abc123').length===2,JSON.stringify(r.j));
  // cookie de admin não vale em subdomínio? (cookie host-only: simula navegador não enviando) -> sem cookie = 401
  r=await rq('/api/db',{host:'pizzaria-do-ze.kattalo.online',method:'POST',body:{op:'delete',path:'sites/abc123'}});ok('delete sem cookie no subdomínio 401',r.s===401);
  // rate limit eventos
@@ -149,6 +149,93 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  ok('callback devolve dados do perfil via postMessage',r.t.includes('Pizza no forno a lenha')&&r.t.includes('Rua A, 10')&&r.t.includes('seg 18:00-23:00')&&r.t.includes('Promo de terça')&&r.t.includes('data:image/jpeg;base64'),r.t.slice(0,300));
  r=await rq('/auth/meta/callback?code=abc&state=forjado',{cookie:ck});ok('state forjado rejeitado',r.t.includes('inválido'));
  r=await rq('/auth/meta/callback?code=abc&state='+encodeURIComponent(state));ok('callback sem sessão rejeitado',r.t.includes('Sessão expirada'));
+
+ // ---- extras: cadastro, cupom, indicação, contato, versões, domínio, backup, e-mail
+ process.env.RESEND_API_KEY='RK';process.env.RESEND_URL='https://mail.test/emails';
+ const mails=[];let xPref=null,xAmt=0;const _f2=global.fetch;
+ global.fetch=async(u,o)=>{u=String(u);if(u==='https://mail.test/emails'){mails.push(JSON.parse(o.body));return{ok:true,status:200,json:async()=>({id:'m'})}}
+  if(u==='https://mp.test/checkout/preferences'){xPref=JSON.parse(o.body);return{ok:true,status:201,json:async()=>({id:'p',init_point:'https://mp.test/pay/x'})}}
+  const m=/^https:\/\/mp\.test\/v1\/payments\/(\d+)$/.exec(u);if(m)return{ok:true,status:200,json:async()=>({status:'approved',external_reference:xPref&&xPref.external_reference,transaction_amount:xAmt})};return _f2(u,o)};
+ const tick=()=>new Promise(k=>setTimeout(k,60));
+ r=await rq('/cadastro');ok('página de cadastro abre',r.s===200&&r.t.includes('7 dias'),r.s);
+ r=await rq('/api/signup',{method:'POST',body:{name:'Ana',email:'ana@ex.com',password:'SenhaBoa123'}});const ckA=(r.h.get('set-cookie')||'').split(';')[0];ok('cadastro cria conta e já entra',r.s===200&&ckA.startsWith('ap_s='),r.t);
+ r=await rq('/api/me',{cookie:ckA});const refA=r.j.ref&&r.j.ref.code;ok('cadastro dá 7 dias de Pro, sem teste extra, com link de indicação',r.j.plan.key==='pro'&&r.j.plan.until>Date.now()+6*864e5&&r.j.trialOk===false&&/\/cadastro\?ref=/.test(r.j.ref.link),r.t);
+ await tick();ok('e-mail de boas-vindas enviado',mails.some(m=>/Bem-vindo/.test(m.subject)&&m.to[0]==='ana@ex.com'));
+ r=await rq('/api/signup',{method:'POST',body:{name:'Ana',email:'ana@ex.com',password:'SenhaBoa123'}});ok('e-mail repetido 409',r.s===409,r.s);
+ r=await rq('/api/signup',{method:'POST',body:{name:'X',email:'x@ex.com',password:'curta'}});ok('senha curta recusada no cadastro',r.s===400,r.s);
+ r=await rq('/api/signup',{method:'POST',body:{name:'Bot',email:'bot@ex.com',password:'SenhaBoa123',w:'spam'}});r=await rq('/login',{method:'POST',raw:'email=bot%40ex.com&password=SenhaBoa123'});ok('honeypot não cria conta',r.s===401,r.s);
+ // teste grátis para cliente criado pelo admin
+ r=await rq('/api/admin/clients',{method:'POST',cookie:ck,body:{name:'Bia',email:'bia@ex.com',plan:'free'}});const pwB=r.j.password;
+ r=await rq('/login',{method:'POST',raw:'email=bia%40ex.com&password='+pwB});const ckB=(r.h.get('set-cookie')||'').split(';')[0];
+ r=await rq('/api/me',{cookie:ckB});ok('cliente free vê teste grátis disponível',r.j.trialOk===true&&r.j.plan.key==='free',r.t);
+ r=await rq('/api/db',{method:'POST',cookie:ckB,body:{op:'set',path:'sites/bia001',data:{j:JSON.stringify({id:'bia001',name:'Bia Studio'}),name:'Bia Studio'}}});
+ r=await rq('/api/domain',{method:'POST',cookie:ckB,body:{site:'bia001',domain:'biastudio.com.br'}});ok('domínio próprio exige plano pago',r.s===403,r.s+' '+r.t);
+ r=await rq('/api/trial',{method:'POST',cookie:ckB});ok('teste grátis ativa Pro por 7 dias',r.s===200,r.t);
+ r=await rq('/api/trial',{method:'POST',cookie:ckB});ok('teste grátis só uma vez',r.s===400,r.s);
+ r=await rq('/api/me',{cookie:ckB});ok('após o teste: plano Pro, trialOk falso',r.j.plan.key==='pro'&&r.j.trialOk===false,r.t);
+ // cupom + indicação
+ r=await rq('/api/admin/coupons',{method:'POST',body:{code:'LANC20',pct:20}});ok('cupom exige admin',r.s===401,r.s);
+ r=await rq('/api/admin/coupons',{method:'POST',cookie:ck,body:{code:'a b',pct:20}});ok('cupom com código inválido recusado',r.s===400,r.s);
+ r=await rq('/api/admin/coupons',{method:'POST',cookie:ck,body:{code:'lanc20',pct:20,max:2}});ok('admin cria cupom',r.s===200&&r.j.coupon.code==='LANC20',r.t);
+ r=await rq('/api/coupon?code=lanc20');ok('cupom válido devolve o desconto',r.s===200&&r.j.pct===20,r.t);
+ r=await rq('/api/coupon?code=nada');ok('cupom inexistente 404',r.s===404,r.s);
+ r=await rq('/api/signup',{method:'POST',body:{name:'Caio',email:'caio@ex.com',password:'SenhaBoa123',ref:refA}});const ckC=(r.h.get('set-cookie')||'').split(';')[0];
+ const untilA0=(await rq('/api/me',{cookie:ckA})).j.plan.until;
+ r=await rq('/api/checkout',{method:'POST',cookie:ckC,body:{plan:'basic',coupon:'invalido'}});ok('checkout com cupom inválido recusado',r.s===400,r.s);
+ r=await rq('/api/checkout',{method:'POST',cookie:ckC,body:{plan:'basic',coupon:'lanc20'}});ok('checkout aplica 20% no valor cobrado',r.s===200&&xPref.items[0].unit_price===39.92,r.t+JSON.stringify(xPref&&xPref.items));
+ xAmt=49.9;await rq('/mp/webhook?type=payment&data.id=301',{method:'POST'});
+ r=await rq('/api/admin/overview',{cookie:ck});const cc=r.j.clients.find(c=>c.email==='caio@ex.com');ok('pagamento com valor cheio-menor que o desconto não vale? (49,90 ≥ 39,92 libera)',cc&&cc.plan.key==='basic',JSON.stringify(cc&&cc.plan));
+ r=await rq('/api/admin/overview',{cookie:ck});ok('uso do cupom contabilizado',r.j.coupons.find(c=>c.code==='LANC20').used===1,JSON.stringify(r.j.coupons));
+ r=await rq('/api/me',{cookie:ckA});ok('indicação premia o indicador com +7 dias e conta o cadastro',r.j.plan.until>=untilA0+7*864e5-1000&&r.j.ref.rewards===1&&r.j.ref.signups===1,r.t);
+ await tick();ok('e-mails de recibo e de indicação enviados',mails.some(m=>/Pagamento aprovado/.test(m.subject)&&m.to[0]==='caio@ex.com')&&mails.some(m=>/7 dias grátis/.test(m.subject)&&m.to[0]==='ana@ex.com'));
+ xAmt=49.9;await rq('/mp/webhook?type=payment&data.id=301',{method:'POST'});r=await rq('/api/me',{cookie:ckA});ok('webhook repetido não premia de novo',r.j.ref.rewards===1,r.t);
+ r=await rq('/api/admin/audit');ok('auditoria exige admin',r.s===401,r.s);
+ r=await rq('/api/admin/audit',{cookie:ck});ok('auditoria registra pagamento, indicação e cadastro',r.j.items.some(i=>i.a==='order.paid')&&r.j.items.some(i=>i.a==='referral.reward')&&r.j.items.some(i=>i.a==='signup')&&r.j.items.some(i=>i.a==='admin.login'),JSON.stringify(r.j.items.map(i=>i.a)));
+ // contato / presença / lead vindos do site
+ const sh='pizzaria-do-ze.kattalo.online';
+ r=await rq('/api/contact',{host:sh,method:'POST',ct:'text/plain',body:{type:'rsvp',n:'Maria',c:'11999990000',x:'2 pessoas'}});ok('visitante envia presença/mensagem',r.s===200,r.s+' '+r.t);
+ r=await rq('/api/contact',{host:sh,method:'POST',ct:'text/plain',body:{type:'lead',c:'sem nome'}});ok('mensagem sem nome recusada',r.s===400,r.s);
+ r=await rq('/api/contact',{host:'inexistente.kattalo.online',method:'POST',ct:'text/plain',body:{n:'A'}});ok('contato em site inexistente recusado',r.s===400,r.s);
+ r=await rq('/api/contact',{host:sh,method:'POST',ct:'text/plain',body:{n:'Robô',w:'x'}});ok('honeypot de contato ignorado',r.s===200);
+ r=await rq('/api/messages',{cookie:ck});ok('dono (admin) vê a mensagem',r.j.items.length===1&&r.j.items[0].type==='rsvp'&&r.j.items[0].n==='Maria',r.t);
+ r=await rq('/api/messages',{cookie:ckA});ok('outro cliente não vê mensagens alheias',r.s===200&&r.j.items.length===0,r.t);
+ r=await rq('/api/messages?site=abc123',{cookie:ckA});ok('outro cliente não lê site alheio',r.s===403,r.s);
+ r=await rq('/api/messages?csv=1',{cookie:ck});ok('exporta CSV de mensagens',r.s===200&&r.t.includes('Maria')&&r.t.includes('Nome'),r.t.slice(0,80));
+ r=await rq('/api/messages',{});ok('mensagens exigem login',r.s===401,r.s);
+ const mid=(await rq('/api/messages',{cookie:ck})).j.items[0].id;
+ r=await rq('/api/messages/delete',{method:'POST',cookie:ckA,body:{site:'abc123',id:mid}});ok('cliente não apaga mensagem alheia',r.s===403,r.s);
+ r=await rq('/api/messages/delete',{method:'POST',cookie:ck,body:{site:'abc123',id:mid}});r=await rq('/api/messages',{cookie:ck});ok('dono apaga mensagem',r.j.items.length===0,r.t);
+ // estatísticas por site
+ r=await rq('/api/stats/site?id=abc123',{cookie:ck});ok('estatísticas do site: visitantes únicos e 30 dias',r.s===200&&r.j.unique30>=1&&r.j.days.length===30,r.t.slice(0,120));
+ r=await rq('/api/stats/site?id=abc123',{cookie:ckA});ok('estatísticas de site alheio 403',r.s===403,r.s);
+ r=await rq('/api/stats/site?id=lnk001',{cookie:ck});ok('redirecionamento do link na bio é contado como clique com o nome do link',r.j.links.some(l=>l.l==='Insta'&&l.c>=1)&&r.j.unique30>=1,r.t.slice(0,200));
+ // versões
+ r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/abc123',data:{j:JSON.stringify({...site,name:'Pizzaria V2'}),name:'Pizzaria V2'}}});
+ r=await rq('/api/versions?site=abc123',{cookie:ck});const vv=r.j.items&&r.j.items[0];ok('republicar guarda a versão anterior',r.s===200&&r.j.items.length===1,r.t);
+ r=await rq('/api/versions/restore',{method:'POST',cookie:ckA,body:{site:'abc123',v:vv.v}});ok('cliente não restaura versão alheia',r.s===403,r.s);
+ r=await rq('/api/versions/restore',{method:'POST',cookie:ck,body:{site:'abc123',v:vv.v}});r=await rq('/api/db',{host:sh,method:'POST',body:{op:'get',path:'sites/abc123'}});ok('restaurar volta o conteúdo anterior',JSON.parse(r.j.data.j).name==='Pizzaria do Zé',r.t.slice(0,100));
+ // domínio próprio
+ r=await rq('/api/db',{method:'POST',cookie:ckA,body:{op:'set',path:'sites/ana001',data:{j:JSON.stringify({id:'ana001',name:'Ana Sites'}),name:'Ana Sites'}}});
+ r=await rq('/api/domain',{method:'POST',cookie:ckA,body:{site:'ana001',domain:'foo'}});ok('domínio inválido recusado',r.s===400,r.s);
+ r=await rq('/api/domain',{method:'POST',cookie:ckA,body:{site:'ana001',domain:'x.kattalo.online'}});ok('domínio dentro do nosso domínio recusado',r.s===400,r.s);
+ r=await rq('/api/domain',{method:'POST',cookie:ckA,body:{site:'abc123',domain:'meu.com.br'}});ok('domínio para site alheio 403',r.s===403,r.s);
+ r=await rq('/api/domain',{method:'POST',cookie:ckA,body:{site:'ana001',domain:'https://AnaSite.com.br/'}});ok('cliente pago registra domínio (normalizado)',r.s===200&&r.j.host==='anasite.com.br'&&r.j.target==='app.kattalo.online',r.t);
+ r=await rq('/api/domain',{method:'POST',cookie:ckC,body:{site:'ana001',domain:'anasite.com.br'}});ok('domínio já em uso por outro site 403/409',r.s===403||r.s===409,r.s);
+ r=await rq('/',{host:'anasite.com.br'});ok('domínio ainda não verificado não serve o site',r.t.includes('type=password'),r.s);
+ await store.set('domain/anasite.com.br',{site:'ana001',owner:(await store.get('uemail/ana@ex.com')).id,ok:true,at:Date.now()});
+ r=await rq('/',{host:'anasite.com.br'});ok('domínio verificado serve o site',r.s===200&&r.t.includes('window.__SITE_ID="ana001"'),r.t.slice(0,80));
+ r=await rq('/api/domains',{cookie:ckA});ok('lista os domínios do cliente',r.j.items.length===1&&r.j.items[0].ok===true,r.t);
+ r=await rq('/api/domain/delete',{method:'POST',cookie:ckA,body:{domain:'anasite.com.br'}});r=await rq('/',{host:'anasite.com.br'});ok('remover domínio tira o site do ar nesse endereço',r.t.includes('type=password'));
+ // backup
+ r=await rq('/api/admin/backups/run',{method:'POST'});ok('backup manual exige admin',r.s===401,r.s);
+ r=await rq('/api/admin/backups/run',{method:'POST',cookie:ck});ok('backup manual gera snapshot',r.s===200&&r.j.size>100,r.t);
+ r=await rq('/api/admin/backups',{cookie:ck});const bd=r.j.items[0]&&r.j.items[0].day;ok('lista de backups',r.j.items.length>=1&&/^\d{4}-\d\d-\d\d$/.test(bd),r.t);
+ r=await rq('/api/admin/backups/download?d='+bd,{cookie:ck});ok('baixa o backup sem hashes de senha',r.s===200&&Array.isArray(r.j.users)&&!r.t.includes('"pw"'),r.s);
+ // vencimento por e-mail
+ const idA=(await store.get('uemail/ana@ex.com')).id,uA=await store.get('users/'+idA);uA.planUntil=Date.now()+2*864e5;await store.set('users/'+idA,uA);mails.length=0;
+ r=await rq('/api/admin/jobs',{method:'POST',cookie:ck});await tick();ok('aviso de vencimento enviado ao cliente',r.j.expiring>=1&&mails.some(m=>/vence em/.test(m.subject)&&m.to[0]==='ana@ex.com'),r.t+JSON.stringify(mails.map(m=>m.subject)));
+ mails.length=0;r=await rq('/api/admin/jobs',{method:'POST',cookie:ck});ok('aviso não repete',r.j.expiring===0&&!mails.length,r.t);
+ global.fetch=_f2;delete process.env.RESEND_API_KEY;
  // páginas legais + saúde + headers
  r=await rq('/privacidade');ok('política de privacidade',r.s===200&&r.t.includes('Política'));
  r=await rq('/healthz');ok('healthz',r.j&&r.j.ok);

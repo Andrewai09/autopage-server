@@ -31,7 +31,7 @@ r("phone:r.ph?'+'+r.ph:DEFPHS,","phone:r.ph?'+'+r.ph:(META&&META.phone&&META.pho
 # const nm precisa ser let
 s=s.replace("n=sel||guess(r.hd+' '+$('#c-bio').value),nm=","n=sel||guess(r.hd+' '+$('#c-bio').value);let nm=",1) if False else s
 # painéis Admin/Cliente
-ui=open('hosted/ui.html').read();uj=open('hosted/ui.js').read()
+ui=open('hosted/ui.html').read();uj=open('hosted/qr.js').read()+'\n'+open('hosted/ui.js').read()
 r('<section id="v-create">',ui+'<section id="v-create">')
 r("['create','proc','edit','dash'].forEach","['create','proc','edit','dash','home','cli'].forEach")
 r("if(v==='dash'){dash();evs()}","if(v==='dash'){dash();evs()}if(window.HX)HX(v);")

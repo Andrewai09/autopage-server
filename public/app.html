@@ -40,6 +40,7 @@ label.l{display:block;font-size:11px;font-weight:800;text-transform:uppercase;le
 .hs{max-width:760px;margin:10px auto 18px;text-align:center}.hs h1{background:linear-gradient(120deg,var(--br),#db2777);-webkit-background-clip:text;background-clip:text;color:transparent}
 .stp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;max-width:760px;margin:0 auto 16px}.stp div{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:10px 12px;font-size:13px;display:flex;gap:10px;align-items:center}.stp b{width:26px;height:26px;border-radius:50%;background:var(--br);color:#fff;display:grid;place-items:center;font-size:13px;flex:none}
 .dc{display:flex;gap:10px;align-items:center;margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--in);border:1px solid var(--bd)}.dc[hidden]{display:none}.dc .ic{width:38px;height:38px;font-size:19px;flex:none}
+.mdl{position:fixed;inset:0;background:#000a;display:grid;place-items:center;z-index:60;padding:16px}.mbx{background:var(--cd);color:var(--tx);border:1px solid var(--bd);border-radius:18px;padding:18px;max-width:560px;width:100%;max-height:90vh;overflow:auto}
 .dz{display:block;margin-top:6px;border:2px dashed var(--bd);border-radius:14px;padding:14px;text-align:center;cursor:pointer;transition:.15s;font-size:13px}.dz.on,.dz:hover{border-color:var(--br);background:color-mix(in srgb,var(--br) 8%,transparent)}.dz input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}.dz{position:relative}
 .th{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.th div{position:relative}.th img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--bd)}.th button{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:0;background:var(--er);color:#fff;cursor:pointer;font-size:11px;padding:0}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:560px){.g2{grid-template-columns:1fr}}
@@ -68,6 +69,7 @@ details.mr{margin-top:12px}details.mr summary{cursor:pointer;font-weight:700;fon
 .chs svg{width:100%;height:auto;display:block}.lgd{display:flex;gap:14px;font-size:12px;color:var(--mu);margin-top:4px}.lgd i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
 .cr{background:color-mix(in srgb,var(--ok) 12%,transparent);border:1px solid var(--ok);border-radius:14px;padding:14px;margin:12px 0;font-size:14px}.cr code{background:var(--in);padding:2px 6px;border-radius:6px;user-select:all}
 .rowa{display:flex;gap:6px;flex-wrap:wrap}
+.mdl{position:fixed;inset:0;background:#000a;display:grid;place-items:center;z-index:60;padding:16px}.mbx{background:var(--cd);color:var(--tx);border:1px solid var(--bd);border-radius:18px;padding:18px;max-width:560px;width:100%;max-height:90vh;overflow:auto}
 </style>
 <section id="v-home" hidden><div id="hm"><div class="cd">Carregando seu painel…</div></div></section>
 <section id="v-cli" hidden><div id="cl"><div class="cd">Carregando…</div></div></section>
@@ -102,6 +104,8 @@ details.mr{margin-top:12px}details.mr summary{cursor:pointer;font-weight:700;fon
 <label class="opt"><input type="radio" name="goal" value="resume"><b>📄 Currículo online</b><div class="mu">Resumo, experiência, formação e habilidades.</div></label>
 <label class="opt"><input type="radio" name="goal" value="menu"><b>🍽️ Cardápio digital</b><div class="mu">Itens por categoria, com botão de pedir no WhatsApp.</div></label>
 <label class="opt"><input type="radio" name="goal" value="booking"><b>📅 Agendamento</b><div class="mu">Serviços, escolha de dia e horário enviada ao WhatsApp.</div></label>
+<label class="opt"><input type="radio" name="goal" value="capture"><b>📧 Captura de contatos</b><div class="mu">Página com formulário: nome e contato chegam ao seu painel.</div></label>
+<label class="opt"><input type="radio" name="goal" value="pet"><b>🐾 Carteirinha do pet</b><div class="mu">Dados, vacinas e contato do tutor, com QR Code para a coleira.</div></label>
 </div>
 <button class="btn pri" style="width:100%;margin-top:16px;padding:13px" onclick="go()">Gerar site agora</button>
 <p class="mu c" style="margin:10px 0 0">As redes sociais bloqueiam a leitura automática de perfis. Por isso o site usa só o que está no link, na bio colada e nos prints. Nada é inventado: o que faltar fica em branco para você completar.</p>
@@ -122,7 +126,7 @@ details.mr{margin-top:12px}details.mr summary{cursor:pointer;font-weight:700;fon
 <button class="btn" onclick="show('create')">← Voltar</button>
 <b id="pt" style="margin-right:auto"></b>
 <button class="btn" onclick="dev(0)">🖥️</button><button class="btn" onclick="dev(1)">📱</button>
-<button class="btn" id="und" hidden onclick="undo()">↩️ Desfazer</button><button class="btn" onclick="sav(1)">💾 Salvar</button>
+<button class="btn" id="und" hidden onclick="undo()">↩️ Desfazer</button><button class="btn" id="b-imp" onclick="improve()">🔎 Melhorar site</button><button class="btn" id="b-qr" hidden onclick="qrCur()">▦ QR Code</button><button class="btn" id="b-ver" hidden onclick="verOpen()">🕘 Versões</button><button class="btn" onclick="sav(1)">💾 Salvar</button>
 <button class="btn" onclick="cph()">📋 Copiar HTML</button>
 <button class="btn" onclick="dl()">⬇️ Baixar .html</button>
 <button class="btn pri" onclick="pub()">🌐 Publicar</button>
@@ -131,7 +135,7 @@ details.mr{margin-top:12px}details.mr summary{cursor:pointer;font-weight:700;fon
 <div class="ed">
 <div class="cd">
 <label class="l" style="margin-top:0">Formato</label>
-<select class="inp" onchange="P.goal=this.value;altUI();rf()" id="e-goal"><option value="landing">Landing Page</option><option value="catalog">Catálogo Zap</option><option value="ecommerce">Loja com carrinho</option><option value="profile">Perfil profissional</option><option value="portfolio">Portfólio</option><option value="presentation">Apresentação</option><option value="invite">Convite</option><option value="links">Link na bio</option><option value="card">Cartão de visita</option><option value="resume">Currículo online</option><option value="menu">Cardápio digital</option><option value="booking">Agendamento</option></select>
+<select class="inp" onchange="P.goal=this.value;altUI();rf()" id="e-goal"><option value="landing">Landing Page</option><option value="catalog">Catálogo Zap</option><option value="ecommerce">Loja com carrinho</option><option value="profile">Perfil profissional</option><option value="portfolio">Portfólio</option><option value="presentation">Apresentação</option><option value="invite">Convite</option><option value="links">Link na bio</option><option value="card">Cartão de visita</option><option value="resume">Currículo online</option><option value="menu">Cardápio digital</option><option value="booking">Agendamento</option><option value="capture">Captura de contatos</option><option value="pet">Carteirinha do pet</option></select>
 <div id="alt" hidden><label class="l">Links e botões (título + endereço)</label><div id="lnks"></div><button class="btn sm" onclick="addL()">+ Link</button>
 <label class="l" id="secl">Seções</label><div id="secs"></div><button class="btn sm" onclick="addS()">+ Seção</button>
 <div id="bkw" hidden><label class="l">Agendamentos recebidos</label><button class="btn sm" onclick="bks()">📅 Atualizar lista</button><div id="bkl" class="mu" style="margin-top:6px"></div></div>
@@ -145,7 +149,7 @@ details.mr{margin-top:12px}details.mr summary{cursor:pointer;font-weight:700;fon
 <div data-g="bio"><label class="l" id="l-bio">Bio / legendas do perfil (opcional)</label><textarea class="inp" id="e-bio" rows="3" placeholder="Cole a bio, endereço, horário, produtos e preços do perfil. A IA só organiza o que estiver escrito"></textarea>
 <button class="btn pri sm" style="margin-top:6px" onclick="ai()" id="b-ai">✨ Ler bio/cardápio colado e preencher</button></div>
 <div style="display:flex;gap:5px;margin-top:8px"><input class="inp" id="e-cmd" placeholder="Peça ao Claude: deixe mais sofisticado, adicione 2 sobremesas…"><button class="btn pri sm" onclick="cmd()">Enviar</button></div>
-<div class="mu" id="comp" style="margin:8px 0;font-weight:700"></div><div data-g="cover"><label class="l">Foto de capa (fundo do topo)</label><input type="file" accept="image/*,.jpg,.jpeg,.png,.webp" onchange="up(this.files[0],v=>{P.cover=v;rf()},900)"><button class="btn dg sm" onclick="P.cover='';rf()">Remover</button></div><div data-g="gal"><label class="l" id="l-gal">Galeria de fotos (até 6)</label><input type="file" accept="image/*,.jpg,.jpeg,.png,.webp" multiple onchange="upG(this.files)"><button class="btn dg sm" onclick="P.gal=[];rf()">Limpar galeria</button></div><div data-g="logo"><label class="l" id="l-logo">Logo</label><input type="file" accept="image/*,.jpg,.jpeg,.png,.webp" onchange="up(this.files[0],v=>{P.logo=v;rf()})"><button class="btn dg sm" onclick="P.logo='';rf()">Remover</button></div>
+<div class="mu" id="comp" style="margin:8px 0;font-weight:700"></div><div data-g="cover"><label class="l">Foto de capa (fundo do topo)</label><input type="file" accept="image/*,.jpg,.jpeg,.png,.webp" onchange="up(this.files[0],v=>{P.cover=v;rf()},900)"><button class="btn dg sm" onclick="P.cover='';rf()">Remover</button></div><div data-g="gal"><label class="l" id="l-gal">Galeria de fotos (até 6)</label><input type="file" accept="image/*,.jpg,.jpeg,.png,.webp" multiple onchange="upG(this.files)"><button class="btn dg sm" onclick="P.gal=[];rf()">Limpar galeria</button></div><div data-g="logo"><label class="l" id="l-logo">Logo</label><input type="file" accept="image/*,.jpg,.jpeg,.png,.webp" onchange="up(this.files[0],v=>{P.logo=v;rf()})"><button class="btn sm" onclick="logoColor()">🎨 Usar a cor da logo</button><button class="btn dg sm" onclick="P.logo='';rf()">Remover</button></div>
 <div data-g="phone"><label class="l" id="l-phone">WhatsApp de vendas</label><input class="inp" id="e-phone" oninput="P.phone=this.value;rf()">
 <div class="err" id="e-ph"></div></div>
 <label class="l">Cor principal</label>
@@ -170,7 +174,7 @@ details.mr{margin-top:12px}details.mr summary{cursor:pointer;font-weight:700;fon
 <div data-g="items"><label class="l" id="l-items">Produtos / serviços</label><div class="mu" id="ihint" hidden style="padding:8px 0">Nenhum produto ainda. Cole o cardápio/lista de preços no campo de bio e use “Ler bio/cardápio”, ou adicione manualmente.</div><div id="items"></div>
 <button class="btn sm" onclick="addI()" id="b-items">＋ Adicionar item</button></div>
 </div>
-<div><div class="mu" style="margin-bottom:6px">🔒 <span id="pu2"></span></div><iframe class="fr" id="fr" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" title="Prévia do site"></iframe></div>
+<div><div class="mu" style="margin-bottom:6px">🔒 <span id="pu2"></span></div><iframe class="fr" id="fr" sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox" title="Prévia do site"></iframe></div>
 </div></section>
 
 <section id="v-dash" hidden>
@@ -251,7 +255,7 @@ function setC(c){P.color=c;$('#e-col').value=c;rf()}
 function applyN(k){snap();const n=N[k];P.niche=k;P.nauto=false;P.nl='';P.ne='';$('#e-nl').value='';$('#e-ne').value='';P.layout=LM[k]||'';$('#e-lay').value=P.layout;P.style=SM[k];P.color=n.c;P.slogan=pick(SLG[P.goal]||n.s);P.items=n.i.map(a=>({n:a[0],p:a[1],e:a[2]}));$('#e-slogan').value=P.slogan;$('#e-col').value=P.color;items();rf()}
 function reg(){const o=SLG[P.goal]||N[P.niche].s;P.slogan=pick(o.filter(x=>x!==P.slogan).concat(o));$('#e-slogan').value=P.slogan;rf()}
 function items(){$('#ihint').hidden=P.items.length>0;$('#items').innerHTML=P.items.map((x,i)=>'<div class="row"><input class="inp" style="padding:6px;text-align:center" value="'+esc(x.e)+'" oninput="P.items['+i+'].e=this.value;rf()"><input class="inp" style="padding:6px" value="'+esc(x.n)+'" oninput="P.items['+i+'].n=this.value;rf()"><input class="inp" style="padding:6px" type="number" min="0" step="0.01" value="'+x.p+'" oninput="P.items['+i+'].p=parseFloat(this.value)||0;rf()"><label class="btn sm ph" title="Foto">'+(x.i?'✅':'📷')+'<input type="file" accept="image/*,.jpg,.jpeg,.png,.webp" onchange="up(this.files[0],v=>{P.items['+i+'].i=v;items();rf()})"></label><button class="btn dg sm" onclick="delI('+i+')">✕</button></div><div class="row2"><input class="inp" placeholder="Categoria" value="'+esc(x.c||'')+'" oninput="P.items['+i+'].c=this.value;rf()"><input class="inp" placeholder="Variações: P,M,G" value="'+esc(x.v||'')+'" oninput="P.items['+i+'].v=this.value;rf()"><button class="btn sm" onclick="mv('+i+',-1)" title="Subir">↑</button><button class="btn sm" onclick="mv('+i+',1)" title="Descer">↓</button></div><input class="inp" style="margin-bottom:9px;padding:5px 8px;font-size:12px" maxlength="140" placeholder="Descrição curta do item" value="'+esc(x.d||'')+'" oninput="P.items['+i+'].d=this.value;rf()">').join('')}
-const SECL={profile:'Experiência e destaques (título + texto)',portfolio:'Projetos (título + texto)',presentation:'Slides (título + texto)',invite:'Programação (horário/título + detalhe)',links:'',card:'',resume:'Experiência e formação (cargo/curso + detalhes)',menu:'',booking:''};
+const SECL={profile:'Experiência e destaques (título + texto)',portfolio:'Projetos (título + texto)',presentation:'Slides (título + texto)',invite:'Programação (horário/título + detalhe)',links:'',card:'',resume:'Experiência e formação (cargo/curso + detalhes)',menu:'',booking:'',capture:'Benefícios (título + detalhe)',pet:'Vacinas e cuidados (vacina/data + detalhe)'};
 function altUI(){fmtUI();const a=ALT.includes(P.goal);$('#alt').hidden=!a;if(!a)return;P.links=P.links||[];P.secs=P.secs||[];$('#secl').hidden=$('#secs').hidden=!SECL[P.goal];$('#secl').textContent=SECL[P.goal]||'';$('#evw').hidden=P.goal!=='invite';$('#bkw').hidden=!(P.goal==='booking'&&window.__ROOT&&P.pub);$('#rdw').hidden=P.goal!=='links';$('#e-date').value=P.edate||'';$('#e-time').value=P.etime||'';$('#e-redir').checked=!!P.redir;lst()}
 const FG=['slogan','bio','cover','gal','logo','phone','niche','open','deliv','pay','loc','tests','faq','items'];
 const FC={
@@ -266,9 +270,11 @@ links:{g:'slogan bio cover gal logo',about:'Texto curto de apresentação',gal:'
 card:{g:'slogan bio cover logo phone loc',about:'Sobre você ou a empresa',bio:['Dados do cartão','Cole cargo, empresa, endereço e horário. A IA só organiza o que estiver escrito','✨ Ler texto colado e preencher'],slo:['Cargo / frase do cartão'],ck:'logo about addr hours phone',cmd:'Peça ao Claude: deixe mais sóbrio, mude a cor…'},
 resume:{g:'slogan bio cover gal logo phone loc items',items:['Habilidades (competências)','＋ Adicionar habilidade'],about:'Resumo profissional',gal:'Trabalhos e certificados (até 6)',bio:['Dados do currículo','Cole seu currículo: experiências, formação, cursos e habilidades. A IA só organiza o que estiver escrito','✨ Ler currículo colado e preencher'],slo:['Cargo / objetivo profissional'],ck:'logo about items phone addr',cmd:'Peça ao Claude: deixe mais objetivo, destaque minha experiência…'},
 menu:{g:'slogan bio cover gal logo phone loc items',items:['Itens do cardápio (nome + preço)','＋ Adicionar item'],about:'Sobre o restaurante',gal:'Fotos dos pratos (até 6)',bio:['Cardápio colado','Cole o cardápio com pratos e preços. A IA só organiza o que estiver escrito','✨ Ler cardápio colado e preencher'],slo:['Frase do cardápio'],ck:'logo cover gal about addr hours items phone',cmd:'Peça ao Claude: adicione 2 sobremesas, separe por categoria…'},
+capture:{g:'slogan bio cover logo phone',about:'Texto de apresentação',bio:['Oferta e benefícios','Cole a descrição da oferta e dos benefícios. A IA só organiza o que estiver escrito','✨ Ler texto colado e preencher'],slo:['Título da página'],ck:'logo about phone',cmd:'Peça ao Claude: deixe mais persuasivo, mude a cor…'},
+pet:{g:'slogan bio cover gal logo phone loc',about:'Observações do pet (temperamento, alergias, cuidados)',gal:'Fotos do pet (até 6)',bio:['Dados do pet','Cole espécie, raça, idade, vacinas e dados do tutor. A IA só organiza o que estiver escrito','✨ Ler texto colado e preencher'],slo:['Espécie e raça'],ck:'logo about phone addr',cmd:'Peça ao Claude: adicione a vacina antirrábica…'},
 booking:{g:'slogan bio cover gal logo phone open loc items',items:['Serviços (nome + preço)','＋ Adicionar serviço'],about:'Sobre o atendimento',gal:'Fotos do espaço / trabalhos (até 6)',bio:['Serviços e preços colados','Cole a lista de serviços e preços. A IA só organiza o que estiver escrito','✨ Ler serviços colados e preencher'],slo:['Frase do agendamento'],ck:'logo cover gal about addr items phone hours',cmd:'Peça ao Claude: adicione o serviço…, deixe mais sofisticado…'}
 };
-const SLG={profile:['Profissional dedicado, resultado de verdade','Experiência que se transforma em resultado','Qualidade e atenção em cada atendimento'],portfolio:['Projetos que falam por mim','Meu trabalho, minha assinatura','Veja o que já criei'],presentation:['Conheça nossa história','Quem somos e o que fazemos','Uma apresentação do nosso trabalho'],invite:['Você é meu convidado especial','Venha celebrar com a gente','Sua presença é muito importante'],links:['Todos os meus links em um só lugar','Siga, fale comigo e conheça meu trabalho','Tudo que você precisa, a um toque'],card:['Vamos conversar?','Meu contato, sempre à mão','Fale comigo direto pelo WhatsApp'],resume:['Profissional em busca de novos desafios','Experiência, dedicação e vontade de crescer','Comprometimento e resultado em cada função'],menu:['Feito com carinho, servido com sabor','Escolha, peça e aproveite','Sabor que você já conhece'],booking:['Agende seu horário em poucos cliques','Reserve seu horário online','Atendimento no seu tempo']};
+const SLG={profile:['Profissional dedicado, resultado de verdade','Experiência que se transforma em resultado','Qualidade e atenção em cada atendimento'],portfolio:['Projetos que falam por mim','Meu trabalho, minha assinatura','Veja o que já criei'],presentation:['Conheça nossa história','Quem somos e o que fazemos','Uma apresentação do nosso trabalho'],invite:['Você é meu convidado especial','Venha celebrar com a gente','Sua presença é muito importante'],links:['Todos os meus links em um só lugar','Siga, fale comigo e conheça meu trabalho','Tudo que você precisa, a um toque'],card:['Vamos conversar?','Meu contato, sempre à mão','Fale comigo direto pelo WhatsApp'],resume:['Profissional em busca de novos desafios','Experiência, dedicação e vontade de crescer','Comprometimento e resultado em cada função'],menu:['Feito com carinho, servido com sabor','Escolha, peça e aproveite','Sabor que você já conhece'],capture:['Receba novidades e ofertas exclusivas','Cadastre-se e fale com a gente','Deixe seu contato e retornamos'],pet:['Cachorro · SRD','Gato · SRD','Se me achou, ligue para o meu tutor'],booking:['Agende seu horário em poucos cliques','Reserve seu horário online','Atendimento no seu tempo']};
 function fmtUI(){const c=FC[P.goal]||FC.landing,v=c.g.split(' ');document.querySelectorAll('[data-g]').forEach(e=>e.hidden=!v.includes(e.dataset.g));const L=(id,t)=>{const e=$('#'+id);if(e&&t)e.textContent=t},d=FC.landing;L('l-about',c.about);L('l-items',(c.items||[])[0]||'Produtos / serviços');L('b-items',(c.items||[])[1]||'＋ Adicionar item');L('l-gal',c.gal||'Galeria de fotos (até 6)');L('l-slogan',(c.slo||[])[0]||'Slogan');const b=c.bio||['Bio / legendas do perfil (opcional)','Cole a bio, endereço, horário, produtos e preços do perfil. A IA só organiza o que estiver escrito','✨ Ler bio/cardápio colado e preencher'];L('l-bio',b[0]);$('#e-bio').placeholder=b[1];L('b-ai',b[2]);$('#e-cmd').placeholder=c.cmd||'Peça ao Claude: deixe mais sofisticado, adicione 2 sobremesas…';L('l-phone',['profile','portfolio','presentation','invite','card','resume','booking'].includes(P.goal)?'WhatsApp para contato':'WhatsApp de vendas')}
 function lst(){$('#lnks').innerHTML=P.links.map((l,i)=>'<div class="g2" style="margin-bottom:6px"><input class="inp" placeholder="Título (ex.: Instagram)" maxlength="40" value="'+esc(l.t)+'" oninput="P.links['+i+'].t=this.value;rf()"><div style="display:flex;gap:6px"><input class="inp" placeholder="https://… ou mailto:/tel:" value="'+esc(l.u)+'" oninput="P.links['+i+'].u=this.value;rf()"><button class="btn dg sm" onclick="P.links.splice('+i+',1);lst();rf()">✕</button></div></div>').join('');$('#secs').innerHTML=P.secs.map((q,i)=>'<div style="margin-bottom:8px"><div style="display:flex;gap:6px"><input class="inp" placeholder="Título" maxlength="60" value="'+esc(q.t)+'" oninput="P.secs['+i+'].t=this.value;rf()"><button class="btn dg sm" onclick="P.secs.splice('+i+',1);lst();rf()">✕</button></div><textarea class="inp" rows="2" maxlength="500" placeholder="Texto" oninput="P.secs['+i+'].b=this.value;rf()">'+esc(q.b)+'</textarea></div>').join('')}
 async function bks(){const b=$('#bkl');b.textContent='Carregando…';try{const r=await fetch('/api/bookings?site='+encodeURIComponent(P.id));const j=await r.json();if(!r.ok)throw 0;b.innerHTML=j.items.length?j.items.map(x=>'<div class="li" style="padding:6px 0"><div style="flex:1"><b>'+esc(x.d.split('-').reverse().join('/'))+' '+esc(x.t)+'</b> · '+esc(x.n)+'<div class="mu">'+esc(x.s)+'</div></div><button class="btn dg sm" onclick="bkc(\''+esc(x.d)+'\',\''+esc(x.t)+'\')">Cancelar</button></div>').join(''):'Nenhum agendamento futuro.'}catch(e){b.textContent='Não consegui carregar agora.'}}
@@ -292,6 +298,21 @@ function snap(){UNDO=JSON.stringify(P);$('#und').hidden=false}
 function undo(){if(!UNDO)return;const k=JSON.parse(UNDO);UNDO=null;edit(k);toast('Alteração desfeita')}function rf(first){clearTimeout(rt);rt=setTimeout(()=>{$('#fr').srcdoc=siteHTML(P,PY)},first?0:220);if(!first){clearTimeout(at);at=setTimeout(()=>sav(0),1500)}$('#pt').textContent=P.name||'Sem nome';const u='https://'+slug(P.name)+'.autopage.site';$('#pu2').textContent=u;$('#e-ph').textContent=phErr();try{compl()}catch(e){}}
 function dev(m){$('#fr').style.maxWidth=m?'390px':'100%';$('#fr').style.margin=m?'0 auto':'0';$('#fr').style.display='block'}
 function upG(fl){P.gal=P.gal||[];[...fl].slice(0,Math.max(0,6-P.gal.length)).forEach(f=>up(f,v=>{if(P.gal.length<6){P.gal.push(v);rf()}},640))}
+function logoColor(){if(!P.logo){toast('Envie a logo primeiro');return}const im=new Image();im.onerror=()=>toast('Não consegui ler a logo');im.onload=()=>{const c=document.createElement('canvas'),z=48;c.width=c.height=z;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0,z,z);let d;try{d=x.getImageData(0,0,z,z).data}catch(e){toast('Não consegui ler a logo');return}const b={};let best=null,bs=0;for(let i=0;i<d.length;i+=4){const a=d[i+3];if(a<200)continue;const r=d[i],g=d[i+1],bl=d[i+2],mx=Math.max(r,g,bl),mn=Math.min(r,g,bl),sat=mx?(mx-mn)/mx:0;if(mx<50||(sat<.25&&mx>200))continue;const k=(r>>5)+','+(g>>5)+','+(bl>>5),o=b[k]=b[k]||{n:0,r:0,g:0,b:0,s:0};o.n++;o.r+=r;o.g+=g;o.b+=bl;o.s+=sat}for(const k in b){const o=b[k],sc=o.n*(0.4+o.s/o.n);if(sc>bs){bs=sc;best=o}}if(!best){toast('A logo não tem uma cor marcante. Escolha a cor manualmente.');return}const h=v=>Math.round(v/best.n).toString(16).padStart(2,'0'),hex='#'+h(best.r)+h(best.g)+h(best.b);snap();setC(hex);toast('Cor ajustada pela logo')};im.src=P.logo}
+function improve(){if(!P)return;const t=[],c=FC[P.goal]||FC.landing,ck=c.ck.split(' '),has=(P.gal||[]).length;const add=(msg,btn,fn)=>t.push({msg,btn,fn});
+const sl=(P.slogan||'').trim();if(!sl)add('Falta uma frase de destaque no topo.','Sugerir frase','reg()');else if(sl.length>90)add('A frase do topo está longa ('+sl.length+' letras). Frases curtas funcionam melhor.','Sugerir outra','reg()');
+if(ck.includes('about')&&(P.about||'').trim().length<40)add('O texto "'+((document.getElementById('l-about')||{}).textContent||'Sobre')+'" está curto ou vazio. Escreva 2 ou 3 frases reais sobre você ou o negócio.','Ir para o campo',"focusF('e-about')");
+if(ck.includes('logo')&&!P.logo)add('Sem logo ou foto de perfil. Isso passa mais confiança.','Enviar logo',"focusF('l-logo')");
+if(ck.includes('cover')&&!P.cover)add('Sem foto de capa. Uma boa foto prende a atenção no topo.','Enviar capa',"focusF('b-ai')");
+if(ck.includes('gal')&&!has)add('Sem fotos na galeria. Mostre seu trabalho ou seus produtos.','Enviar fotos',"focusF('l-gal')");
+if(ck.includes('items')&&!P.items.length)add('Nenhum item cadastrado.','Adicionar itens',"focusF('l-items')");
+if(ck.includes('items')&&P.items.length&&P.items.some(i=>!(i.p>0))&&['catalog','ecommerce','menu','booking'].includes(P.goal))add('Há itens sem preço. Preço claro aumenta os pedidos.','Revisar itens',"focusF('l-items')");
+if(ck.includes('phone')&&phErr())add('O WhatsApp ainda não é um número real. Sem ele, ninguém consegue falar com você.','Corrigir número',"focusF('e-phone')");
+if(ck.includes('addr')&&!(P.addr||'').trim()&&['landing','catalog','ecommerce','profile','menu','booking','card','pet','invite'].includes(P.goal))add('Sem endereço ou local. Quem quer ir até você não encontra.','Adicionar endereço',"focusF('e-addr')");
+if(ck.includes('hours')&&!(P.hours||P.open))add('Sem horário de atendimento.','Adicionar horário',"focusF('e-hrs')");
+const box=document.createElement('div');box.className='mdl';box.id='mdl';box.onclick=e=>{if(e.target===box)box.remove()};box.innerHTML='<div class="mbx" role="dialog" aria-modal="true"><h3 style="margin:0 0 4px">🔎 Melhorar este site</h3><div class="mu" style="margin-bottom:10px">'+(t.length?t.length+' ponto(s) para melhorar neste formato ('+esc(GL[P.goal]||'')+'):':'Tudo certo! Nenhuma pendência encontrada.')+'</div>'+t.map((x,i)=>'<div class="li" style="padding:8px 0;display:flex;gap:8px;align-items:center"><div style="flex:1;font-size:14px">'+esc(x.msg)+'</div><button class="btn sm" onclick="document.getElementById(\'mdl\').remove();'+x.fn.replace(/"/g,'&quot;')+'">'+esc(x.btn)+'</button></div>').join('')+'<div class="rowa" style="margin-top:12px">'+(window.claude?'<button class="btn pri sm" onclick="document.getElementById(\'mdl\').remove();improveAI()">✨ Pedir ideias à IA</button>':'')+'<button class="btn sm" onclick="document.getElementById(\'mdl\').remove()">Fechar</button></div></div>';const old=document.getElementById('mdl');if(old)old.remove();document.body.appendChild(box)}
+function focusF(id){const e=document.getElementById(id);if(e){e.scrollIntoView({behavior:'smooth',block:'center'});if(e.focus)e.focus()}}
+async function improveAI(){const s=window.claude?await claude.use('sample'):null;if(!s){toast('IA indisponível neste ambiente');return}toast('Pensando nas melhorias…');try{const o={format:GL[P.goal],name:P.name,slogan:P.slogan,about:P.about,items:P.items.slice(0,12).map(i=>({n:i.n,p:i.p})),secs:(P.secs||[]).slice(0,8),hasLogo:!!P.logo,hasCover:!!P.cover,gallery:(P.gal||[]).length,addr:!!P.addr},r=await s.json('Você revisa páginas de pequenos negócios. Dado este JSON de uma página do formato "'+o.format+'", sugira de 3 a 5 melhorias práticas de conteúdo e estrutura, específicas para ESSE formato. NÃO invente fatos, preços, endereços ou depoimentos: diga o que o dono deve acrescentar ou reescrever. Responda em JSON {"ideias":["..."]} em português do Brasil.\n'+JSON.stringify(o)),a=(r&&r.ideias||[]).filter(x=>typeof x==='string').slice(0,5);if(!a.length)throw 0;const box=document.createElement('div');box.className='mdl';box.id='mdl';box.onclick=e=>{if(e.target===box)box.remove()};box.innerHTML='<div class="mbx"><h3 style="margin:0 0 8px">✨ Ideias da IA</h3>'+a.map(x=>'<div style="padding:8px 0;border-bottom:1px solid var(--bd)">• '+esc(x)+'</div>').join('')+'<div style="margin-top:12px"><button class="btn sm" onclick="document.getElementById(\'mdl\').remove()">Fechar</button></div></div>';document.body.appendChild(box)}catch(e){toast('A IA não respondeu agora. Tente de novo.')}}
 function compl(){const p=P,all={logo:['logo',!!p.logo],cover:['foto de capa',!!p.cover],gal:['galeria',(p.gal||[]).length>0],about:['sobre',!!p.about],addr:['endereço',!!p.addr],hours:['horário',!!(p.hours||p.open)],items:['itens',p.items.length>0],phone:['WhatsApp real',!phErr()]},c=FC[p.goal]||FC.landing,k=c.ck.split(' ').map(x=>all[x]).filter(Boolean),ok=k.filter(a=>a[1]).length;$('#comp').textContent='Site '+Math.round(ok/k.length*100)+'% completo'+(ok<k.length?' · falta: '+k.filter(a=>!a[1]).map(a=>a[0]).join(', '):' ✅')}
 const IMX=/\.(jpe?g|png|webp|gif|bmp|avif|heic|heif)$/i;
 function isImg(f){return !!f&&(/^image\//.test(f.type||'')||IMX.test(f.name||'')||((!f.type||f.type==="application/octet-stream")&&!/\.(pdf|txt|docx?|xlsx?|zip|mp4|mov)$/i.test(f.name||'')))}
@@ -327,9 +348,9 @@ if(removed)toast(removed+' foto(s) não couberam e ficaram fora da versão publi
 async function cpl(id){const u=id?LINK(id,(S.find(x=>x.id===id)||{}).slug):$('#pl').textContent;try{await navigator.clipboard.writeText(u);toast('Link copiado')}catch(e){toast(u)}}
 async function evs(){const db=await dbs();if(!db)return;try{const q=await db.collection('events').orderBy('at','desc').limit(3000).get(),c=Object.create(null),ids=new Set(S.map(s=>s.id)),lim=+$('#per').value?Date.now()-(+$('#per').value)*864e5:0;q.docs.forEach(d=>{const x=d.data();if(!x||!ids.has(x.s)||(x.t!=='view'&&x.t!=='click')||!(x.at>=lim))return;const o=c[x.s]=c[x.s]||{view:0,click:0,u:Object.create(null)};o[x.t]++;if(x.t==='view')o.u[String(x.b||d.id).slice(0,16)]=1});S.forEach(s=>{const e=$('#ev-'+s.id),k=c[s.id]||{view:0,click:0,u:{}};if(e)e.textContent='🟢 Publicado'+(dirty(s)?' · 🟠 alterações pendentes':'')+' · 👁 '+k.view+' ('+Object.keys(k.u).length+' únicos)'+' · 💬 '+k.click+' cliques · copiar link'})}catch(e){}}
 function bid(){try{let b=localStorage.getItem('ap_b');if(!b){b=Math.random().toString(36).slice(2,10);localStorage.setItem('ap_b',b)}return b}catch(e){return'x'}}
-function ev(id,t){if(!/^[a-z0-9]{1,16}$/.test(id)||(t!=='view'&&t!=='click'))return;if(t==='click'){if(Date.now()-(window._ct||0)<3000||(window._cc=(window._cc||0)+1)>30)return;window._ct=Date.now()}if(S.some(s=>s.id===id))return;if(t==='view'){try{const k='v'+id+new Date().toDateString();if(localStorage.getItem(k))return;localStorage.setItem(k,1)}catch(e){}}dbs().then(db=>db&&db.collection('events').add({s:id,t:t,b:bid(),at:Date.now()})).catch(()=>{})}
-async function route(){const m=/^#site-([a-z0-9]+)$/.exec(location.hash)||(window.__SITE_ID&&/^[a-z0-9]{1,16}$/.test(window.__SITE_ID)?[0,window.__SITE_ID]:null);if(!m)return;document.querySelector('header').hidden=true;document.querySelector('main').hidden=true;const db=await dbs();const msg=t=>document.body.insertAdjacentHTML('beforeend','<p class="c mu" style="padding:40px">'+t+'</p>');if(!db){msg('Entre no Claude para ver este site.');return}try{const d=await db.doc('sites/'+m[1]).get();if(!d.exists)throw 0;if(String(d.data().j).length>1100000)throw 0;const p=sane(JSON.parse(d.data().j)),f=document.createElement('iframe');f.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff';f.sandbox='allow-scripts allow-popups allow-popups-to-escape-sandbox';f.srcdoc=siteHTML(p);document.body.appendChild(f);ev(m[1],'view');addEventListener('message',e=>{if(e.source===f.contentWindow&&e.data&&e.data.ap===1)ev(m[1],'click')})}catch(e){msg('Site não encontrado.')}}
-const GL={landing:'Landing Page',catalog:'Catálogo Zap',ecommerce:'Loja com carrinho',profile:'Perfil profissional',portfolio:'Portfólio',presentation:'Apresentação',invite:'Convite',links:'Link na bio',card:'Cartão de visita',resume:'Currículo online',menu:'Cardápio digital',booking:'Agendamento'};const ALT=['profile','portfolio','presentation','invite','links','card','resume','menu','booking'];
+function ev(id,t,l){if(!/^[a-z0-9]{1,16}$/.test(id)||(t!=='view'&&t!=='click'))return;if(t==='click'){if(Date.now()-(window._ct||0)<3000||(window._cc=(window._cc||0)+1)>30)return;window._ct=Date.now()}if(S.some(s=>s.id===id))return;if(t==='view'){try{const k='v'+id+new Date().toDateString();if(localStorage.getItem(k))return;localStorage.setItem(k,1)}catch(e){}}dbs().then(db=>db&&db.collection('events').add({s:id,t:t,b:bid(),l:String(l||'').replace(/[\u0000-\u001f<>]/g,' ').slice(0,30),at:Date.now()})).catch(()=>{})}
+async function route(){const m=/^#site-([a-z0-9]+)$/.exec(location.hash)||(window.__SITE_ID&&/^[a-z0-9]{1,16}$/.test(window.__SITE_ID)?[0,window.__SITE_ID]:null);if(!m)return;document.querySelector('header').hidden=true;document.querySelector('main').hidden=true;const db=await dbs();const msg=t=>document.body.insertAdjacentHTML('beforeend','<p class="c mu" style="padding:40px">'+t+'</p>');if(!db){msg('Entre no Claude para ver este site.');return}try{const d=await db.doc('sites/'+m[1]).get();if(!d.exists)throw 0;if(String(d.data().j).length>1100000)throw 0;const p=sane(JSON.parse(d.data().j)),f=document.createElement('iframe');f.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff';f.sandbox='allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox';f.srcdoc=siteHTML(p);document.body.appendChild(f);ev(m[1],'view');addEventListener('message',e=>{if(e.source===f.contentWindow&&e.data&&e.data.ap===1)ev(m[1],'click',typeof e.data.l==='string'?e.data.l:'')})}catch(e){msg('Site não encontrado.')}}
+const GL={landing:'Landing Page',catalog:'Catálogo Zap',ecommerce:'Loja com carrinho',profile:'Perfil profissional',portfolio:'Portfólio',presentation:'Apresentação',invite:'Convite',links:'Link na bio',card:'Cartão de visita',resume:'Currículo online',menu:'Cardápio digital',booking:'Agendamento',capture:'Captura de contatos',pet:'Carteirinha do pet'};const ALT=['profile','portfolio','presentation','invite','links','card','resume','menu','booking','capture','pet'];
 const dirty=s=>s.pub&&s.at>(s.pubAt||0)+3000;
 function dash(){const ni=S.reduce((a,s)=>a+s.items.length,0),ok=S.filter(s=>s.phone.replace(/\D/g,'').length>=10).length;
 $('#stats').innerHTML=[['Sites',S.length],['Itens no total',ni],['Com WhatsApp válido',ok]].map(a=>'<div class="cd"><div class="mu">'+a[0]+'</div><div style="font-size:28px;font-weight:800">'+a[1]+'</div></div>').join('');
@@ -420,7 +441,20 @@ else if(g==='booking'){
  +(p.items.length?'<section class="s"><div class="kk">Serviços</div><h2>Escolha o que você precisa</h2><div class="cg">'+p.items.map((i,k)=>'<div class="cc"><div style="font-size:28px">'+esc(i.e)+'</div><h3>'+esc(i.n)+'</h3>'+(i.d?'<p>'+esc(i.d)+'</p>':'')+(i.p>0?'<strong style="display:block;margin-top:8px;color:var(--c)">R$ '+i.p.toFixed(2).replace('.',',')+'</strong>':'')+'<a class="pd" style="display:inline-block;margin-top:10px" href="#agendar" onclick="pk('+k+')">Agendar</a></div>').join('')+'</div></section>':'')
  +(p.about?'<section class="s"><p class="ab">'+esc(p.about)+'</p></section>':'')+(G.length?'<section class="s">'+gal+'</section>':'')
  +'<section class="s" id="agendar" style="max-width:560px">'+secH('Agendamento','Reserve seu horário')+'<form class="bf" onsubmit="return bk(event)"><label>Seu nome<input id="bn" maxlength="80" required autocomplete="name"></label>'+(p.items.length?'<label>Serviço<select id="bs">'+p.items.map(i=>'<option>'+esc(i.n)+'</option>').join('')+'</select></label>':'')+'<div class="g2"><label>Dia<input type="date" id="bd" required onchange="sl()"></label><label>Horário<select id="bh" required></select></label></div><small id="bm"></small><button class="cta" type="submit" style="border:0;width:100%;cursor:pointer;font-size:16px">'+(API?'Reservar horário':'Continuar')+'</button><small>'+(API?'O horário fica reservado para você. O negócio confirma pelo WhatsApp.':'O horário só fica confirmado depois da resposta do negócio.')+'</small></form></section>'+(L.length?'<section class="s"><div class="bts">'+lnk+'</div></section>':'')+'</main>';
- extra='var API='+JSON.stringify(API)+',DY='+JSON.stringify(days)+',OP='+JSON.stringify(op)+',CL='+JSON.stringify(cl)+',PH='+JSON.stringify(ph)+',NM='+JSON.stringify(p.name)+';var bd=document.getElementById("bd");if(bd){var t=new Date();bd.min=t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0")}function pk(k){var s=document.getElementById("bs");if(s)s.selectedIndex=k}function ok(dt){var w=dt.getDay();return DY==="todos"||(DY==="semana"&&w>0&&w<6)||(DY==="sabado"&&w>0)}function fill(v,tk){var h=document.getElementById("bh"),m=document.getElementById("bm");h.innerHTML="";var a=OP.split(":"),z=CL.split(":"),i=+a[0]*60+ +a[1],e=+z[0]*60+ +z[1],now=new Date(),same=v===bd.min;for(;i+30<=e;i+=30){var hh=String(Math.floor(i/60)).padStart(2,"0")+":"+String(i%60).padStart(2,"0");if(tk.indexOf(hh)>-1)continue;if(same&&i<=now.getHours()*60+now.getMinutes())continue;var o=document.createElement("option");o.textContent=hh;h.appendChild(o)}m.textContent=h.children.length?"":"Sem horários livres neste dia. Escolha outra data."}function sl(){var v=document.getElementById("bd").value,h=document.getElementById("bh"),m=document.getElementById("bm");h.innerHTML="";m.textContent="";if(!v)return;var dt=new Date(v+"T12:00:00");if(!ok(dt)){m.textContent="Fechado neste dia. Escolha outra data.";return}if(!API){fill(v,[]);return}fetch(API+"/api/slots?d="+v).then(function(r){return r.json()}).then(function(j){fill(v,j.taken||[])}).catch(function(){fill(v,[])})}function bk(ev){ev.preventDefault();var h=document.getElementById("bh"),m=document.getElementById("bm");if(!h.value){m.textContent="Escolha um dia com horários disponíveis.";return false}var s=document.getElementById("bs"),v=document.getElementById("bd").value,d=v.split("-").reverse().join("/"),nm=document.getElementById("bn").value.trim(),t="Olá! Gostaria de agendar"+(s?" "+s.value:"")+" no dia "+d+" às "+h.value+". Meu nome é "+nm+".",hv=h.value;function done(){var f=document.querySelector(".bf");f.innerHTML="<div style=\"text-align:center;display:grid;gap:12px\"><div style=\"font-size:44px\">✅</div><b style=\"font-size:20px\">"+(API?"Horário reservado!":"Pedido pronto!")+"</b><div>"+d+" às "+hv+"</div><small>Envie a mensagem no WhatsApp para o negócio confirmar com você.</small><a class=\"cta\" target=\"_blank\" rel=\"noopener noreferrer\" href=\"https://wa.me/"+PH+"?text="+encodeURIComponent(t)+"\">Enviar no WhatsApp</a></div>"}if(!API){done();return false}var btn=document.querySelector(".bf button");btn.disabled=true;fetch(API+"/api/book",{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify({d:v,t:hv,n:nm,s:s?s.value:""})}).then(function(r){return r.json().then(function(j){return{s:r.status,j:j}})}).then(function(o){btn.disabled=false;if(o.s===200){done();return}if(o.s===409){m.textContent="Esse horário acabou de ser reservado. Escolha outro.";sl();return}m.textContent=o.s===429?"Muitas tentativas. Tente mais tarde.":"Não foi possível reservar agora. Tente de novo."}).catch(function(){btn.disabled=false;m.textContent="Sem conexão. Tente de novo."});return false}';
+ extra='var API='+JSON.stringify(API)+',DY='+JSON.stringify(days)+',OP='+JSON.stringify(op)+',CL='+JSON.stringify(cl)+',PH='+JSON.stringify(ph)+',NM='+JSON.stringify(p.name)+';var bd=document.getElementById("bd");if(bd){var t=new Date();bd.min=t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0")}function pk(k){var s=document.getElementById("bs");if(s)s.selectedIndex=k}function ok(dt){var w=dt.getDay();return DY==="todos"||(DY==="semana"&&w>0&&w<6)||(DY==="sabado"&&w>0)}function fill(v,tk){var h=document.getElementById("bh"),m=document.getElementById("bm");h.innerHTML="";var a=OP.split(":"),z=CL.split(":"),i=+a[0]*60+ +a[1],e=+z[0]*60+ +z[1],now=new Date(),same=v===bd.min;for(;i+30<=e;i+=30){var hh=String(Math.floor(i/60)).padStart(2,"0")+":"+String(i%60).padStart(2,"0");if(tk.indexOf(hh)>-1)continue;if(same&&i<=now.getHours()*60+now.getMinutes())continue;var o=document.createElement("option");o.textContent=hh;h.appendChild(o)}m.textContent=h.children.length?"":"Sem horários livres neste dia. Escolha outra data."}function sl(){var v=document.getElementById("bd").value,h=document.getElementById("bh"),m=document.getElementById("bm");h.innerHTML="";m.textContent="";if(!v)return;var dt=new Date(v+"T12:00:00");if(!ok(dt)){m.textContent="Fechado neste dia. Escolha outra data.";return}if(!API){fill(v,[]);return}fetch(API+"/api/slots?d="+v).then(function(r){return r.json()}).then(function(j){fill(v,j.taken||[])}).catch(function(){fill(v,[])})}function bk(ev){ev.preventDefault();var h=document.getElementById("bh"),m=document.getElementById("bm");if(!h.value){m.textContent="Escolha um dia com horários disponíveis.";return false}var s=document.getElementById("bs"),v=document.getElementById("bd").value,d=v.split("-").reverse().join("/"),nm=document.getElementById("bn").value.trim(),t="Olá! Gostaria de agendar"+(s?" "+s.value:"")+" no dia "+d+" às "+h.value+". Meu nome é "+nm+".",hv=h.value;function done(){var f=document.querySelector(".bf");f.innerHTML="<div style=\\"text-align:center;display:grid;gap:12px\\"><div style=\\"font-size:44px\\">✅</div><b style=\\"font-size:20px\\">"+(API?"Horário reservado!":"Pedido pronto!")+"</b><div>"+d+" às "+hv+"</div><small>Envie a mensagem no WhatsApp para o negócio confirmar com você.</small><a class=\\"cta\\" target=\\"_blank\\" rel=\\"noopener noreferrer\\" href=\\"https://wa.me/"+PH+"?text="+encodeURIComponent(t)+"\\">Enviar no WhatsApp</a></div>"}if(!API){done();return false}var btn=document.querySelector(".bf button");btn.disabled=true;fetch(API+"/api/book",{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify({d:v,t:hv,n:nm,s:s?s.value:""})}).then(function(r){return r.json().then(function(j){return{s:r.status,j:j}})}).then(function(o){btn.disabled=false;if(o.s===200){done();return}if(o.s===409){m.textContent="Esse horário acabou de ser reservado. Escolha outro.";sl();return}m.textContent=o.s===429?"Muitas tentativas. Tente mais tarde.":"Não foi possível reservar agora. Tente de novo."}).catch(function(){btn.disabled=false;m.textContent="Sem conexão. Tente de novo."});return false}';
+}
+else if(g==='capture'){
+ body='<main class="lp"><div class="lc" style="max-width:520px">'+av+'<h1>'+esc(p.name)+'</h1>'+(p.slogan?'<p class="sl">'+esc(p.slogan)+'</p>':'')+(p.about?'<p class="ab">'+esc(p.about)+'</p>':'')+(S2.length?'<div class="cg" style="width:100%;text-align:left">'+S2.map(q=>'<div class="cc"><h3>✔ '+esc(q.t)+'</h3>'+(q.b?'<p>'+esc(q.b)+'</p>':'')+'</div>').join('')+'</div>':'')
+ +'<form class="bf" style="width:100%;text-align:left" onsubmit="return lf(event)"><label>Seu nome<input id="ln" maxlength="80" required autocomplete="name"></label><label>E-mail ou WhatsApp<input id="lc" maxlength="120" required></label><label>Mensagem (opcional)<input id="lm" maxlength="300"></label><small id="lt"></small><button class="cta" type="submit" style="border:0;width:100%;cursor:pointer;font-size:16px">Quero receber contato</button><small>'+(API?'Seus dados são enviados só para '+esc(p.name)+'.':'Você continuará a conversa pelo WhatsApp.')+'</small></form>'
+ +(dg.length>=10?'<a class="bt" href="'+wa('Olá! Vi sua página.')+'"'+RL+'><span>💬 Prefiro falar no WhatsApp</span><i>›</i></a>':'')+(L.length?'<div class="bts">'+lnk+'</div>':'')+'</div></main>';
+ extra='var PH='+JSON.stringify(ph)+';function lf(ev){ev.preventDefault();var n=document.getElementById("ln").value.trim(),c=document.getElementById("lc").value.trim(),m=document.getElementById("lm").value.trim(),t=document.getElementById("lt");if(!n||!c)return false;function ok(){document.querySelector(".bf").innerHTML="<div style=\\"text-align:center;font-size:18px\\"><div style=\\"font-size:44px\\">✅</div><b>Recebemos seus dados!</b><br>Em breve entraremos em contato.</div>"}if(API){t.textContent="Enviando…";ct({type:"lead",n:n,c:c,m:m},function(k){if(k)ok();else t.textContent="Não consegui enviar agora. Tente de novo."})}else if(PH.length>=10){window.open("https://wa.me/"+PH+"?text="+encodeURIComponent("Olá! Sou "+n+". Contato: "+c+(m?". "+m:"")),"_blank","noopener");ok()}else ok();return false}';
+}
+else if(g==='pet'){
+ body='<header class="ph pf" style="'+(p.cover?'--cv:url(\''+esc(p.cover)+'\')':'')+'"><div class="in c1">'+av+'<h1 style="margin-top:12px">🐾 '+esc(p.name)+'</h1>'+(p.slogan?'<p class="sl">'+esc(p.slogan)+'</p>':'')+'</div></header><main>'
+ +(p.about?'<section class="s"><div class="kk">Sobre o pet</div><p class="ab" style="max-width:none">'+esc(p.about)+'</p></section>':'')
+ +(S2.length?'<section class="s"><div class="kk">Saúde</div><h2>Vacinas e cuidados</h2><div class="tl big">'+S2.map(q=>'<div><b>'+esc(q.t)+'</b>'+(q.b?'<p>'+esc(q.b)+'</p>':'')+'</div>').join('')+'</div></section>':'')
+ +((adr||hrs)?'<section class="s"><div class="ibs">'+adr+hrs+'</div></section>':'')+(G.length?'<section class="s">'+gal+'</section>':'')+(L.length?'<section class="s"><div class="bts">'+lnk+'</div></section>':'')
+ +'<section class="s fin"><h2>Achou este pet?</h2>'+(dg.length>=10?cta('📞 Falar com o tutor','Olá! Encontrei o pet '+p.name+'.'):'<p class="ab">Procure o tutor pelos contatos acima.</p>')+'</section></main>';
 }
 else if(g==='invite'){
  const ok=/^\d{4}-\d\d-\d\d$/.test(p.edate||''),tm=/^\d\d:\d\d$/.test(p.etime||'')?p.etime:'',dt=ok?new Date(p.edate+'T'+(tm||'00:00')+':00'):null;
@@ -432,8 +466,8 @@ else if(g==='invite'){
  +(p.addr?'<a class="ib"'+RL+' href="'+mapU+'"><b>📍</b><span>'+esc(p.addr)+'</span></a>':'')
  +(p.about?'<p class="ab">'+esc(p.about)+'</p>':'')
  +(S2.length?'<div class="tl">'+S2.map(q=>'<div><b>'+esc(q.t)+'</b>'+(q.b?'<p>'+esc(q.b)+'</p>':'')+'</div>').join('')+'</div>':'')
- +'<div class="bts">'+'<a class="bt pr" href="'+wa('Olá! Confirmo minha presença em '+p.name+'.')+'"'+RL+'><span>✅ Confirmar presença</span><i>›</i></a>'+'<a class="bt" href="'+wa('Olá! Não poderei comparecer a '+p.name+'.')+'"'+RL+'><span>❌ Não poderei ir</span><i>›</i></a>'+(cal?'<a class="bt" href="'+cal+'"'+RL+'><span>📅 Adicionar à agenda</span><i>›</i></a>':'')+(mapU?'<a class="bt" href="'+mapU+'"'+RL+'><span>🧭 Como chegar</span><i>›</i></a>':'')+lnk+'</div>'+(G.length?'<div class="gl sm">'+G.slice(0,6).map(u=>'<img src="'+esc(u)+'" alt="" '+zm+'>').join('')+'</div>':'')+'</div></main>';
- extra='var e=document.getElementById("cd");if(e){var t=+e.getAttribute("data-t");function tk(){var s=Math.floor((t-Date.now())/1e3);if(s<=0){e.innerHTML="<b>É hoje, ou já aconteceu 🎉</b>";return}var v=[["dias",Math.floor(s/86400)],["horas",Math.floor(s%86400/3600)],["min",Math.floor(s%3600/60)],["seg",s%60]];e.innerHTML=v.map(function(x){return"<div><b>"+x[1]+"</b><small>"+x[0]+"</small></div>"}).join("")}tk();setInterval(tk,1000)}';
+ +(API?'<form class="bf" style="width:100%;text-align:left" onsubmit="return rv(event)"><label>Seu nome<input id="rn" maxlength="80" required autocomplete="name"></label><label>Telefone ou e-mail (opcional)<input id="rc" maxlength="120"></label><label>Acompanhantes<select id="rx"><option value="">Vou sozinho(a)</option>'+[1,2,3,4,5].map(n=>'<option>+'+n+' acompanhante'+(n>1?'s':'')+'</option>').join('')+'</select></label><small id="rm"></small><button class="cta" type="submit" style="border:0;width:100%;cursor:pointer;font-size:16px">✅ Confirmar presença</button></form>':'')+'<div class="bts">'+(API?'':'<a class="bt pr" href="'+wa('Olá! Confirmo minha presença em '+p.name+'.')+'"'+RL+'><span>✅ Confirmar presença</span><i>›</i></a>')+'<a class="bt" href="'+wa('Olá! Não poderei comparecer a '+p.name+'.')+'"'+RL+'><span>❌ Não poderei ir</span><i>›</i></a>'+(cal?'<a class="bt" href="'+cal+'"'+RL+'><span>📅 Adicionar à agenda</span><i>›</i></a>':'')+(mapU?'<a class="bt" href="'+mapU+'"'+RL+'><span>🧭 Como chegar</span><i>›</i></a>':'')+lnk+'</div>'+(G.length?'<div class="gl sm">'+G.slice(0,6).map(u=>'<img src="'+esc(u)+'" alt="" '+zm+'>').join('')+'</div>':'')+'</div></main>';
+ extra='function rv(ev){ev.preventDefault();var n=document.getElementById("rn").value.trim();if(!n)return false;var m=document.getElementById("rm");m.textContent="Enviando…";ct({type:"rsvp",n:n,c:document.getElementById("rc").value,x:document.getElementById("rx").value},function(ok){if(ok){document.querySelector(".bf").innerHTML="<div style=\\"text-align:center;font-size:18px\\"><div style=\\"font-size:44px\\">🎉</div><b>Presença confirmada!</b><br>Obrigado, "+n.replace(/[<>&"]/g,"")+". Te esperamos lá.</div>"}else{m.textContent="Não consegui enviar agora. Tente de novo."}});return false}var e=document.getElementById("cd");if(e){var t=+e.getAttribute("data-t");function tk(){var s=Math.floor((t-Date.now())/1e3);if(s<=0){e.innerHTML="<b>É hoje, ou já aconteceu 🎉</b>";return}var v=[["dias",Math.floor(s/86400)],["horas",Math.floor(s%86400/3600)],["min",Math.floor(s%3600/60)],["seg",s%60]];e.innerHTML=v.map(function(x){return"<div><b>"+x[1]+"</b><small>"+x[0]+"</small></div>"}).join("")}tk();setInterval(tk,1000)}';
 }
 const css='*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:"Plus Jakarta Sans",system-ui,sans-serif;color:#0f172a;background:#f6f7fb;line-height:1.55;-webkit-font-smoothing:antialiased}body.dk{background:#0b0f1a;color:#e8ecf6}img{max-width:100%}a{color:inherit;text-decoration:none}h1,h2,h3{margin:0;line-height:1.15}'
 +'.av{width:112px;height:112px;border-radius:50%;object-fit:cover;border:4px solid #fff;box-shadow:0 14px 34px -12px #0006;background:#fff}.av.em{display:grid;place-items:center;font-size:52px;background:linear-gradient(135deg,var(--c),var(--d))}'
@@ -451,7 +485,7 @@ const css='*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;fon
 +'.iv{min-height:100vh;display:grid;place-items:center;padding:28px 14px;background:linear-gradient(160deg,color-mix(in srgb,var(--d) 75%,#000),color-mix(in srgb,var(--c) 55%,#000)),var(--cv,none);background-size:cover;background-attachment:fixed}.ic{width:100%;max-width:520px;background:#fffffff2;color:#0f172a;border-radius:32px;padding:34px 24px;text-align:center;display:flex;flex-direction:column;gap:16px;align-items:center;box-shadow:0 40px 90px -30px #000a}.dk .ic{background:#0f1526f2;color:#fff}.pre{color:var(--c);font-weight:800;letter-spacing:.1em;text-transform:uppercase;font-size:12px}.ic h1{font-size:clamp(30px,8vw,44px)}.dtb{display:grid;gap:2px}.dtb b{font-size:19px}.dtb span{color:var(--c);font-weight:800;font-size:18px}#cd{display:flex;gap:10px;justify-content:center}#cd div{background:linear-gradient(135deg,var(--c),var(--d));color:#fff;border-radius:16px;padding:10px 12px;min-width:62px}#cd b{display:block;font-size:24px}#cd small{font-size:11px;opacity:.9}.tl{width:100%;text-align:left;border-left:3px solid var(--c);padding-left:16px;display:grid;gap:12px}.tl p{margin:2px 0 0;opacity:.8;font-size:14px}'
 +'.rs{display:grid;grid-template-columns:300px 1fr;min-height:100vh}.rs aside{background:linear-gradient(180deg,color-mix(in srgb,var(--d) 78%,#000),color-mix(in srgb,var(--c) 65%,#000));color:#fff;padding:36px 22px;display:grid;gap:22px;align-content:start}.rs .sdb{text-align:center}.rs .sdb h1{font-size:24px;margin-top:12px}.rs .sdb .sl{color:#fff;font-size:15px}.rs h3{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.8;margin-bottom:10px}.rs aside .ib,.rs aside .bt{background:#ffffff1f;border-color:#ffffff2e;color:#fff;box-shadow:none;margin-bottom:8px}.rs aside .ch span{background:#ffffff1f;border-color:#ffffff2e;color:#fff;box-shadow:none}.rs aside .bt i{color:#fff}.rs main{max-width:none;padding:10px 3vw}.tl.big{gap:18px}.tl.big b{font-size:17px}@media(max-width:800px){.rs{grid-template-columns:1fr}}@media print{.rs aside{-webkit-print-color-adjust:exact;print-color-adjust:exact}}.cn{position:sticky;top:0;z-index:5;display:flex;gap:8px;overflow-x:auto;padding:12px 5vw;background:#f6f7fbf2;backdrop-filter:blur(8px)}.dk .cn{background:#0b0f1af2}.cn a{white-space:nowrap;background:#fff;border:1px solid #0f172a14;border-radius:99px;padding:8px 16px;font-weight:700;font-size:14px}.dk .cn a,.dk .mi,.dk .bf{background:#141b2d;border-color:#ffffff14}.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}.mi{display:flex;gap:14px;background:#fff;border:1px solid #0f172a12;border-radius:22px;padding:12px;box-shadow:0 14px 30px -22px #0f172a77}.mi img,.me{width:96px;height:96px;border-radius:16px;object-fit:cover;flex:none}.me{display:grid;place-items:center;font-size:40px;background:color-mix(in srgb,var(--c) 14%,transparent)}.mt{flex:1;min-width:0;display:flex;flex-direction:column}.mt p{margin:3px 0;font-size:13px;opacity:.75}.mp2{display:flex;justify-content:space-between;align-items:center;margin-top:auto;gap:8px}.mp2 strong{color:var(--c);font-size:17px}.pd{background:linear-gradient(135deg,var(--c),var(--d));color:#fff;font-weight:800;padding:8px 18px;border-radius:99px;font-size:14px}.bf{display:grid;gap:12px;background:#fff;border:1px solid #0f172a12;border-radius:24px;padding:22px;box-shadow:0 20px 44px -26px #0f172a77}.bf label{display:grid;gap:5px;font-weight:700;font-size:13px}.bf input,.bf select{font:inherit;padding:12px;border-radius:12px;border:1px solid #cbd5e1;background:#fff;color:#0f172a;width:100%}.bf small{opacity:.7;color:inherit}#bm{color:#dc2626;opacity:1;font-weight:700}.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}'
 +'footer{text-align:center;color:#94a3b8;font-size:12px;padding:30px 16px}#zm{position:fixed;inset:0;z-index:80;background:#000d;display:grid;place-items:center;cursor:zoom-out;padding:16px}#zm[hidden]{display:none}#zm img{max-height:100%;border-radius:14px}@media(max-width:600px){.ph{padding:50px 6vw 56px}.av{width:92px;height:92px}}';
-const js='function zm(e){var o=document.getElementById("zm"),i=new Image();i.src=e.src;o.innerHTML="";o.appendChild(i);o.hidden=false}'+extra;
+const js='var API='+JSON.stringify(API)+';function zm(e){var o=document.getElementById("zm"),i=new Image();i.src=e.src;o.innerHTML="";o.appendChild(i);o.hidden=false}function ct(o,cb){if(!API){cb&&cb(false);return}fetch(API+"/api/contact",{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(o)}).then(function(r){cb&&cb(r.ok)}).catch(function(){cb&&cb(false)})}document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a)return;var h=a.getAttribute("href")||"";if(h.charAt(0)==="#")return;try{parent.postMessage({ap:1,l:(a.textContent||"").replace(/[›]/g,"").replace(/\\s+/g," ").trim().slice(0,30)},"*")}catch(x){}});'+extra;
 const csp='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data: https:; style-src \'unsafe-inline\' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src \'unsafe-inline\'; base-uri \'none\'; form-action \'none\''+(API?'; connect-src '+API:'')+'">';
 return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'+csp+'<meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(p.name)+'</title><meta name="description" content="'+esc(p.slogan||p.about)+'"><meta property="og:title" content="'+esc(p.name)+'"><meta property="og:description" content="'+esc(p.slogan||p.about)+'"><meta name="theme-color" content="'+c+'"><link rel="icon" href="data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">'+emo+'</text></svg>')+'"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"><style>:root{--c:'+c+';--d:'+d+'}'+css+'</style></head><body class="'+(dk?'dk':'')+'">'+body+(g==='presentation'||g==='invite'?'':foot)+'<div id="zm" hidden onclick="this.hidden=true"></div><script>'+js+'<\/script></body></html>'}
 function siteHTML(p,y){
@@ -497,7 +531,8 @@ const sel=p.items.map(x=>'<option>'+esc(x.n)+'</option>').join('');
 const contact='<section class="s" id="contato" style="max-width:720px"><div class="kk">Contato</div><h2>'+(g==='landing'?'Peça um orçamento':'Fale com a gente')+'</h2><form class="cf rv" onsubmit="return cf(event)"><input id="cn" placeholder="Seu nome" maxlength="80" required autocomplete="name"><select id="ci" aria-label="Assunto"><option value="">Assunto / interesse</option>'+sel+'<option>Outro assunto</option></select><textarea id="cm2" rows="3" maxlength="400" placeholder="Sua mensagem"></textarea><button class="go" type="submit">Enviar no WhatsApp</button><small>Seus dados são usados apenas para montar a mensagem enviada ao WhatsApp do negócio.</small></form></section>';
 const ld='<script type="application/ld+json">'+JSON.stringify(Object.assign({'@context':'https://schema.org','@type':'LocalBusiness',name:p.name,description:p.slogan,telephone:'+'+ph},p.addr?{address:p.addr}:{},p.hours?{openingHours:p.hours}:{})).replace(/</g,'\\u003c')+'<\/script>';
 const ico='<link rel="icon" href="data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">'+n.e+'</text></svg>')+'"><meta name="theme-color" content="'+c+'">';
-const csp='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data: https:; frame-src https://www.google.com; style-src \'unsafe-inline\' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src \'unsafe-inline\'; base-uri \'none\'; form-action \'none\'">';
+const API2=(x=>/^https?:\/\/[a-z0-9.:-]+$/.test(x)?x:'')(typeof window==='undefined'?'':(window.__SITE_ID?location.origin:(window.__ROOT&&p.slug?'https://'+p.slug+'.'+window.__ROOT:'')));
+const csp='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data: https:; frame-src https://www.google.com; style-src \'unsafe-inline\' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src \'unsafe-inline\'; base-uri \'none\'; form-action \'none\''+(API2?'; connect-src '+API2:'')+'">';
 const css=`*{box-sizing:border-box;margin:0}html{scroll-behavior:smooth}body{font:16px/1.6 'Plus Jakarta Sans',system-ui,sans-serif;color:#0f172a;background:#fff;overflow-x:hidden}a{text-decoration:none;color:inherit}
 nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;padding:12px 5vw;background:#ffffffb8;backdrop-filter:blur(14px);border-bottom:1px solid #0f172a12}
 .br{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;margin-right:auto}.lg,.lgm{width:38px;height:38px;border-radius:12px;object-fit:cover;display:grid;place-items:center;background:linear-gradient(135deg,var(--c),var(--d));font-size:20px}
@@ -555,7 +590,7 @@ body.el h1,body.el h2,body.el .pb h3{font-family:Georgia,'Playfair Display',seri
 @media(max-width:700px){nav{flex-wrap:wrap}.mn{display:block}nav .lk{display:none;width:100%;order:9;padding:8px 0;font-size:16px}body.mo nav .lk{display:block}}
 .dk .cf input,.dk .cf select,.dk .cf textarea,.dk .pn select,.dk .pn textarea{background:#0b0f1a;border-color:#ffffff22;color:#fff}.dk .pmi{background:linear-gradient(135deg,color-mix(in srgb,var(--c) 30%,#121826),color-mix(in srgb,var(--d) 30%,#121826))}.dk .qt button{background:#ffffff18;color:#fff}.dk #pm .pn{background:#121826;color:#fff}
 `;
-const js='const D='+data+',G="'+g+'";'+`
+const js='var __API='+JSON.stringify(API2)+';const D='+data+',G="'+g+'";'+`
 const R=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;","'":"&#39;"}[m]));
 const cl=t=>String(t||"").replace(/[\\u0000-\\u001f\\u007f]/g," ").trim();
@@ -581,7 +616,7 @@ function sheet(){const s=document.getElementById("sh");s.hidden=!s.hidden;if(!s.
 function send(){const n=cl(document.getElementById("nm").value).slice(0,80),k=Object.keys(C),er=document.getElementById("er"),m=mode(),a=cl(document.getElementById("ad").value).slice(0,200),py=document.getElementById("py").value,ob=cl(document.getElementById("ob").value).slice(0,300),tc=cl(document.getElementById("tc").value).slice(0,10);
 if(!k.length){er.textContent="Adicione ao menos 1 item.";return}if(!n){er.textContent="Informe seu nome.";return}if(m==="entrega"&&!a){er.textContent="Informe o endereço de entrega.";return}if(D.min&&sub()<D.min){er.textContent="Pedido mínimo: "+R(D.min)+".";return}er.textContent="";
 const d=disc(),f=fee();wa("*Novo pedido - "+D.name+"*\\n"+k.map(function(i){return C[i]+"x "+nmk(i)+" - "+R(C[i]*D.items[i.split("|")[0]].p)}).join("\\n")+"\\n\\nSubtotal: "+R(sub())+(d?"\\nCupom "+D.cup.c+" (-"+d+"%)":"")+(f?"\\nEntrega: "+R(f):"")+"\\n*Total: "+R(tot())+"*\\nPagamento: "+py+(py==="Dinheiro"&&tc?" (troco para "+tc+")":"")+"\\n"+(m==="entrega"?"Entrega em: "+a:"Retirada no local")+"\\nCliente: "+n+(ob?"\\nObs: "+ob:"")+(window.ISOPEN===false?"\\n(Pedido feito fora do horário de atendimento)":""))}
-function cf(e){e.preventDefault();const n=cl(document.getElementById("cn").value).slice(0,80),i=document.getElementById("ci").value,m=cl(document.getElementById("cm2").value).slice(0,400);if(!n)return false;wa("Olá! Meu nome é "+n+"."+(i?"\\nAssunto: "+i:"")+(m?"\\n"+m:""));return false}
+function cf(e){e.preventDefault();const n=cl(document.getElementById("cn").value).slice(0,80),i=document.getElementById("ci").value,m=cl(document.getElementById("cm2").value).slice(0,400);if(!n)return false;if(__API)try{fetch(__API+"/api/contact",{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify({type:"msg",n:n,x:i||"",m:m})}).catch(function(){})}catch(x){}wa("Olá! Meu nome é "+n+"."+(i?"\\nAssunto: "+i:"")+(m?"\\n"+m:""));return false}
 function det(i){const x=D.items[i],c=document.querySelectorAll(".pc")[i],im=c&&c.querySelector(".im img");PI=i;PQ=1;document.getElementById("pmc").innerHTML="<div class=pmi>"+(im?"<img src=\\""+im.src+"\\" alt=\\"\\">":"<span>"+E(x.e)+"</span>")+"</div><h3>"+E(x.n)+"</h3><div class=pr>"+(x.p>0?R(x.p):"Consulte")+"</div>"+(x.d?"<p class=ds2>"+E(x.d)+"</p>":"")+(x.v.length?"<select id=pv aria-label=Opções>"+x.v.map(function(o){return "<option>"+E(o)+"</option>"}).join("")+"</select>":"")+(G==="landing"?"":"<div class=qt><button onclick=pq(-1)>−</button><b id=pn>1</b><button onclick=pq(1)>+</button></div>")+"<button class=go onclick=pa()>"+(G==="ecommerce"?"Adicionar ao carrinho":G==="catalog"?"Pedir no WhatsApp":"Saber mais")+"</button><button class=cl onclick=pc()>Fechar</button>";document.getElementById("pm").hidden=false;try{document.querySelector("#pmc .go").focus()}catch(e){}}
 function pq(d){PQ=Math.min(Math.max(PQ+d,1),20);document.getElementById("pn").textContent=PQ}
 function pa(){const v=document.getElementById("pv");addv(PI,v?v.value:"",PQ);pc()}
@@ -611,6 +646,1255 @@ return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'+csp+'<me
 addEventListener('message',e=>{if(e.data&&e.data.ap===2&&e.source===$('#fr').contentWindow)PY=e.data.y|0});
 S=S.map(sane);store();route();
 try{recents()}catch(e){}
+/* QR Code generator - Copyright (c) 2009 Kazuhiko Arase, MIT license (http://www.opensource.org/licenses/mit-license.php). "QR Code" is a registered trademark of DENSO WAVE INCORPORATED. */
+(function(){var M={},C={};function R(n){n=n.replace("./","");if(!C[n]){var m={exports:{}};M[n](m,m.exports,R);C[n]=m.exports}return C[n]}
+M["QRMode"]=function(module,exports,require){module.exports = {
+    MODE_NUMBER :       1 << 0,
+    MODE_ALPHA_NUM :    1 << 1,
+    MODE_8BIT_BYTE :    1 << 2,
+    MODE_KANJI :        1 << 3
+};
+
+};
+M["QRErrorCorrectLevel"]=function(module,exports,require){module.exports = {
+	L : 1,
+	M : 0,
+	Q : 3,
+	H : 2
+};
+
+
+};
+M["QRMaskPattern"]=function(module,exports,require){module.exports = {
+	PATTERN000 : 0,
+	PATTERN001 : 1,
+	PATTERN010 : 2,
+	PATTERN011 : 3,
+	PATTERN100 : 4,
+	PATTERN101 : 5,
+	PATTERN110 : 6,
+	PATTERN111 : 7
+};
+
+};
+M["QRMath"]=function(module,exports,require){var QRMath = {
+
+	glog : function(n) {
+	
+		if (n < 1) {
+			throw new Error("glog(" + n + ")");
+		}
+		
+		return QRMath.LOG_TABLE[n];
+	},
+	
+	gexp : function(n) {
+	
+		while (n < 0) {
+			n += 255;
+		}
+	
+		while (n >= 256) {
+			n -= 255;
+		}
+	
+		return QRMath.EXP_TABLE[n];
+	},
+	
+	EXP_TABLE : new Array(256),
+	
+	LOG_TABLE : new Array(256)
+
+};
+	
+for (var i = 0; i < 8; i++) {
+	QRMath.EXP_TABLE[i] = 1 << i;
+}
+for (var i = 8; i < 256; i++) {
+	QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4]
+		^ QRMath.EXP_TABLE[i - 5]
+		^ QRMath.EXP_TABLE[i - 6]
+		^ QRMath.EXP_TABLE[i - 8];
+}
+for (var i = 0; i < 255; i++) {
+	QRMath.LOG_TABLE[QRMath.EXP_TABLE[i] ] = i;
+}
+
+module.exports = QRMath;
+
+};
+M["QRPolynomial"]=function(module,exports,require){var QRMath = require('./QRMath');
+
+function QRPolynomial(num, shift) {
+	if (num.length === undefined) {
+		throw new Error(num.length + "/" + shift);
+	}
+
+	var offset = 0;
+
+	while (offset < num.length && num[offset] === 0) {
+		offset++;
+	}
+
+	this.num = new Array(num.length - offset + shift);
+	for (var i = 0; i < num.length - offset; i++) {
+		this.num[i] = num[i + offset];
+	}
+}
+
+QRPolynomial.prototype = {
+
+	get : function(index) {
+		return this.num[index];
+	},
+	
+	getLength : function() {
+		return this.num.length;
+	},
+	
+	multiply : function(e) {
+	
+		var num = new Array(this.getLength() + e.getLength() - 1);
+	
+		for (var i = 0; i < this.getLength(); i++) {
+			for (var j = 0; j < e.getLength(); j++) {
+				num[i + j] ^= QRMath.gexp(QRMath.glog(this.get(i) ) + QRMath.glog(e.get(j) ) );
+			}
+		}
+	
+		return new QRPolynomial(num, 0);
+	},
+	
+	mod : function(e) {
+	
+		if (this.getLength() - e.getLength() < 0) {
+			return this;
+		}
+	
+		var ratio = QRMath.glog(this.get(0) ) - QRMath.glog(e.get(0) );
+	
+		var num = new Array(this.getLength() );
+		
+		for (var i = 0; i < this.getLength(); i++) {
+			num[i] = this.get(i);
+		}
+		
+		for (var x = 0; x < e.getLength(); x++) {
+			num[x] ^= QRMath.gexp(QRMath.glog(e.get(x) ) + ratio);
+		}
+	
+		// recursive call
+		return new QRPolynomial(num, 0).mod(e);
+	}
+};
+
+module.exports = QRPolynomial;
+
+};
+M["QRBitBuffer"]=function(module,exports,require){function QRBitBuffer() {
+	this.buffer = [];
+	this.length = 0;
+}
+
+QRBitBuffer.prototype = {
+
+	get : function(index) {
+		var bufIndex = Math.floor(index / 8);
+		return ( (this.buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+	},
+	
+	put : function(num, length) {
+		for (var i = 0; i < length; i++) {
+			this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+		}
+	},
+	
+	getLengthInBits : function() {
+		return this.length;
+	},
+	
+	putBit : function(bit) {
+	
+		var bufIndex = Math.floor(this.length / 8);
+		if (this.buffer.length <= bufIndex) {
+			this.buffer.push(0);
+		}
+	
+		if (bit) {
+			this.buffer[bufIndex] |= (0x80 >>> (this.length % 8) );
+		}
+	
+		this.length++;
+	}
+};
+
+module.exports = QRBitBuffer;
+
+};
+M["QR8bitByte"]=function(module,exports,require){var QRMode = require('./QRMode');
+
+function QR8bitByte(data) {
+	this.mode = QRMode.MODE_8BIT_BYTE;
+	this.data = data;
+}
+
+QR8bitByte.prototype = {
+
+	getLength : function() {
+		return this.data.length;
+	},
+	
+	write : function(buffer) {
+		for (var i = 0; i < this.data.length; i++) {
+			// not JIS ...
+			buffer.put(this.data.charCodeAt(i), 8);
+		}
+	}
+};
+
+module.exports = QR8bitByte;
+
+};
+M["QRRSBlock"]=function(module,exports,require){var QRErrorCorrectLevel = require('./QRErrorCorrectLevel');
+
+function QRRSBlock(totalCount, dataCount) {
+	this.totalCount = totalCount;
+	this.dataCount  = dataCount;
+}
+
+QRRSBlock.RS_BLOCK_TABLE = [
+
+	// L
+	// M
+	// Q
+	// H
+
+	// 1
+	[1, 26, 19],
+	[1, 26, 16],
+	[1, 26, 13],
+	[1, 26, 9],
+	
+	// 2
+	[1, 44, 34],
+	[1, 44, 28],
+	[1, 44, 22],
+	[1, 44, 16],
+
+	// 3
+	[1, 70, 55],
+	[1, 70, 44],
+	[2, 35, 17],
+	[2, 35, 13],
+
+	// 4		
+	[1, 100, 80],
+	[2, 50, 32],
+	[2, 50, 24],
+	[4, 25, 9],
+	
+	// 5
+	[1, 134, 108],
+	[2, 67, 43],
+	[2, 33, 15, 2, 34, 16],
+	[2, 33, 11, 2, 34, 12],
+	
+	// 6
+	[2, 86, 68],
+	[4, 43, 27],
+	[4, 43, 19],
+	[4, 43, 15],
+	
+	// 7		
+	[2, 98, 78],
+	[4, 49, 31],
+	[2, 32, 14, 4, 33, 15],
+	[4, 39, 13, 1, 40, 14],
+	
+	// 8
+	[2, 121, 97],
+	[2, 60, 38, 2, 61, 39],
+	[4, 40, 18, 2, 41, 19],
+	[4, 40, 14, 2, 41, 15],
+	
+	// 9
+	[2, 146, 116],
+	[3, 58, 36, 2, 59, 37],
+	[4, 36, 16, 4, 37, 17],
+	[4, 36, 12, 4, 37, 13],
+	
+	// 10		
+	[2, 86, 68, 2, 87, 69],
+	[4, 69, 43, 1, 70, 44],
+	[6, 43, 19, 2, 44, 20],
+	[6, 43, 15, 2, 44, 16],
+
+	// 11
+	[4, 101, 81],
+	[1, 80, 50, 4, 81, 51],
+	[4, 50, 22, 4, 51, 23],
+	[3, 36, 12, 8, 37, 13],
+
+	// 12
+	[2, 116, 92, 2, 117, 93],
+	[6, 58, 36, 2, 59, 37],
+	[4, 46, 20, 6, 47, 21],
+	[7, 42, 14, 4, 43, 15],
+
+	// 13
+	[4, 133, 107],
+	[8, 59, 37, 1, 60, 38],
+	[8, 44, 20, 4, 45, 21],
+	[12, 33, 11, 4, 34, 12],
+
+	// 14
+	[3, 145, 115, 1, 146, 116],
+	[4, 64, 40, 5, 65, 41],
+	[11, 36, 16, 5, 37, 17],
+	[11, 36, 12, 5, 37, 13],
+
+	// 15
+	[5, 109, 87, 1, 110, 88],
+	[5, 65, 41, 5, 66, 42],
+	[5, 54, 24, 7, 55, 25],
+	[11, 36, 12],
+
+	// 16
+	[5, 122, 98, 1, 123, 99],
+	[7, 73, 45, 3, 74, 46],
+	[15, 43, 19, 2, 44, 20],
+	[3, 45, 15, 13, 46, 16],
+
+	// 17
+	[1, 135, 107, 5, 136, 108],
+	[10, 74, 46, 1, 75, 47],
+	[1, 50, 22, 15, 51, 23],
+	[2, 42, 14, 17, 43, 15],
+
+	// 18
+	[5, 150, 120, 1, 151, 121],
+	[9, 69, 43, 4, 70, 44],
+	[17, 50, 22, 1, 51, 23],
+	[2, 42, 14, 19, 43, 15],
+
+	// 19
+	[3, 141, 113, 4, 142, 114],
+	[3, 70, 44, 11, 71, 45],
+	[17, 47, 21, 4, 48, 22],
+	[9, 39, 13, 16, 40, 14],
+
+	// 20
+	[3, 135, 107, 5, 136, 108],
+	[3, 67, 41, 13, 68, 42],
+	[15, 54, 24, 5, 55, 25],
+	[15, 43, 15, 10, 44, 16],
+
+	// 21
+	[4, 144, 116, 4, 145, 117],
+	[17, 68, 42],
+	[17, 50, 22, 6, 51, 23],
+	[19, 46, 16, 6, 47, 17],
+
+	// 22
+	[2, 139, 111, 7, 140, 112],
+	[17, 74, 46],
+	[7, 54, 24, 16, 55, 25],
+	[34, 37, 13],
+
+	// 23
+	[4, 151, 121, 5, 152, 122],
+	[4, 75, 47, 14, 76, 48],
+	[11, 54, 24, 14, 55, 25],
+	[16, 45, 15, 14, 46, 16],
+
+	// 24
+	[6, 147, 117, 4, 148, 118],
+	[6, 73, 45, 14, 74, 46],
+	[11, 54, 24, 16, 55, 25],
+	[30, 46, 16, 2, 47, 17],
+
+	// 25
+	[8, 132, 106, 4, 133, 107],
+	[8, 75, 47, 13, 76, 48],
+	[7, 54, 24, 22, 55, 25],
+	[22, 45, 15, 13, 46, 16],
+
+	// 26
+	[10, 142, 114, 2, 143, 115],
+	[19, 74, 46, 4, 75, 47],
+	[28, 50, 22, 6, 51, 23],
+	[33, 46, 16, 4, 47, 17],
+
+	// 27
+	[8, 152, 122, 4, 153, 123],
+	[22, 73, 45, 3, 74, 46],
+	[8, 53, 23, 26, 54, 24],
+	[12, 45, 15, 28, 46, 16],
+
+	// 28
+	[3, 147, 117, 10, 148, 118],
+	[3, 73, 45, 23, 74, 46],
+	[4, 54, 24, 31, 55, 25],
+	[11, 45, 15, 31, 46, 16],
+
+	// 29
+	[7, 146, 116, 7, 147, 117],
+	[21, 73, 45, 7, 74, 46],
+	[1, 53, 23, 37, 54, 24],
+	[19, 45, 15, 26, 46, 16],
+
+	// 30
+	[5, 145, 115, 10, 146, 116],
+	[19, 75, 47, 10, 76, 48],
+	[15, 54, 24, 25, 55, 25],
+	[23, 45, 15, 25, 46, 16],
+
+	// 31
+	[13, 145, 115, 3, 146, 116],
+	[2, 74, 46, 29, 75, 47],
+	[42, 54, 24, 1, 55, 25],
+	[23, 45, 15, 28, 46, 16],
+
+	// 32
+	[17, 145, 115],
+	[10, 74, 46, 23, 75, 47],
+	[10, 54, 24, 35, 55, 25],
+	[19, 45, 15, 35, 46, 16],
+
+	// 33
+	[17, 145, 115, 1, 146, 116],
+	[14, 74, 46, 21, 75, 47],
+	[29, 54, 24, 19, 55, 25],
+	[11, 45, 15, 46, 46, 16],
+
+	// 34
+	[13, 145, 115, 6, 146, 116],
+	[14, 74, 46, 23, 75, 47],
+	[44, 54, 24, 7, 55, 25],
+	[59, 46, 16, 1, 47, 17],
+
+	// 35
+	[12, 151, 121, 7, 152, 122],
+	[12, 75, 47, 26, 76, 48],
+	[39, 54, 24, 14, 55, 25],
+	[22, 45, 15, 41, 46, 16],
+
+	// 36
+	[6, 151, 121, 14, 152, 122],
+	[6, 75, 47, 34, 76, 48],
+	[46, 54, 24, 10, 55, 25],
+	[2, 45, 15, 64, 46, 16],
+
+	// 37
+	[17, 152, 122, 4, 153, 123],
+	[29, 74, 46, 14, 75, 47],
+	[49, 54, 24, 10, 55, 25],
+	[24, 45, 15, 46, 46, 16],
+
+	// 38
+	[4, 152, 122, 18, 153, 123],
+	[13, 74, 46, 32, 75, 47],
+	[48, 54, 24, 14, 55, 25],
+	[42, 45, 15, 32, 46, 16],
+
+	// 39
+	[20, 147, 117, 4, 148, 118],
+	[40, 75, 47, 7, 76, 48],
+	[43, 54, 24, 22, 55, 25],
+	[10, 45, 15, 67, 46, 16],
+
+	// 40
+	[19, 148, 118, 6, 149, 119],
+	[18, 75, 47, 31, 76, 48],
+	[34, 54, 24, 34, 55, 25],
+	[20, 45, 15, 61, 46, 16]
+];
+
+QRRSBlock.getRSBlocks = function(typeNumber, errorCorrectLevel) {
+	
+	var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
+	
+	if (rsBlock === undefined) {
+		throw new Error("bad rs block @ typeNumber:" + typeNumber + "/errorCorrectLevel:" + errorCorrectLevel);
+	}
+
+	var length = rsBlock.length / 3;
+	
+	var list = [];
+	
+	for (var i = 0; i < length; i++) {
+
+		var count = rsBlock[i * 3 + 0];
+		var totalCount = rsBlock[i * 3 + 1];
+		var dataCount  = rsBlock[i * 3 + 2];
+
+		for (var j = 0; j < count; j++) {
+			list.push(new QRRSBlock(totalCount, dataCount) );	
+		}
+	}
+	
+	return list;
+};
+
+QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
+
+	switch(errorCorrectLevel) {
+	case QRErrorCorrectLevel.L :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+	case QRErrorCorrectLevel.M :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+	case QRErrorCorrectLevel.Q :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+	case QRErrorCorrectLevel.H :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+	default :
+		return undefined;
+	}
+};
+
+module.exports = QRRSBlock;
+
+};
+M["QRUtil"]=function(module,exports,require){var QRMode = require('./QRMode');
+var QRPolynomial = require('./QRPolynomial');
+var QRMath = require('./QRMath');
+var QRMaskPattern = require('./QRMaskPattern');
+
+var QRUtil = {
+
+    PATTERN_POSITION_TABLE : [
+        [],
+        [6, 18],
+        [6, 22],
+        [6, 26],
+        [6, 30],
+        [6, 34],
+        [6, 22, 38],
+        [6, 24, 42],
+        [6, 26, 46],
+        [6, 28, 50],
+        [6, 30, 54],        
+        [6, 32, 58],
+        [6, 34, 62],
+        [6, 26, 46, 66],
+        [6, 26, 48, 70],
+        [6, 26, 50, 74],
+        [6, 30, 54, 78],
+        [6, 30, 56, 82],
+        [6, 30, 58, 86],
+        [6, 34, 62, 90],
+        [6, 28, 50, 72, 94],
+        [6, 26, 50, 74, 98],
+        [6, 30, 54, 78, 102],
+        [6, 28, 54, 80, 106],
+        [6, 32, 58, 84, 110],
+        [6, 30, 58, 86, 114],
+        [6, 34, 62, 90, 118],
+        [6, 26, 50, 74, 98, 122],
+        [6, 30, 54, 78, 102, 126],
+        [6, 26, 52, 78, 104, 130],
+        [6, 30, 56, 82, 108, 134],
+        [6, 34, 60, 86, 112, 138],
+        [6, 30, 58, 86, 114, 142],
+        [6, 34, 62, 90, 118, 146],
+        [6, 30, 54, 78, 102, 126, 150],
+        [6, 24, 50, 76, 102, 128, 154],
+        [6, 28, 54, 80, 106, 132, 158],
+        [6, 32, 58, 84, 110, 136, 162],
+        [6, 26, 54, 82, 110, 138, 166],
+        [6, 30, 58, 86, 114, 142, 170]
+    ],
+
+    G15 : (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0),
+    G18 : (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0),
+    G15_MASK : (1 << 14) | (1 << 12) | (1 << 10)    | (1 << 4) | (1 << 1),
+
+    getBCHTypeInfo : function(data) {
+        var d = data << 10;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
+            d ^= (QRUtil.G15 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) ) );    
+        }
+        return ( (data << 10) | d) ^ QRUtil.G15_MASK;
+    },
+
+    getBCHTypeNumber : function(data) {
+        var d = data << 12;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
+            d ^= (QRUtil.G18 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) ) );    
+        }
+        return (data << 12) | d;
+    },
+
+    getBCHDigit : function(data) {
+
+        var digit = 0;
+
+        while (data !== 0) {
+            digit++;
+            data >>>= 1;
+        }
+
+        return digit;
+    },
+
+    getPatternPosition : function(typeNumber) {
+        return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1];
+    },
+
+    getMask : function(maskPattern, i, j) {
+        
+        switch (maskPattern) {
+            
+        case QRMaskPattern.PATTERN000 : return (i + j) % 2 === 0;
+        case QRMaskPattern.PATTERN001 : return i % 2 === 0;
+        case QRMaskPattern.PATTERN010 : return j % 3 === 0;
+        case QRMaskPattern.PATTERN011 : return (i + j) % 3 === 0;
+        case QRMaskPattern.PATTERN100 : return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 === 0;
+        case QRMaskPattern.PATTERN101 : return (i * j) % 2 + (i * j) % 3 === 0;
+        case QRMaskPattern.PATTERN110 : return ( (i * j) % 2 + (i * j) % 3) % 2 === 0;
+        case QRMaskPattern.PATTERN111 : return ( (i * j) % 3 + (i + j) % 2) % 2 === 0;
+
+        default :
+            throw new Error("bad maskPattern:" + maskPattern);
+        }
+    },
+
+    getErrorCorrectPolynomial : function(errorCorrectLength) {
+
+        var a = new QRPolynomial([1], 0);
+
+        for (var i = 0; i < errorCorrectLength; i++) {
+            a = a.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0) );
+        }
+
+        return a;
+    },
+
+    getLengthInBits : function(mode, type) {
+
+        if (1 <= type && type < 10) {
+
+            // 1 - 9
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 10;
+            case QRMode.MODE_ALPHA_NUM  : return 9;
+            case QRMode.MODE_8BIT_BYTE  : return 8;
+            case QRMode.MODE_KANJI      : return 8;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 27) {
+
+            // 10 - 26
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 12;
+            case QRMode.MODE_ALPHA_NUM  : return 11;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 10;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 41) {
+
+            // 27 - 40
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 14;
+            case QRMode.MODE_ALPHA_NUM  : return 13;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 12;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else {
+            throw new Error("type:" + type);
+        }
+    },
+
+    getLostPoint : function(qrCode) {
+        
+        var moduleCount = qrCode.getModuleCount();
+        var lostPoint = 0;
+        var row = 0; 
+        var col = 0;
+
+        
+        // LEVEL1
+        
+        for (row = 0; row < moduleCount; row++) {
+
+            for (col = 0; col < moduleCount; col++) {
+
+                var sameCount = 0;
+                var dark = qrCode.isDark(row, col);
+
+                for (var r = -1; r <= 1; r++) {
+
+                    if (row + r < 0 || moduleCount <= row + r) {
+                        continue;
+                    }
+
+                    for (var c = -1; c <= 1; c++) {
+
+                        if (col + c < 0 || moduleCount <= col + c) {
+                            continue;
+                        }
+
+                        if (r === 0 && c === 0) {
+                            continue;
+                        }
+
+                        if (dark === qrCode.isDark(row + r, col + c) ) {
+                            sameCount++;
+                        }
+                    }
+                }
+
+                if (sameCount > 5) {
+                    lostPoint += (3 + sameCount - 5);
+                }
+            }
+        }
+
+        // LEVEL2
+
+        for (row = 0; row < moduleCount - 1; row++) {
+            for (col = 0; col < moduleCount - 1; col++) {
+                var count = 0;
+                if (qrCode.isDark(row,     col    ) ) count++;
+                if (qrCode.isDark(row + 1, col    ) ) count++;
+                if (qrCode.isDark(row,     col + 1) ) count++;
+                if (qrCode.isDark(row + 1, col + 1) ) count++;
+                if (count === 0 || count === 4) {
+                    lostPoint += 3;
+                }
+            }
+        }
+
+        // LEVEL3
+
+        for (row = 0; row < moduleCount; row++) {
+            for (col = 0; col < moduleCount - 6; col++) {
+                if (qrCode.isDark(row, col) && 
+                        !qrCode.isDark(row, col + 1) && 
+                         qrCode.isDark(row, col + 2) && 
+                         qrCode.isDark(row, col + 3) && 
+                         qrCode.isDark(row, col + 4) && 
+                        !qrCode.isDark(row, col + 5) && 
+                         qrCode.isDark(row, col + 6) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount - 6; row++) {
+                if (qrCode.isDark(row, col) &&
+                        !qrCode.isDark(row + 1, col) &&
+                         qrCode.isDark(row + 2, col) &&
+                         qrCode.isDark(row + 3, col) &&
+                         qrCode.isDark(row + 4, col) &&
+                        !qrCode.isDark(row + 5, col) &&
+                         qrCode.isDark(row + 6, col) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        // LEVEL4
+        
+        var darkCount = 0;
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount; row++) {
+                if (qrCode.isDark(row, col) ) {
+                    darkCount++;
+                }
+            }
+        }
+        
+        var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+        lostPoint += ratio * 10;
+
+        return lostPoint;       
+    }
+
+};
+
+module.exports = QRUtil;
+
+};
+M["index"]=function(module,exports,require){//---------------------------------------------------------------------
+// QRCode for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//   http://www.opensource.org/licenses/mit-license.php
+//
+// The word "QR Code" is registered trademark of 
+// DENSO WAVE INCORPORATED
+//   http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+// Modified to work in node for this project (and some refactoring)
+//---------------------------------------------------------------------
+
+var QR8bitByte = require('./QR8bitByte');
+var QRUtil = require('./QRUtil');
+var QRPolynomial = require('./QRPolynomial');
+var QRRSBlock = require('./QRRSBlock');
+var QRBitBuffer = require('./QRBitBuffer');
+
+function QRCode(typeNumber, errorCorrectLevel) {
+	this.typeNumber = typeNumber;
+	this.errorCorrectLevel = errorCorrectLevel;
+	this.modules = null;
+	this.moduleCount = 0;
+	this.dataCache = null;
+	this.dataList = [];
+}
+
+QRCode.prototype = {
+	
+	addData : function(data) {
+		var newData = new QR8bitByte(data);
+		this.dataList.push(newData);
+		this.dataCache = null;
+	},
+	
+	isDark : function(row, col) {
+		if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
+			throw new Error(row + "," + col);
+		}
+		return this.modules[row][col];
+	},
+
+	getModuleCount : function() {
+		return this.moduleCount;
+	},
+	
+	make : function() {
+		// Calculate automatically typeNumber if provided is < 1
+		if (this.typeNumber < 1 ){
+			var typeNumber = 1;
+			for (typeNumber = 1; typeNumber < 40; typeNumber++) {
+				var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, this.errorCorrectLevel);
+
+				var buffer = new QRBitBuffer();
+				var totalDataCount = 0;
+				for (var i = 0; i < rsBlocks.length; i++) {
+					totalDataCount += rsBlocks[i].dataCount;
+				}
+
+				for (var x = 0; x < this.dataList.length; x++) {
+					var data = this.dataList[x];
+					buffer.put(data.mode, 4);
+					buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+					data.write(buffer);
+				}
+				if (buffer.getLengthInBits() <= totalDataCount * 8)
+					break;
+			}
+			this.typeNumber = typeNumber;
+		}
+		this.makeImpl(false, this.getBestMaskPattern() );
+	},
+	
+	makeImpl : function(test, maskPattern) {
+		
+		this.moduleCount = this.typeNumber * 4 + 17;
+		this.modules = new Array(this.moduleCount);
+		
+		for (var row = 0; row < this.moduleCount; row++) {
+			
+			this.modules[row] = new Array(this.moduleCount);
+			
+			for (var col = 0; col < this.moduleCount; col++) {
+				this.modules[row][col] = null;//(col + row) % 3;
+			}
+		}
+	
+		this.setupPositionProbePattern(0, 0);
+		this.setupPositionProbePattern(this.moduleCount - 7, 0);
+		this.setupPositionProbePattern(0, this.moduleCount - 7);
+		this.setupPositionAdjustPattern();
+		this.setupTimingPattern();
+		this.setupTypeInfo(test, maskPattern);
+		
+		if (this.typeNumber >= 7) {
+			this.setupTypeNumber(test);
+		}
+	
+		if (this.dataCache === null) {
+			this.dataCache = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
+		}
+	
+		this.mapData(this.dataCache, maskPattern);
+	},
+
+	setupPositionProbePattern : function(row, col)  {
+		
+		for (var r = -1; r <= 7; r++) {
+			
+			if (row + r <= -1 || this.moduleCount <= row + r) continue;
+			
+			for (var c = -1; c <= 7; c++) {
+				
+				if (col + c <= -1 || this.moduleCount <= col + c) continue;
+				
+				if ( (0 <= r && r <= 6 && (c === 0 || c === 6) ) || 
+                     (0 <= c && c <= 6 && (r === 0 || r === 6) ) || 
+                     (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+					this.modules[row + r][col + c] = true;
+				} else {
+					this.modules[row + r][col + c] = false;
+				}
+			}		
+		}		
+	},
+	
+	getBestMaskPattern : function() {
+	
+		var minLostPoint = 0;
+		var pattern = 0;
+	
+		for (var i = 0; i < 8; i++) {
+			
+			this.makeImpl(true, i);
+	
+			var lostPoint = QRUtil.getLostPoint(this);
+	
+			if (i === 0 || minLostPoint >  lostPoint) {
+				minLostPoint = lostPoint;
+				pattern = i;
+			}
+		}
+	
+		return pattern;
+	},
+	
+	createMovieClip : function(target_mc, instance_name, depth) {
+	
+		var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
+		var cs = 1;
+	
+		this.make();
+
+		for (var row = 0; row < this.modules.length; row++) {
+			
+			var y = row * cs;
+			
+			for (var col = 0; col < this.modules[row].length; col++) {
+	
+				var x = col * cs;
+				var dark = this.modules[row][col];
+			
+				if (dark) {
+					qr_mc.beginFill(0, 100);
+					qr_mc.moveTo(x, y);
+					qr_mc.lineTo(x + cs, y);
+					qr_mc.lineTo(x + cs, y + cs);
+					qr_mc.lineTo(x, y + cs);
+					qr_mc.endFill();
+				}
+			}
+		}
+		
+		return qr_mc;
+	},
+
+	setupTimingPattern : function() {
+		
+		for (var r = 8; r < this.moduleCount - 8; r++) {
+			if (this.modules[r][6] !== null) {
+				continue;
+			}
+			this.modules[r][6] = (r % 2 === 0);
+		}
+	
+		for (var c = 8; c < this.moduleCount - 8; c++) {
+			if (this.modules[6][c] !== null) {
+				continue;
+			}
+			this.modules[6][c] = (c % 2 === 0);
+		}
+	},
+	
+	setupPositionAdjustPattern : function() {
+	
+		var pos = QRUtil.getPatternPosition(this.typeNumber);
+		
+		for (var i = 0; i < pos.length; i++) {
+		
+			for (var j = 0; j < pos.length; j++) {
+			
+				var row = pos[i];
+				var col = pos[j];
+				
+				if (this.modules[row][col] !== null) {
+					continue;
+				}
+				
+				for (var r = -2; r <= 2; r++) {
+				
+					for (var c = -2; c <= 2; c++) {
+					
+						if (Math.abs(r) === 2 || 
+                            Math.abs(c) === 2 ||
+                            (r === 0 && c === 0) ) {
+							this.modules[row + r][col + c] = true;
+						} else {
+							this.modules[row + r][col + c] = false;
+						}
+					}
+				}
+			}
+		}
+	},
+	
+	setupTypeNumber : function(test) {
+	
+		var bits = QRUtil.getBCHTypeNumber(this.typeNumber);
+        var mod;
+	
+		for (var i = 0; i < 18; i++) {
+			mod = (!test && ( (bits >> i) & 1) === 1);
+			this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
+		}
+	
+		for (var x = 0; x < 18; x++) {
+			mod = (!test && ( (bits >> x) & 1) === 1);
+			this.modules[x % 3 + this.moduleCount - 8 - 3][Math.floor(x / 3)] = mod;
+		}
+	},
+	
+	setupTypeInfo : function(test, maskPattern) {
+	
+		var data = (this.errorCorrectLevel << 3) | maskPattern;
+		var bits = QRUtil.getBCHTypeInfo(data);
+        var mod;
+	
+		// vertical		
+		for (var v = 0; v < 15; v++) {
+	
+			mod = (!test && ( (bits >> v) & 1) === 1);
+	
+			if (v < 6) {
+				this.modules[v][8] = mod;
+			} else if (v < 8) {
+				this.modules[v + 1][8] = mod;
+			} else {
+				this.modules[this.moduleCount - 15 + v][8] = mod;
+			}
+		}
+	
+		// horizontal
+		for (var h = 0; h < 15; h++) {
+	
+			mod = (!test && ( (bits >> h) & 1) === 1);
+			
+			if (h < 8) {
+				this.modules[8][this.moduleCount - h - 1] = mod;
+			} else if (h < 9) {
+				this.modules[8][15 - h - 1 + 1] = mod;
+			} else {
+				this.modules[8][15 - h - 1] = mod;
+			}
+		}
+	
+		// fixed module
+		this.modules[this.moduleCount - 8][8] = (!test);
+	
+	},
+	
+	mapData : function(data, maskPattern) {
+		
+		var inc = -1;
+		var row = this.moduleCount - 1;
+		var bitIndex = 7;
+		var byteIndex = 0;
+		
+		for (var col = this.moduleCount - 1; col > 0; col -= 2) {
+	
+			if (col === 6) col--;
+	
+			while (true) {
+	
+				for (var c = 0; c < 2; c++) {
+					
+					if (this.modules[row][col - c] === null) {
+						
+						var dark = false;
+	
+						if (byteIndex < data.length) {
+							dark = ( ( (data[byteIndex] >>> bitIndex) & 1) === 1);
+						}
+	
+						var mask = QRUtil.getMask(maskPattern, row, col - c);
+	
+						if (mask) {
+							dark = !dark;
+						}
+						
+						this.modules[row][col - c] = dark;
+						bitIndex--;
+	
+						if (bitIndex === -1) {
+							byteIndex++;
+							bitIndex = 7;
+						}
+					}
+				}
+								
+				row += inc;
+	
+				if (row < 0 || this.moduleCount <= row) {
+					row -= inc;
+					inc = -inc;
+					break;
+				}
+			}
+		}
+		
+	}
+
+};
+
+QRCode.PAD0 = 0xEC;
+QRCode.PAD1 = 0x11;
+
+QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
+	
+	var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
+	
+	var buffer = new QRBitBuffer();
+	
+	for (var i = 0; i < dataList.length; i++) {
+		var data = dataList[i];
+		buffer.put(data.mode, 4);
+		buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+		data.write(buffer);
+	}
+
+	// calc num max data.
+	var totalDataCount = 0;
+	for (var x = 0; x < rsBlocks.length; x++) {
+		totalDataCount += rsBlocks[x].dataCount;
+	}
+
+	if (buffer.getLengthInBits() > totalDataCount * 8) {
+		throw new Error("code length overflow. (" + 
+            buffer.getLengthInBits() + 
+            ">" +  
+            totalDataCount * 8 + 
+            ")");
+	}
+
+	// end code
+	if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+		buffer.put(0, 4);
+	}
+
+	// padding
+	while (buffer.getLengthInBits() % 8 !== 0) {
+		buffer.putBit(false);
+	}
+
+	// padding
+	while (true) {
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD0, 8);
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD1, 8);
+	}
+
+	return QRCode.createBytes(buffer, rsBlocks);
+};
+
+QRCode.createBytes = function(buffer, rsBlocks) {
+
+	var offset = 0;
+	
+	var maxDcCount = 0;
+	var maxEcCount = 0;
+	
+	var dcdata = new Array(rsBlocks.length);
+	var ecdata = new Array(rsBlocks.length);
+	
+	for (var r = 0; r < rsBlocks.length; r++) {
+
+		var dcCount = rsBlocks[r].dataCount;
+		var ecCount = rsBlocks[r].totalCount - dcCount;
+
+		maxDcCount = Math.max(maxDcCount, dcCount);
+		maxEcCount = Math.max(maxEcCount, ecCount);
+		
+		dcdata[r] = new Array(dcCount);
+		
+		for (var i = 0; i < dcdata[r].length; i++) {
+			dcdata[r][i] = 0xff & buffer.buffer[i + offset];
+		}
+		offset += dcCount;
+		
+		var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+		var rawPoly = new QRPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+		var modPoly = rawPoly.mod(rsPoly);
+		ecdata[r] = new Array(rsPoly.getLength() - 1);
+		for (var x = 0; x < ecdata[r].length; x++) {
+            var modIndex = x + modPoly.getLength() - ecdata[r].length;
+			ecdata[r][x] = (modIndex >= 0)? modPoly.get(modIndex) : 0;
+		}
+
+	}
+	
+	var totalCodeCount = 0;
+	for (var y = 0; y < rsBlocks.length; y++) {
+		totalCodeCount += rsBlocks[y].totalCount;
+	}
+
+	var data = new Array(totalCodeCount);
+	var index = 0;
+
+	for (var z = 0; z < maxDcCount; z++) {
+		for (var s = 0; s < rsBlocks.length; s++) {
+			if (z < dcdata[s].length) {
+				data[index++] = dcdata[s][z];
+			}
+		}
+	}
+
+	for (var xx = 0; xx < maxEcCount; xx++) {
+		for (var t = 0; t < rsBlocks.length; t++) {
+			if (xx < ecdata[t].length) {
+				data[index++] = ecdata[t][xx];
+			}
+		}
+	}
+
+	return data;
+
+};
+
+module.exports = QRCode;
+
+};
+window.QRC=R("index");})();
+
 /* ===== painéis (hospedado): Admin e Cliente ===== */
 const U=window.__U||{role:'admin',name:'Admin'},ROOTD=window.__ROOT||'';
 let HM=null,CL=null;
@@ -623,31 +1907,39 @@ function HX(v){['home','cli'].forEach(x=>{const t=document.getElementById('t-'+x
 function chart(ser){const W=560,H=150,P=24,mx=Math.max(4,...ser.map(a=>Math.max(a.v,a.c))),bw=(W-P*2)/ser.length;let b='',l='',lb='';ser.forEach((a,i)=>{const x=P+i*bw,h=a.v/mx*(H-30);b+='<rect x="'+(x+3)+'" y="'+(H-20-h)+'" width="'+(bw-6)+'" height="'+Math.max(h,0)+'" rx="4" fill="var(--br)" opacity=".85"><title>'+dmy(a.d)+': '+a.v+' visitas, '+a.c+' cliques</title></rect>';const cy=H-20-a.c/mx*(H-30);l+=(i?'L':'M')+(x+bw/2)+' '+cy;if(i%2===0)lb+='<text x="'+(x+bw/2)+'" y="'+(H-4)+'" font-size="9" text-anchor="middle" fill="var(--mu)">'+dmy(a.d)+'</text>'});return '<div class="chs"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Visitas e cliques nos últimos 14 dias"><line x1="'+P+'" x2="'+(W-P)+'" y1="'+(H-20)+'" y2="'+(H-20)+'" stroke="var(--bd)"/>'+b+'<path d="'+l+'" fill="none" stroke="#db2777" stroke-width="2.5" stroke-linejoin="round"/>'+lb+'</svg></div><div class="lgd"><span><i style="background:var(--br)"></i>Visitas</span><span><i style="background:#db2777"></i>Cliques no WhatsApp</span></div>'}
 const kp=(a,b,c)=>'<div class="kp"><small>'+a+'</small><b>'+b+'</b>'+(c?'<i>'+c+'</i>':'')+'</div>';
 const ctr=(c,v)=>v?Math.round(c/v*100)+'%':'—';
-function sitesTbl(sites,adm){return sites.length?'<div class="tw"><table class="tbl"><tr><th>Site</th><th>Formato</th>'+(adm?'<th>Dono</th>':'')+'<th>Visitas 30d</th><th>Cliques 30d</th><th>Taxa</th><th></th></tr>'+sites.map(s=>'<tr><td><b>'+esc(s.name)+'</b><div class="mu"><a href="'+esc(surl(s))+'" target="_blank" rel="noopener">'+esc(s.slug)+'.'+esc(ROOTD)+'</a></div></td><td>'+esc(GLN[s.goal]||s.goal)+'</td>'+(adm?'<td>'+esc(s.ownerName||'—')+'</td>':'')+'<td>'+n0(s.v30)+'</td><td>'+n0(s.c30)+'</td><td>'+ctr(s.c30,s.v30)+'</td><td><div class="rowa">'+((adm?s.owner==='admin':true)?'<button class="btn sm" onclick="openSite(\''+s.id+'\')">Editar</button>':'')+'<button class="btn sm" onclick="navigator.clipboard.writeText(\''+esc(surl(s))+'\').then(()=>toast(\'Link copiado\'))">Copiar link</button>'+(adm?'<button class="btn dg sm" onclick="unpubSite(\''+s.id+'\')">Despublicar</button>':'')+'</div></td></tr>').join('')+'</table></div>':'<div class="mu" style="padding:10px 0">Nenhum site publicado ainda.</div>'}
+function sitesTbl(sites,adm){return sites.length?'<div class="tw"><table class="tbl"><tr><th>Site</th><th>Formato</th>'+(adm?'<th>Dono</th>':'')+'<th>Visitas 30d</th><th>Cliques 30d</th><th>Taxa</th><th></th></tr>'+sites.map(s=>'<tr><td><b>'+esc(s.name)+'</b><div class="mu"><a href="'+esc(surl(s))+'" target="_blank" rel="noopener">'+esc(s.slug)+'.'+esc(ROOTD)+'</a></div></td><td>'+esc(GLN[s.goal]||s.goal)+'</td>'+(adm?'<td>'+esc(s.ownerName||'—')+'</td>':'')+'<td>'+n0(s.v30)+'</td><td>'+n0(s.c30)+'</td><td>'+ctr(s.c30,s.v30)+'</td><td><div class="rowa">'+((adm?s.owner==='admin':true)?'<button class="btn sm" onclick="openSite(\''+s.id+'\')">Editar</button>':'')+'<button class="btn sm" onclick="navigator.clipboard.writeText(\''+esc(surl(s))+'\').then(()=>toast(\'Link copiado\'))">Copiar link</button><button class="btn sm" onclick="qrOpen(\''+esc(surl(s))+'\',\''+esc(s.slug)+'\')">▦ QR</button><button class="btn sm" onclick="siteDet(\''+s.id+'\')">📈 Detalhes</button><button class="btn sm" onclick="domOpen(\''+s.id+'\')">🌐 Domínio</button>'+(adm?'<button class="btn dg sm" onclick="unpubSite(\''+s.id+'\')">Despublicar</button>':'')+'</div></td></tr>').join('')+'</table></div>':'<div class="mu" style="padding:10px 0">Nenhum site publicado ainda.</div>'}
 function bkTbl(b){return b.length?'<div class="tw"><table class="tbl"><tr><th>Quando</th><th>Cliente</th><th>Serviço</th><th>Site</th></tr>'+b.slice(0,10).map(x=>'<tr><td><b>'+esc(x.d.split('-').reverse().join('/'))+' '+esc(x.t)+'</b></td><td>'+esc(x.n)+'</td><td>'+esc(x.s||'—')+'</td><td>'+esc(x.siteName)+'</td></tr>').join('')+'</table></div>':'<div class="mu" style="padding:10px 0">Nenhum agendamento futuro.</div>'}
 async function openSite(id){try{const r=await fx('/api/db',{op:'get',path:'sites/'+id});if(!r.exists)throw 0;const p=sane(JSON.parse(r.data.j));p.pub=1;p.pubAt=r.data.at||Date.now();const d=await fx('/api/db',{op:'all',coll:'sites'}).catch(()=>({docs:[]})),m=(d.docs||[]).find(x=>x.id===id);if(m)p.slug=m.data.slug;edit(p)}catch(e){toast('Não consegui abrir este site')}}
 async function unpubSite(id){if(!confirm('Despublicar este site? O endereço sai do ar.'))return;try{await fx('/api/admin/sites/unpublish',{id});toast('Site despublicado');loadHome();if(!$('#v-cli').hidden)loadCli()}catch(e){toast('Falha ao despublicar')}}
-async function loadHome(){const box=$('#hm');try{if(U.role==='admin'){const o=await fx('/api/admin/overview');HM=o;renderAdmin(o)}else{const [me,st]=await Promise.all([fx('/api/me'),fx('/api/stats')]);HM={me,st};renderClient(me,st)}}catch(e){box.innerHTML='<div class="cd">Não consegui carregar o painel agora. <button class="btn sm" onclick="loadHome()">Tentar de novo</button></div>'}}
+async function loadHome(){const box=$('#hm');try{if(U.role==='admin'){const o=await fx('/api/admin/overview');HM=o;renderAdmin(o)}else{const [me,st]=await Promise.all([fx('/api/me'),fx('/api/stats')]);HM={me,st};renderClient(me,st)}loadMsgs()}catch(e){box.innerHTML='<div class="cd">Não consegui carregar o painel agora. <button class="btn sm" onclick="loadHome()">Tentar de novo</button></div>'}}
 function renderClient(me,st){const t=st.totals,pl=me.plan,pc=Math.min(100,Math.round(me.usage.sites/pl.maxSites*100)),full=me.usage.sites>=pl.maxSites;
 $('#hm').innerHTML='<div class="cd" style="margin-top:6px"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:220px"><h2 style="margin:0">Olá, '+esc(me.name)+' 👋</h2><div class="mu">'+esc(me.email)+'</div></div><span class="pill">Plano '+esc(pl.name)+(pl.until&&!pl.expired?' · até '+new Date(pl.until).toLocaleDateString('pt-BR'):'')+'</span>'+(me.canBuy?'<a class="btn sm" href="/planos">'+(pl.expired?'Renovar plano':'Renovar / mudar de plano')+'</a>':'')+'<button class="btn pri" onclick="show(\'create\')">＋ Criar novo site</button></div><div style="margin-top:12px"><div class="mu">Sites publicados: <b>'+me.usage.sites+' de '+pl.maxSites+'</b>'+(full?' · limite do plano atingido. Fale com o suporte para ampliar.':'')+'</div><div class="bar2" style="margin-top:4px"><div style="width:'+pc+'%"></div></div></div></div>'
 +(pl.expired?'<div class="ban">⏰ Seu plano <b>'+esc((pl.wanted&&{basic:'Básico',pro:'Pro',premium:'Premium'}[pl.wanted])||'')+'</b> venceu e a conta voltou ao limite do plano Gratuito. Seus sites continuam no ar. '+(me.canBuy?'<a href="/planos">Renovar agora</a>':'Fale com o suporte para renovar.')+'</div>':(pl.until&&pl.until-Date.now()<5*864e5?'<div class="ban">⏰ Seu plano vence em '+Math.max(0,Math.ceil((pl.until-Date.now())/864e5))+' dia(s). '+(me.canBuy?'<a href="/planos">Renovar agora</a>':'')+'</div>':''))+(me.tmp?'<div class="ban">🔐 Você está usando uma senha temporária. Troque agora em <a href="#conta" onclick="document.getElementById(\'acc\').scrollIntoView({behavior:\'smooth\'});return false">Minha conta</a>.</div>':'')
-+'<div class="kg">'+kp('Sites no ar',t.sites)+kp('Visitas (7 dias)',n0(t.views7),n0(t.views30)+' em 30 dias')+kp('Cliques no WhatsApp',n0(t.clicks7),n0(t.clicks30)+' em 30 dias')+kp('Taxa de clique',ctr(t.clicks30,t.views30),'cliques ÷ visitas (30d)')+kp('Agendamentos futuros',t.bookings)+'</div>'
++(me.trialOk?'<div class="ban">🎁 Experimente o plano <b>Pro por 7 dias</b>, grátis e sem cartão. <button class="btn pri sm" onclick="trialGo()">Ativar teste grátis</button></div>':'')+'<div class="kg">'+kp('Sites no ar',t.sites)+kp('Visitas (7 dias)',n0(t.views7),n0(t.views30)+' em 30 dias')+kp('Cliques no WhatsApp',n0(t.clicks7),n0(t.clicks30)+' em 30 dias')+kp('Taxa de clique',ctr(t.clicks30,t.views30),'cliques ÷ visitas (30d)')+kp('Agendamentos futuros',t.bookings)+'</div>'
 +'<div class="hg"><div class="cd"><h3 style="margin:0 0 6px">Visitas e cliques · últimos 14 dias</h3>'+chart(st.series)+(st.capped?'<div class="mu">Mostrando os eventos mais recentes.</div>':'')+'</div><div class="cd"><h3 style="margin:0 0 6px">Próximos agendamentos</h3>'+bkTbl(st.bookings)+'</div></div>'
 +'<div class="cd" style="margin-top:14px"><h3 style="margin:0 0 6px">Meus sites publicados</h3>'+sitesTbl(st.sites,false)+'<div class="mu" style="margin-top:8px">Rascunhos ficam em <a href="#" onclick="show(\'dash\');return false">Meus sites</a>. Publique para o site entrar no ar.</div></div>'
++'<div class="cd" style="margin-top:14px"><h3 style="margin:0 0 6px">📬 Mensagens, presenças e contatos</h3><div id="msgs" class="mu">Carregando…</div></div>'
++(me.ref?'<div class="cd" style="margin-top:14px"><h3 style="margin:0 0 6px">🎁 Indique e ganhe 7 dias grátis</h3><div class="mu">Quando alguém criar conta pelo seu link e assinar um plano, você ganha +7 dias.</div><div class="rowa" style="margin-top:8px"><input class="inp" readonly value="'+esc(me.ref.link)+'" style="flex:1;min-width:200px" onclick="this.select()"><button class="btn sm" onclick="navigator.clipboard.writeText(\''+esc(me.ref.link)+'\').then(()=>toast(\'Link copiado\'))">Copiar</button><a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent('Crie seu site em minutos com o AutoPage e teste o plano Pro por 7 dias: '+me.ref.link)+'">Enviar no WhatsApp</a></div><div class="mu" style="margin-top:6px">'+me.ref.signups+' cadastro(s) · '+me.ref.rewards+' recompensa(s) recebida(s)</div></div>':'')
 +'<div class="cd" id="acc" style="margin-top:14px"><h3 style="margin:0 0 6px">Minha conta</h3><div class="g2"><div><label class="l" style="margin-top:0">Nome</label><input class="inp" id="ac-n" value="'+esc(me.name)+'" maxlength="80"></div><div><label class="l" style="margin-top:0">E-mail</label><input class="inp" value="'+esc(me.email)+'" disabled></div></div><button class="btn sm" style="margin-top:8px" onclick="accSave(0)">Salvar nome</button><div class="g2"><div><label class="l">Senha atual</label><input class="inp" type="password" id="ac-o" autocomplete="current-password"></div><div><label class="l">Nova senha (8+ caracteres)</label><input class="inp" type="password" id="ac-p" autocomplete="new-password"></div></div><button class="btn sm" style="margin-top:8px" onclick="accSave(1)">Trocar senha</button></div>'}
+async function trialGo(){try{await fx('/api/trial',{});toast('Teste de 7 dias ativado!');loadHome()}catch(e){toast(e.message||'Falha')}}
 async function accSave(pw){try{if(pw)await fx('/api/account',{oldPassword:$('#ac-o').value,newPassword:$('#ac-p').value});else await fx('/api/account',{name:$('#ac-n').value});toast(pw?'Senha alterada':'Nome salvo');loadHome()}catch(e){toast(e.message||'Falha')}}
 function renderAdmin(o){const k=o.kpi,t=o.totals,top=o.sites.slice().sort((a,b)=>b.v30-a.v30).slice(0,6),pc={};o.clients.forEach(c=>{pc[c.plan.name]=(pc[c.plan.name]||0)+1});
 $('#hm').innerHTML='<div class="cd" style="margin-top:6px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:220px"><h2 style="margin:0">Painel do administrador 🛠️</h2><div class="mu">Visão geral de clientes, sites e resultados</div></div><button class="btn" onclick="show(\'cli\')">👥 Gerenciar clientes</button><button class="btn pri" onclick="show(\'create\')">＋ Criar site</button></div>'
-+'<div class="kg">'+kp('Clientes',k.clients,k.active+' ativos · '+k.blocked+' bloqueados')+kp('Novos (30 dias)',k.new30)+kp('Sites no ar',t.sites)+kp('Visitas (7 dias)',n0(t.views7),n0(t.views30)+' em 30 dias')+kp('Cliques no WhatsApp',n0(t.clicks7),n0(t.clicks30)+' em 30 dias')+kp('Taxa de clique',ctr(t.clicks30,t.views30))+kp('Agendamentos futuros',t.bookings)+kp('Vendas (30 dias)','R$ '+(o.sales.rev30||0).toFixed(2).replace('.',','),o.sales.count30+' pedido(s) pagos · '+o.sales.pending+' aguardando')+kp('IA hoje',k.aiToday+' / '+k.aiLimit,'Banco: '+esc(k.store))+'</div>'
++'<div class="kg">'+kp('Clientes',k.clients,k.active+' ativos · '+k.blocked+' bloqueados')+kp('Novos (30 dias)',k.new30)+kp('Sites no ar',t.sites)+kp('Visitas (7 dias)',n0(t.views7),n0(t.views30)+' em 30 dias')+kp('Cliques no WhatsApp',n0(t.clicks7),n0(t.clicks30)+' em 30 dias')+kp('Taxa de clique',ctr(t.clicks30,t.views30))+kp('Agendamentos futuros',t.bookings)+kp('Vendas (30 dias)','R$ '+(o.sales.rev30||0).toFixed(2).replace('.',','),o.sales.count30+' pedido(s) pagos · '+o.sales.pending+' aguardando')+kp('IA hoje',k.aiToday+' / '+k.aiLimit,'Banco: '+esc(k.store))+kp('E-mail',o.mail?'ativo':'desligado',o.mail?'avisos e recibos':'defina RESEND_API_KEY')+kp('Domínios próprios',o.domains||0,o.signup?'cadastro aberto':'cadastro fechado')+'</div>'
 +'<div class="hg"><div class="cd"><h3 style="margin:0 0 6px">Visitas e cliques · últimos 14 dias</h3>'+chart(o.series)+'</div><div class="cd"><h3 style="margin:0 0 6px">Clientes por plano</h3>'+(Object.keys(pc).length?Object.entries(pc).map(a=>'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd)"><span>'+esc(a[0])+'</span><b>'+a[1]+'</b></div>').join(''):'<div class="mu">Nenhum cliente ainda.</div>')+'<h3 style="margin:14px 0 6px">Últimos clientes</h3>'+(o.clients.slice(0,5).map(c=>'<div style="padding:5px 0"><b>'+esc(c.name)+'</b> <span class="pill '+(c.status==='active'?'ok':'er')+'">'+(c.status==='active'?'ativo':'bloqueado')+'</span><div class="mu">'+esc(c.email)+'</div></div>').join('')||'<div class="mu">—</div>')+'</div></div>'
-+'<div class="hg" style="margin-top:14px"><div class="cd"><h3 style="margin:0 0 6px">Sites com mais visitas (30 dias)</h3>'+sitesTbl(top,true)+'</div><div class="cd"><h3 style="margin:0 0 6px">Próximos agendamentos</h3>'+bkTbl(o.bookings)+'</div></div>'}
++'<div class="hg" style="margin-top:14px"><div class="cd"><h3 style="margin:0 0 6px">Sites com mais visitas (30 dias)</h3>'+sitesTbl(top,true)+'</div><div class="cd"><h3 style="margin:0 0 6px">Próximos agendamentos</h3>'+bkTbl(o.bookings)+'</div></div>'
++'<div class="cd" style="margin-top:14px"><h3 style="margin:0 0 6px">📬 Mensagens, presenças e contatos</h3><div id="msgs" class="mu">Carregando…</div></div>'}
 /* ----- Clientes (admin) ----- */
 async function loadCli(){const box=$('#cl');try{const o=await fx('/api/admin/overview');CL=o;renderCli(o)}catch(e){box.innerHTML='<div class="cd">Não consegui carregar. <button class="btn sm" onclick="loadCli()">Tentar de novo</button></div>'}}
 function renderCli(o){const po=Object.entries(o.plans).map(a=>'<option value="'+a[0]+'">'+esc(a[1].name)+' ('+a[1].maxSites+' site'+(a[1].maxSites>1?'s':'')+')</option>').join('');
 $('#cl').innerHTML='<div class="cd" style="margin-top:6px"><h2 style="margin:0 0 4px">Novo cliente</h2><div class="mu">Gera um acesso com senha temporária. O cliente troca a senha no primeiro login.</div><div class="g2"><div><label class="l">Nome</label><input class="inp" id="nc-n" maxlength="80"></div><div><label class="l">E-mail</label><input class="inp" id="nc-e" type="email"></div></div><div class="g2"><div><label class="l">Plano</label><select class="inp" id="nc-p">'+po+'</select></div><div><label class="l">Observação (opcional)</label><input class="inp" id="nc-o" maxlength="300"></div></div><button class="btn pri" style="margin-top:10px" onclick="newCli()">Criar acesso</button><div id="nc-r"></div></div>'
-+'<div class="cd" style="margin-top:14px"><h2 style="margin:0 0 4px">Vendas dos planos</h2><div class="mu">Página de venda: <code>https://app.'+esc(ROOTD)+'/planos</code> '+(o.mp?'· Mercado Pago <span class="pill ok">conectado</span>':'· Mercado Pago <span class="pill er">não conectado: defina MP_ACCESS_TOKEN no Render</span>')+'</div><div class="kg">'+Object.entries(o.plans).map(a=>'<div class="kp"><small>'+esc(a[1].name)+' · '+a[1].maxSites+' site(s)</small><input class="inp" type="number" min="0" step="0.01" id="pr-'+a[0]+'" placeholder="Preço R$ (vazio = não vender)" value="'+(o.prices[a[0]]||'')+'"></div>').join('')+'</div><div class="rowa"><button class="btn sm" onclick="savePrices()">Salvar preços</button><button class="btn sm" onclick="navigator.clipboard.writeText(\'https://app.'+esc(ROOTD)+'/planos\').then(()=>toast(\'Link copiado\'))">Copiar link de venda</button><<a class="btn sm" href="/api/admin/export">⬇ Baixar backup (JSON)</a></div>'+(o.sales.recent.length?'<div class="tw" style="margin-top:10px"><table class="tbl"><tr><th>Quando</th><th>Comprador</th><th>Plano</th><th>Valor</th><th>Status</th></tr>'+o.sales.recent.map(x=>'<tr><td>'+new Date(x.at).toLocaleDateString('pt-BR')+'</td><td>'+esc(x.name)+'<div class="mu">'+esc(x.email)+'</div></td><td>'+esc((o.plans[x.plan]||{}).name||x.plan)+'</td><td>R$ '+(+x.amount).toFixed(2).replace('.',',')+'</td><td><span class="pill '+(x.status==='paid'?'ok':'')+'">'+(x.status==='paid'?'pago':'aguardando')+'</span></td></tr>').join('')+'</table></div>':'')+'</div>'
++'<div class="cd" style="margin-top:14px"><h2 style="margin:0 0 4px">Vendas dos planos</h2><div class="mu">Página de venda: <code>https://app.'+esc(ROOTD)+'/planos</code> '+(o.mp?'· Mercado Pago <span class="pill ok">conectado</span>':'· Mercado Pago <span class="pill er">não conectado: defina MP_ACCESS_TOKEN no Render</span>')+'</div><div class="kg">'+Object.entries(o.plans).map(a=>'<div class="kp"><small>'+esc(a[1].name)+' · '+a[1].maxSites+' site(s)</small><input class="inp" type="number" min="0" step="0.01" id="pr-'+a[0]+'" placeholder="Preço R$ (vazio = não vender)" value="'+(o.prices[a[0]]||'')+'"></div>').join('')+'</div><div class="rowa"><button class="btn sm" onclick="savePrices()">Salvar preços</button><button class="btn sm" onclick="navigator.clipboard.writeText(\'https://app.'+esc(ROOTD)+'/planos\').then(()=>toast(\'Link copiado\'))">Copiar link de venda</button><a class="btn sm" href="/api/admin/export">⬇ Baixar backup (JSON)</a></div>'+(o.sales.recent.length?'<div class="tw" style="margin-top:10px"><table class="tbl"><tr><th>Quando</th><th>Comprador</th><th>Plano</th><th>Valor</th><th>Status</th></tr>'+o.sales.recent.map(x=>'<tr><td>'+new Date(x.at).toLocaleDateString('pt-BR')+'</td><td>'+esc(x.name)+'<div class="mu">'+esc(x.email)+'</div></td><td>'+esc((o.plans[x.plan]||{}).name||x.plan)+'</td><td>R$ '+(+x.amount).toFixed(2).replace('.',',')+'</td><td><span class="pill '+(x.status==='paid'?'ok':'')+'">'+(x.status==='paid'?'pago':'aguardando')+'</span></td></tr>').join('')+'</table></div>':'')+'</div>'
++'<div class="cd" style="margin-top:14px"><h2 style="margin:0 0 4px">Cupons de desconto</h2><div class="mu">O cliente digita o código na página de planos. O desconto vale para a compra de qualquer plano.</div><div class="g2"><div><label class="l">Código (ex.: LANCAMENTO20)</label><input class="inp" id="cu-c" maxlength="20" style="text-transform:uppercase"></div><div><label class="l">Desconto (%)</label><input class="inp" id="cu-p" type="number" min="1" max="90" value="10"></div></div><div class="g2"><div><label class="l">Limite de usos (0 = sem limite)</label><input class="inp" id="cu-m" type="number" min="0" value="0"></div><div><label class="l">Validade em dias (0 = sem prazo)</label><input class="inp" id="cu-d" type="number" min="0" value="0"></div></div><button class="btn sm" style="margin-top:8px" onclick="cupSave()">Salvar cupom</button>'+((o.coupons||[]).length?'<div class="tw" style="margin-top:10px"><table class="tbl"><tr><th>Código</th><th>Desconto</th><th>Usos</th><th>Validade</th><th></th></tr>'+o.coupons.map(c=>'<tr><td><b>'+esc(c.code)+'</b></td><td>'+c.pct+'%</td><td>'+(c.used||0)+(c.max?' / '+c.max:'')+'</td><td>'+(c.exp?new Date(c.exp).toLocaleDateString('pt-BR'):'sem prazo')+'</td><td><button class="btn dg sm" onclick="cupDel(\''+esc(c.code)+'\')">Excluir</button></td></tr>').join('')+'</table></div>':'')+'</div>'
++'<div class="cd" style="margin-top:14px"><h2 style="margin:0 0 4px">Domínios próprios</h2><div class="mu">Depois que o DNS apontar para o servidor, adicione o domínio também no Render (Settings → Custom Domains) para liberar o HTTPS.</div><div id="doms" class="tw">Carregando…</div></div>'
++'<div class="cd" style="margin-top:14px"><h2 style="margin:0 0 4px">Backups</h2><div class="mu">O app guarda os 3 últimos backups diários no banco'+(o.mail?' e envia o arquivo para o e-mail do administrador.':'. Defina RESEND_API_KEY e ADMIN_EMAIL para receber o arquivo por e-mail.')+'</div><div id="bk" class="tw">Carregando…</div></div>'
++'<div class="cd" style="margin-top:14px"><h2 style="margin:0 0 4px">Atividade recente</h2><div id="aud" class="tw">Carregando…</div></div>'
 +'<div class="cd" style="margin-top:14px"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 style="margin:0;flex:1">Clientes ('+o.clients.length+')</h2><input class="inp" id="cq" placeholder="Buscar por nome ou e-mail" style="max-width:260px" oninput="cliRows()"></div><div class="tw" id="crow"></div></div>'
-+'<div class="cd" style="margin-top:14px"><h2 style="margin:0 0 6px">Todos os sites publicados ('+o.sites.length+')</h2>'+sitesTbl(o.sites,true)+'</div>';cliRows()}
++'<div class="cd" style="margin-top:14px"><h2 style="margin:0 0 6px">Todos os sites publicados ('+o.sites.length+')</h2>'+sitesTbl(o.sites,true)+'</div>';cliRows();loadDoms();loadBk();loadAud()}
 function cliRows(){const q=($('#cq')?$('#cq').value:'').toLowerCase(),po=Object.entries(CL.plans),l=CL.clients.filter(c=>!q||(c.name+' '+c.email).toLowerCase().includes(q));$('#crow').innerHTML=l.length?'<table class="tbl"><tr><th>Cliente</th><th>Plano</th><th>Sites</th><th>Último acesso</th><th>Status</th><th></th></tr>'+l.map(c=>'<tr><td><b>'+esc(c.name)+'</b><div class="mu">'+esc(c.email)+(c.note?' · '+esc(c.note):'')+'</div></td><td><select class="inp" style="padding:4px" onchange="cliUp(\''+c.id+'\',{plan:this.value})">'+po.map(a=>'<option value="'+a[0]+'"'+(a[0]===c.plan.key?' selected':'')+'>'+esc(a[1].name)+'</option>').join('')+'</select></td><td>'+c.sites+' / '+c.plan.maxSites+' <button class="btn sm" title="Alterar limite de sites" onclick="cliMax(\''+c.id+'\','+c.plan.maxSites+')">✎</button></td><td>'+(c.lastLogin?new Date(c.lastLogin).toLocaleDateString('pt-BR'):'nunca')+(c.tmp?' <span class="pill">senha temporária</span>':'')+(c.plan.until?'<div class="mu">'+(c.plan.expired?'plano vencido em ':'plano até ')+new Date(c.plan.until).toLocaleDateString('pt-BR')+'</div>':'')+'</td><td><span class="pill '+(c.status==='active'?'ok':'er')+'">'+(c.status==='active'?'ativo':'bloqueado')+'</span></td><td><div class="rowa"><button class="btn sm" onclick="cliUp(\''+c.id+'\',{status:\''+(c.status==='active'?'blocked':'active')+'\'})">'+(c.status==='active'?'Bloquear':'Ativar')+'</button><button class="btn sm" onclick="cliPw(\''+c.id+'\',\''+esc(c.email)+'\')">Nova senha</button><button class="btn dg sm" onclick="cliDel(\''+c.id+'\')">Excluir</button></div></td></tr>').join('')+'</table>':'<div class="mu" style="padding:10px 0">Nenhum cliente encontrado.</div>'}
 async function savePrices(){const pr={};Object.keys(CL.plans).forEach(k=>{const v=parseFloat($('#pr-'+k).value);if(v>0)pr[k]=v});try{await fx('/api/admin/config',{prices:pr});toast('Preços salvos');loadCli()}catch(e){toast('Falha ao salvar')}}
 function credBox(email,pw,tit){const msg='Seu acesso ao AutoPage.ai\nEndereço: https://app.'+ROOTD+'\nE-mail: '+email+'\nSenha temporária: '+pw+'\nTroque a senha no primeiro acesso.';return '<div class="cr"><b>'+tit+'</b><div style="margin-top:6px">Endereço: <code>https://app.'+esc(ROOTD)+'</code><br>E-mail: <code>'+esc(email)+'</code><br>Senha temporária: <code>'+esc(pw)+'</code></div><div class="mu" style="margin:6px 0">Essa senha aparece só agora. Copie e envie ao cliente.</div><div class="rowa"><button class="btn sm" onclick="navigator.clipboard.writeText('+esc(JSON.stringify(msg)).replace(/&quot;/g,'&quot;')+').then(()=>toast(\'Acesso copiado\'))">Copiar acesso</button><a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(msg)+'">Enviar no WhatsApp</a></div></div>'}
@@ -657,6 +1949,33 @@ async function cliMax(id,cur){const v=prompt('Limite de sites publicados para es
 async function cliPw(id,email){if(!confirm('Gerar uma nova senha temporária para este cliente? A senha atual deixa de valer.'))return;try{const r=await fx('/api/admin/clients/update',{id,resetPassword:true});await loadCli();$('#nc-r').innerHTML=credBox(email,r.password,'🔑 Nova senha gerada');scrollTo(0,0)}catch(e){toast('Falha')}}
 async function cliDel(id){if(!confirm('Excluir este cliente E todos os sites publicados dele? Isso não pode ser desfeito.'))return;try{await fx('/api/admin/clients/delete',{id});toast('Cliente excluído');loadCli()}catch(e){toast('Falha ao excluir')}}
 function lgo(){const f=document.createElement('form');f.method='post';f.action='/logout';document.body.appendChild(f);f.submit()}
+/* ----- recursos extras: modal, QR, detalhes, domínio, versões, mensagens, cupons, backup, atividade ----- */
+function modal(h){mclose();const m=document.createElement('div');m.id='mdl';m.className='mdl';m.innerHTML='<div class="mbx" role="dialog" aria-modal="true">'+h+'</div>';m.onclick=e=>{if(e.target===m)mclose()};document.body.appendChild(m)}
+function mclose(){const m=document.getElementById('mdl');if(m)m.remove()}
+addEventListener('keydown',e=>{if(e.key==='Escape')mclose()});
+function qrPng(url,px){const q=new QRC(-1,0);q.addData(url);q.make();const n=q.getModuleCount(),m=4,sz=Math.max(3,Math.floor((px||520)/(n+2*m))),W=sz*(n+2*m),c=document.createElement('canvas');c.width=c.height=W;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,W);x.fillStyle='#000';for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k))x.fillRect((k+m)*sz,(r+m)*sz,sz,sz);return c.toDataURL('image/png')}
+function qrOpen(url,name){let img;try{img=qrPng(url)}catch(e){toast('Não consegui gerar o QR Code');return}window.__qr={url,img,name:name||'site'};modal('<h3 style="margin:0 0 4px">▦ QR Code do site</h3><div class="mu" style="margin-bottom:10px">Imprima em cartão, balcão ou panfleto. Quem apontar a câmera abre o site.</div><div style="text-align:center"><img src="'+img+'" alt="QR Code de '+esc(url)+'" style="width:260px;max-width:100%;border-radius:12px;background:#fff"></div><div class="mu" style="text-align:center;margin:8px 0;word-break:break-all">'+esc(url)+'</div><div class="rowa" style="justify-content:center"><a class="btn pri sm" download="qr-'+esc(name||'site')+'.png" href="'+img+'">⬇ Baixar PNG</a><button class="btn sm" onclick="qrPrint()">🖨️ Imprimir</button><button class="btn sm" onclick="navigator.clipboard.writeText(__qr.url).then(()=>toast(\'Link copiado\'))">Copiar link</button><button class="btn sm" onclick="mclose()">Fechar</button></div>')}
+function qrPrint(){const f=document.createElement('iframe');f.style.cssText='position:fixed;width:0;height:0;border:0';document.body.appendChild(f);f.contentDocument.write('<body style="text-align:center;font:20px system-ui"><h2>'+esc(__qr.name)+'</h2><img src="'+__qr.img+'" style="width:340px"><p>'+esc(__qr.url)+'</p>');f.contentDocument.close();f.onload=null;setTimeout(()=>{f.contentWindow.focus();f.contentWindow.print();setTimeout(()=>f.remove(),2000)},300)}
+function qrCur(){if(!(P&&P.pub&&P.slug)){toast('Publique o site primeiro');return}qrOpen('https://'+P.slug+'.'+ROOTD,P.slug)}
+async function siteDet(id){modal('<div class="mu">Carregando…</div>');try{const r=await fx('/api/stats/site?id='+encodeURIComponent(id)),cl=r.days.reduce((a,x)=>a+x.c,0),vw=r.days.reduce((a,x)=>a+x.v,0);modal('<h3 style="margin:0 0 8px">📈 Detalhes do site · 30 dias</h3><div class="kg" style="margin:8px 0">'+kp('Visitantes únicos',n0(r.unique30),n0(r.unique7)+' nos últimos 7 dias')+kp('Voltaram ao site',n0(r.returning30),'mais de 1 visita')+kp('Visitas',n0(vw))+kp('Cliques',n0(cl),ctr(cl,vw)+' das visitas')+'</div>'+chart(r.days)+'<h4 style="margin:12px 0 6px">Botões e links mais clicados</h4>'+(r.links.length?r.links.map(l=>'<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bd)"><span>'+esc(l.l)+'</span><b>'+l.c+'</b></div>').join(''):'<div class="mu">Nenhum clique ainda.</div>')+'<div style="margin-top:12px"><button class="btn sm" onclick="mclose()">Fechar</button></div>')}catch(e){modal('<div>Não consegui carregar os detalhes.</div><button class="btn sm" onclick="mclose()">Fechar</button>')}}
+async function domOpen(id){modal('<div class="mu">Carregando…</div>');try{const r=await fx('/api/domains'),d=r.items.find(x=>x.site===id);window.__dsite=id;modal('<h3 style="margin:0 0 4px">🌐 Domínio próprio</h3><div class="mu">Use seu endereço, como <b>meusite.com.br</b>, em vez do endereço padrão. Disponível nos planos pagos.</div>'+(d?'<div class="cr"><b>'+esc(d.host)+'</b> '+(d.ok?'<span class="pill ok">verificado</span>':'<span class="pill">aguardando DNS</span>')+'<div class="mu" style="margin:6px 0">No painel onde você comprou o domínio, crie um registro <b>CNAME</b> apontando para <code>'+esc(r.target)+'</code> (para o domínio raiz, use o ANAME/ALIAS ou o registro A que seu provedor indicar). Depois clique em Verificar. A propagação pode levar de alguns minutos a algumas horas.</div>'+(d.ok?'<div class="mu">Para ativar o HTTPS, avise o suporte para liberar o domínio no servidor.</div>':'')+'<div class="rowa">'+(d.ok?'':'<button class="btn pri sm" onclick="domVerify(\''+esc(d.host)+'\')">Verificar DNS</button>')+'<button class="btn dg sm" onclick="domDel(\''+esc(d.host)+'\')">Remover</button></div></div>':'<label class="l">Seu domínio</label><input class="inp" id="dm-h" placeholder="meusite.com.br" maxlength="100"><div class="rowa" style="margin-top:8px"><button class="btn pri sm" onclick="domSet()">Conectar domínio</button></div>')+'<div style="margin-top:12px"><button class="btn sm" onclick="mclose()">Fechar</button></div>')}catch(e){modal('<div>Não consegui carregar.</div><button class="btn sm" onclick="mclose()">Fechar</button>')}}
+async function domSet(){try{await fx('/api/domain',{site:window.__dsite,domain:$('#dm-h').value});domOpen(window.__dsite)}catch(e){toast(e.message||'Falha')}}
+async function domVerify(h){try{const r=await fx('/api/domain/verify',{domain:h});toast(r.ok?'Domínio verificado!':'O DNS ainda não aponta para o servidor. Tente de novo mais tarde.');domOpen(window.__dsite)}catch(e){toast('Falha ao verificar')}}
+async function domDel(h){if(!confirm('Remover este domínio?'))return;try{await fx('/api/domain/delete',{domain:h});domOpen(window.__dsite)}catch(e){toast('Falha')}}
+async function loadDoms(){const b=$('#doms');if(!b)return;try{const r=await fx('/api/domains');b.innerHTML=r.items.length?'<table class="tbl"><tr><th>Domínio</th><th>Status</th><th>Ação no Render</th><th></th></tr>'+r.items.map(d=>'<tr><td><b>'+esc(d.host)+'</b></td><td><span class="pill '+(d.ok?'ok':'')+'">'+(d.ok?'DNS verificado':'aguardando DNS')+'</span></td><td class="mu">'+(d.ok?'adicionar em Custom Domains (HTTPS)':'—')+'</td><td><button class="btn dg sm" onclick="domAdm(\''+esc(d.host)+'\')">Remover</button></td></tr>').join('')+'</table>':'<div class="mu" style="padding:8px 0">Nenhum domínio próprio ainda.</div>'}catch(e){b.textContent='—'}}
+async function domAdm(h){if(!confirm('Remover '+h+'?'))return;try{await fx('/api/domain/delete',{domain:h});loadDoms()}catch(e){toast('Falha')}}
+async function verOpen(){if(!P||!P.id)return;modal('<div class="mu">Carregando…</div>');try{const r=await fx('/api/versions?site='+encodeURIComponent(P.id));modal('<h3 style="margin:0 0 4px">🕘 Versões publicadas</h3><div class="mu" style="margin-bottom:8px">Cada vez que você publica, a versão anterior é guardada (últimas 6). Restaurar coloca a versão antiga no ar e abre ela no editor.</div>'+(r.items.length?r.items.map(v=>'<div class="li" style="padding:8px 0;display:flex;gap:8px;align-items:center"><div style="flex:1"><b>'+esc(v.name||'Versão')+'</b><div class="mu">'+(v.at?new Date(v.at).toLocaleString('pt-BR'):'')+' · '+v.kb+' KB</div></div><button class="btn sm" onclick="verGo(\''+esc(v.v)+'\')">Restaurar</button></div>').join(''):'<div class="mu">Ainda não há versões anteriores. Elas aparecem depois que você publicar alterações.</div>')+'<div style="margin-top:12px"><button class="btn sm" onclick="mclose()">Fechar</button></div>')}catch(e){modal('<div>Não consegui carregar as versões. Publique o site primeiro.</div><button class="btn sm" onclick="mclose()">Fechar</button>')}}
+async function verGo(v){if(!confirm('Restaurar esta versão? A versão atual também fica guardada.'))return;try{await fx('/api/versions/restore',{site:P.id,v});mclose();toast('Versão restaurada');await openSite(P.id)}catch(e){toast(e.message||'Falha')}}
+const MI={rsvp:'✅ Presença',lead:'📧 Contato',msg:'💬 Mensagem'};
+async function loadMsgs(){const b=$('#msgs');if(!b)return;try{const r=await fx('/api/messages');b.innerHTML=r.items.length?'<div class="rowa" style="margin-bottom:8px"><a class="btn sm" href="/api/messages?csv=1">⬇ Baixar CSV ('+r.total+')</a></div><div class="tw"><table class="tbl"><tr><th>Quando</th><th>Tipo</th><th>Nome / contato</th><th>Mensagem</th><th>Site</th><th></th></tr>'+r.items.slice(0,15).map(m=>{const ph=String(m.c||'').replace(/\D/g,'');return '<tr><td>'+new Date(m.at).toLocaleDateString('pt-BR')+'</td><td>'+(MI[m.type]||m.type)+'</td><td><b>'+esc(m.n)+'</b><div class="mu">'+(ph.length>=10?'<a target="_blank" rel="noopener" href="https://wa.me/'+(ph.length<=11?'55':'')+ph+'">'+esc(m.c)+'</a>':esc(m.c||''))+'</div></td><td>'+esc(m.m||'')+(m.x?'<div class="mu">'+esc(m.x)+'</div>':'')+'</td><td>'+esc(m.siteName)+'</td><td><button class="btn dg sm" onclick="msgDel(\''+m.site+'\',\''+m.id+'\')">✕</button></td></tr>'}).join('')+'</table></div>':'Nenhuma mensagem ainda. Formulários de contato, confirmações de presença e cadastros dos seus sites aparecem aqui.'}catch(e){b.textContent='Não consegui carregar as mensagens.'}}
+async function msgDel(site,id){try{await fx('/api/messages/delete',{site,id});loadMsgs()}catch(e){toast('Falha')}}
+async function cupSave(){try{await fx('/api/admin/coupons',{code:$('#cu-c').value,pct:$('#cu-p').value,max:$('#cu-m').value,days:$('#cu-d').value});toast('Cupom salvo');loadCli()}catch(e){toast(e.message||'Falha')}}
+async function cupDel(c){if(!confirm('Excluir o cupom '+c+'?'))return;try{await fx('/api/admin/coupons/delete',{code:c});loadCli()}catch(e){toast('Falha')}}
+async function loadBk(){const b=$('#bk');if(!b)return;try{const r=await fx('/api/admin/backups');b.innerHTML='<div class="rowa" style="margin:6px 0"><button class="btn sm" onclick="bkRun()">💾 Fazer backup agora</button><a class="btn sm" href="/api/admin/export">⬇ Exportar tudo (JSON)</a></div>'+(r.items.length?'<table class="tbl"><tr><th>Dia</th><th>Tamanho</th><th></th></tr>'+r.items.map(i=>'<tr><td>'+esc(i.day.split('-').reverse().join('/'))+'</td><td>'+Math.round(i.size/1024)+' KB</td><td><a class="btn sm" href="/api/admin/backups/download?d='+esc(i.day)+'">Baixar</a></td></tr>').join('')+'</table>':'<div class="mu">Nenhum backup guardado ainda.</div>')}catch(e){b.textContent='—'}}
+async function bkRun(){try{toast('Gerando backup…');await fx('/api/admin/backups/run',{});toast('Backup criado');loadBk();loadAud()}catch(e){toast('Falha no backup')}}
+const AL={'admin.login':'Login do admin','login.fail':'Tentativa de login falhou','client.create':'Cliente criado','client.update':'Cliente alterado','client.delete':'Cliente excluído','site.unpublish':'Site despublicado','config.prices':'Preços alterados','coupon.save':'Cupom salvo','coupon.delete':'Cupom excluído','order.paid':'Pagamento aprovado','referral.reward':'Indicação premiada','signup':'Novo cadastro','trial.start':'Teste grátis iniciado','domain.set':'Domínio cadastrado','domain.verify':'Domínio verificado','domain.delete':'Domínio removido','backup.run':'Backup','site.restore':'Versão restaurada'};
+async function loadAud(){const b=$('#aud');if(!b)return;try{const r=await fx('/api/admin/audit?limit=40');b.innerHTML=r.items.length?'<table class="tbl"><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Detalhe</th></tr>'+r.items.map(i=>'<tr><td>'+new Date(i.at).toLocaleString('pt-BR')+'</td><td>'+esc(i.who)+'</td><td>'+esc(AL[i.a]||i.a)+'</td><td class="mu">'+esc(i.d)+'</td></tr>').join('')+'</table>':'<div class="mu">Sem atividade registrada.</div>'}catch(e){b.textContent='—'}}
+(function(){const a=document.getElementById('b-qr'),v=document.getElementById('b-ver');if(a)a.hidden=false;if(v)v.hidden=false})();
 (function(){const tabs=document.querySelector('nav.tabs');const adm=U.role==='admin';tabs.insertAdjacentHTML('afterbegin','<button class="t" id="t-home" onclick="show(\'home\')"><span>📊</span><span class="tt">Painel</span></button>');if(adm)tabs.insertAdjacentHTML('beforeend','<button class="t" id="t-cli" onclick="show(\'cli\')"><span>👥</span><span class="tt">Clientes</span></button>');const h=document.getElementById('thb');h.insertAdjacentHTML('afterend','<button class="ib" id="lgb" onclick="lgo()" aria-label="Sair" title="Sair ('+esc(U.name)+')">⎋</button>');if(!/^#site-/.test(location.hash))show('home')})();
 
 </script>
