@@ -26,3 +26,6 @@ Defina `MP_ACCESS_TOKEN` no Render. Na aba **Clientes → Vendas dos planos**, i
 
 ## Currículo → Perfil profissional
 Nos formatos *Perfil profissional* e *Currículo online* é possível enviar o currículo (PDF até 5 MB, Word .docx, TXT ou foto). DOCX/TXT são lidos no navegador; PDF vai para `/api/ai` como `docs` (Gemini ou Claude). A IA só usa o que está no currículo (nunca inventa) e preenche nome, título, resumo, contatos, links, competências e experiência/formação.
+
+## Padrão visual
+Tema, fonte e layout dos sites novos são fixos (padrão: claro, Plus Jakarta Sans, layout dividido) e não variam por segmento. Mudança em "Padrão visual dos novos sites" na tela de criar, ou "Usar este visual como padrão" no editor. Fontes: Plus Jakarta Sans, Inter, Poppins, Playfair Display+Inter, Space Grotesk+Inter.
