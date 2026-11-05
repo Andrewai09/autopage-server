@@ -71,6 +71,33 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/api/admin/clients/update',{method:'POST',cookie:ck,body:{id:cid,status:'active',plan:'pro',resetPassword:true}});const pw2=r.j&&r.j.password;ok('admin reativa, muda plano e reseta senha',r.s===200&&pw2&&r.j.user.plan.key==='pro',r.t);
  r=await rq('/api/admin/clients/delete',{method:'POST',cookie:ck,body:{id:cid}});r=await rq('/',{host:'loja-da-maria.kattalo.online'});ok('excluir cliente remove seus sites',r.s===404,r.s);
  r=await rq('/login',{method:'POST',raw:'email=maria%40ex.com&password='+encodeURIComponent(pw2)});ok('cliente excluído não loga',r.s===401,r.s);
+ // ---- vendas (Mercado Pago mock)
+ process.env.MP_ACCESS_TOKEN='TESTTOKEN';process.env.MP_URL='https://mp.test';const _ff=global.fetch;let lastPref=null,payAmt=null;
+ global.fetch=async(u,o)=>{u=String(u);if(u==='https://mp.test/checkout/preferences'){lastPref=JSON.parse(o.body);return{ok:true,status:201,json:async()=>({id:'pref1',init_point:'https://mp.test/pay/abc'})}}
+  const m=/^https:\/\/mp\.test\/v1\/payments\/(\d+)$/.exec(u);if(m){return{ok:true,status:200,json:async()=>({status:m[1]==='999'?'pending':'approved',external_reference:lastPref&&lastPref.external_reference,transaction_amount:payAmt})}}return _ff(u,o)};
+ r=await rq('/planos');ok('/planos sem preços mostra vendas fechadas',r.s===200&&r.t.includes('Vendas ainda não'),r.s);
+ r=await rq('/api/admin/config',{method:'POST',cookie:ck,body:{prices:{basic:49.9,pro:99,free:10}}});ok('admin define preços (free ignora?)',r.s===200&&r.j.prices.basic===49.9&&r.j.prices.pro===99&&r.j.prices.free===10,r.t);
+ r=await rq('/api/admin/config',{method:'POST',body:{prices:{basic:1}}});ok('config de preços exige admin',r.s===401,r.s);
+ r=await rq('/planos');ok('/planos mostra os planos com preço',r.t.includes('R$ 49,90')&&r.t.includes('R$ 99,00')&&r.t.includes('Pagar com Mercado Pago'),r.s);
+ r=await rq('/api/checkout',{method:'POST',body:{plan:'premium',name:'João',email:'joao@ex.com'}});ok('plano sem preço rejeitado',r.s===400,r.s);
+ r=await rq('/api/checkout',{method:'POST',body:{plan:'basic',name:'João Souza',email:'joao@ex.com'}});ok('checkout cria preferência e devolve a URL',r.s===200&&r.j.url==='https://mp.test/pay/abc'&&lastPref.items[0].unit_price===49.9&&lastPref.payer.email==='joao@ex.com'&&/^[a-f0-9]{16}$/.test(lastPref.external_reference),r.t);
+ const oid=lastPref.external_reference,tok=new URL(lastPref.back_urls.success).searchParams.get('t');
+ r=await rq('/api/order?o='+oid+'&t='+encodeURIComponent(tok));ok('pedido pendente',r.s===200&&r.j.status==='pending',r.t);
+ r=await rq('/api/order?o='+oid+'&t=falso');ok('token inválido 404',r.s===404,r.s);
+ payAmt=10;r=await rq('/mp/webhook?type=payment&data.id=123',{method:'POST'});r=await rq('/api/order?o='+oid+'&t='+encodeURIComponent(tok));ok('valor pago menor não libera',r.j.status==='pending',r.t);
+ r=await rq('/mp/webhook?type=payment&data.id=999',{method:'POST'});r=await rq('/api/order?o='+oid+'&t='+encodeURIComponent(tok));ok('pagamento pendente não libera',r.j.status==='pending',r.t);
+ payAmt=49.9;r=await rq('/mp/webhook',{method:'POST',body:{type:'payment',data:{id:'123'}}});r=await rq('/api/order?o='+oid+'&t='+encodeURIComponent(tok));ok('pagamento aprovado libera o pedido e pede a senha',r.j.status==='paid'&&r.j.needPw===true,r.t);
+ r=await rq('/mp/webhook?type=payment&data.id=123',{method:'POST'});r=await rq('/api/admin/overview',{cookie:ck});const jc=r.j.clients.find(c=>c.email==='joao@ex.com');ok('webhook repetido não duplica; cliente criado no plano Básico com validade',jc&&r.j.clients.filter(c=>c.email==='joao@ex.com').length===1&&jc.plan.key==='basic'&&jc.plan.until>Date.now()+29*864e5&&r.j.sales.count30===1&&r.j.sales.rev30===49.9,JSON.stringify(jc)+JSON.stringify(r.j.sales));
+ r=await rq('/login',{method:'POST',raw:'email=joao%40ex.com&password=qualquercoisa'});ok('antes de criar a senha não entra',r.s===401,r.s);
+ r=await rq('/api/order/setpw',{method:'POST',body:{o:oid,t:tok,password:'curta'}});ok('senha curta recusada',r.s===400,r.s);
+ r=await rq('/api/order/setpw',{method:'POST',body:{o:oid,t:'x',password:'SenhaBoa123'}});ok('setpw com token falso recusado',r.s===404,r.s);
+ r=await rq('/api/order/setpw',{method:'POST',body:{o:oid,t:tok,password:'SenhaBoa123'}});const ck3=(r.h.get('set-cookie')||'').split(';')[0];ok('comprador cria a senha e já entra',r.s===200&&ck3.startsWith('ap_s='),r.t);
+ r=await rq('/api/order/setpw',{method:'POST',body:{o:oid,t:tok,password:'OutraSenha123'}});ok('não dá para redefinir a senha pelo mesmo pedido',r.s===400,r.s);
+ r=await rq('/api/me',{cookie:ck3});ok('/api/me do comprador: plano Básico com 3 sites',r.j.plan.key==='basic'&&r.j.plan.maxSites===3&&r.j.canBuy===true,r.t);
+ r=await rq('/api/checkout',{method:'POST',body:{plan:'pro',name:'J',email:'joao@ex.com'}});ok('e-mail já cliente exige login para renovar',r.s===409,r.s);
+ r=await rq('/api/checkout',{method:'POST',cookie:ck3,body:{plan:'pro'}});ok('cliente logado compra upgrade',r.s===200&&lastPref.payer.email==='joao@ex.com',r.t);
+ payAmt=99;r=await rq('/mp/webhook?type=payment&data.id=124',{method:'POST'});r=await rq('/api/me',{cookie:ck3});ok('upgrade aplica o plano Pro',r.j.plan.key==='pro'&&r.j.plan.maxSites===10&&r.j.plan.until>Date.now()+59*864e5,r.t);
+ global.fetch=_ff;
  // site por subdomínio
  r=await rq('/',{host:'pizzaria-do-ze.kattalo.online'});ok('subdomínio serve o site sem login',r.s===200&&r.t.includes('window.__SITE_ID="abc123"')&&!r.t.includes('type=password'),r.s);
  r=await rq('/',{host:'inexistente.kattalo.online'});ok('subdomínio inexistente 404',r.s===404);

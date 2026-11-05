@@ -27,7 +27,10 @@ const cookies = (req) => Object.fromEntries(String(req.headers.cookie || '').spl
 const isAdmin = (req) => !!(req.u && req.u.role === 'admin');
 const isAuth = (req) => !!req.u;
 const PLANS = { free: { name: 'Gratuito', maxSites: 1, ai: 10 }, basic: { name: 'Básico', maxSites: 3, ai: 30 }, pro: { name: 'Pro', maxSites: 10, ai: 80 }, premium: { name: 'Premium', maxSites: 30, ai: 200 } };
-const planOf = (u) => { const p = PLANS[u.plan] || PLANS.free; return { key: PLANS[u.plan] ? u.plan : 'free', name: p.name, maxSites: u.maxSites > 0 ? u.maxSites : p.maxSites, ai: p.ai }; };
+const planOf = (u) => {
+  const exp = !!(u.planUntil && u.planUntil < Date.now()), k = PLANS[u.plan] && !exp ? u.plan : 'free', p = PLANS[k];
+  return { key: k, name: p.name, maxSites: (u.maxSites > 0 && !exp) ? u.maxSites : p.maxSites, ai: p.ai, until: u.planUntil || 0, expired: exp, wanted: exp ? u.plan : '' };
+};
 const pwHash = (pw) => { const salt = crypto.randomBytes(16).toString('hex'); return salt + ':' + crypto.scryptSync(String(pw), salt, 32).toString('hex'); };
 const pwCheck = (pw, h) => { try { const [salt, hx] = String(h).split(':'); return safeEq(crypto.scryptSync(String(pw), salt, 32).toString('hex'), hx); } catch (e) { return false; } };
 const genPw = () => { const al = 'abcdefghjkmnpqrstuvwxyzACDEFGHJKLMNPQRSTUVWXYZ23456789'; let o = ''; for (const b of crypto.randomBytes(10)) o += al[b % al.length]; return o; };
@@ -91,7 +94,7 @@ async function main() {
   app.all('/meta/data-deletion', (req, res) => res.json({ url: 'https://' + APP_HOST + '/privacidade', confirmation_code: crypto.randomBytes(6).toString('hex') }));
 
   // ---- login
-  const loginPage = (msg) => '<!doctype html><html lang=pt-BR><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>AutoPage.ai · Entrar</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;color:#e8ecff;font:16px system-ui"><form method=post action=/login style="width:min(340px,90vw);background:#141a33;padding:28px;border-radius:16px;display:grid;gap:12px"><h2 style="margin:0">🪄 AutoPage.ai</h2>' + (msg ? '<div style="color:#fca5a5">' + esc(msg) + '</div>' : '') + '<input type=email name=email placeholder="E-mail (admin: pode deixar em branco)" autocomplete=username style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><input type=password name=password placeholder=Senha autofocus required style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><button style="padding:12px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-weight:700">Entrar</button></form></html>';
+  const loginPage = (msg) => '<!doctype html><html lang=pt-BR><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>AutoPage.ai · Entrar</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;color:#e8ecff;font:16px system-ui"><form method=post action=/login style="width:min(340px,90vw);background:#141a33;padding:28px;border-radius:16px;display:grid;gap:12px"><h2 style="margin:0">🪄 AutoPage.ai</h2>' + (msg ? '<div style="color:#fca5a5">' + esc(msg) + '</div>' : '') + '<input type=email name=email placeholder="E-mail (admin: pode deixar em branco)" autocomplete=username style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><input type=password name=password placeholder=Senha autofocus required style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><button style="padding:12px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-weight:700">Entrar</button><a href=/planos style="color:#a5b4fc;text-align:center;font-size:14px">Quero contratar um plano</a></form></html>';
   app.post('/login', async (req, res) => {
     if (kind(hostOf(req)).t !== 'app') return res.status(404).end();
     if (limited('login:' + ipOf(req), 8, 15 * 60e3)) return res.status(429).type('html').send(loginPage('Muitas tentativas. Aguarde 15 minutos.'));
@@ -381,7 +384,7 @@ async function main() {
     if (!isAuth(req)) return res.status(401).json({ error: 'auth' });
     if (isAdmin(req)) return res.json({ role: 'admin', name: 'Admin' });
     const u = req.u.user, mine = (await allSites()).filter(x => x.owner === u.id);
-    res.json({ role: 'client', name: u.name, email: u.email, tmp: !!u.tmp, plan: planOf(u), usage: { sites: mine.length } });
+    res.json({ role: 'client', name: u.name, email: u.email, tmp: !!u.tmp, plan: planOf(u), usage: { sites: mine.length }, canBuy: !!MPT() });
   });
   app.get('/api/stats', async (req, res) => {
     if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
@@ -407,8 +410,9 @@ async function main() {
     const sites = await allSites(), users = (await store.list('users/', 1000, true)).map(x => x.data).filter(Boolean), st = await computeStats(sites);
     const nameOf = Object.fromEntries(users.map(u => [u.id, u.name])); nameOf.admin = 'Admin';
     st.sites = st.sites.map(x => ({ ...x, ownerName: nameOf[x.owner] || '—' }));
-    const now = Date.now();
-    res.json({ ...st, clients: users.map(u => pubUser(u, sites)).sort((a, b) => b.createdAt - a.createdAt), kpi: { clients: users.length, active: users.filter(u => u.status === 'active').length, blocked: users.filter(u => u.status !== 'active').length, new30: users.filter(u => now - u.createdAt < 30 * 864e5).length, aiToday: aiDay.d === new Date().toISOString().slice(0, 10) ? aiDay.n : 0, aiLimit: AI_DAILY, store: store.kind }, plans: Object.fromEntries(Object.entries(PLANS).map(([k, v]) => [k, v])) });
+    const now = Date.now(), orders = (await store.list('orders/', 300, true)).map(x => x.data).filter(Boolean), paid = orders.filter(x => x.status === 'paid');
+    const sales = { rev30: paid.filter(x => now - x.paidAt < 30 * 864e5).reduce((a, x) => a + x.amount, 0), count30: paid.filter(x => now - x.paidAt < 30 * 864e5).length, pending: orders.filter(x => x.status === 'pending' && now - x.at < 7 * 864e5).length, recent: orders.slice(0, 12).map(x => ({ name: x.name, email: x.email, plan: x.plan, amount: x.amount, status: x.status, at: x.paidAt || x.at })) };
+    res.json({ ...st, sales, prices: await getPrices(), mp: !!MPT(), clients: users.map(u => pubUser(u, sites)).sort((a, b) => b.createdAt - a.createdAt), kpi: { clients: users.length, active: users.filter(u => u.status === 'active').length, blocked: users.filter(u => u.status !== 'active').length, new30: users.filter(u => now - u.createdAt < 30 * 864e5).length, aiToday: aiDay.d === new Date().toISOString().slice(0, 10) ? aiDay.n : 0, aiLimit: AI_DAILY, store: store.kind }, plans: Object.fromEntries(Object.entries(PLANS).map(([k, v]) => [k, v])) });
   });
   app.post('/api/admin/clients', async (req, res) => {
     if (!needAdmin(req, res)) return;
@@ -446,6 +450,98 @@ async function main() {
     if (!needAdmin(req, res)) return;
     const id = String((req.body || {}).id || ''); if (!ID.test(id)) return res.status(400).json({ error: 'bad' });
     const d = await store.get('sites/' + id); if (d && d.slug) await store.del('slug/' + d.slug); await store.del('sites/' + id); res.json({ ok: true });
+  });
+
+  // ---- vendas: planos + Mercado Pago (pagamento libera o acesso sozinho)
+  const MPT = () => process.env.MP_ACCESS_TOKEN || '', MPU = () => process.env.MP_URL || 'https://api.mercadopago.com';
+  const APP_URL = () => process.env.APP_URL || ('https://' + APP_HOST);
+  const getPrices = async () => ((await store.get('config/plans')) || {}).prices || {};
+  const fmt = (n) => 'R$ ' + (+n).toFixed(2).replace('.', ',');
+  let ordLock = Promise.resolve();
+  const ordRun = (fn) => { const p = ordLock.then(fn, fn); ordLock = p.catch(() => {}); return p; };
+  const shell = (title, body) => '<!doctype html><html lang=pt-BR><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>' + esc(title) + '</title><body style="margin:0;min-height:100vh;background:#0b1020;color:#e8ecff;font:16px/1.5 system-ui;display:grid;place-items:center;padding:20px"><main style="width:min(880px,100%)">' + body + '</main></html>';
+  app.get('/planos', async (req, res) => {
+    if (kind(hostOf(req)).t !== 'app') return res.status(404).end();
+    const prices = await getPrices(), me = req.u && req.u.role === 'client' ? req.u.user : null;
+    const cards = Object.entries(PLANS).filter(([k]) => prices[k] > 0).map(([k, p]) => '<label style="display:block;cursor:pointer"><input type=radio name=plan value=' + k + ' style="position:absolute;opacity:0" ' + (me && me.plan === k ? 'checked' : '') + '><div class=pc style="background:#141a33;border:2px solid #2b3566;border-radius:18px;padding:20px;height:100%;box-sizing:border-box"><b style="font-size:18px">' + esc(p.name) + '</b><div style="font-size:30px;font-weight:800;margin:6px 0">' + fmt(prices[k]) + '<small style="font-size:13px;font-weight:400;color:#93a0bb"> / 30 dias</small></div><div style="color:#b7c0dc;font-size:14px">' + p.maxSites + ' site' + (p.maxSites > 1 ? 's' : '') + ' publicado' + (p.maxSites > 1 ? 's' : '') + '<br>Leitura de perfil com IA<br>Painel com visitas e cliques<br>Endereço próprio em ' + esc(ROOT) + '</div></div></label>').join('');
+    const body = '<h1 style="text-align:center;margin:0 0 6px">🪄 AutoPage.ai</h1><p style="text-align:center;color:#b7c0dc;margin:0 0 22px">Escolha o plano e receba seu acesso assim que o pagamento for aprovado.</p>' + (cards && MPT() ? '<form id=f><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">' + cards + '</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px"><input id=n placeholder="Seu nome" required maxlength=80 value="' + esc(me ? me.name : '') + '" style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><input id=e type=email placeholder="Seu e-mail" required value="' + esc(me ? me.email : '') + '" ' + (me ? 'readonly' : '') + ' style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"></div><div id=m style="color:#fca5a5;margin-top:8px;min-height:20px"></div><button style="width:100%;margin-top:6px;padding:14px;border:0;border-radius:12px;background:#4f46e5;color:#fff;font-weight:800;font-size:16px;cursor:pointer">Pagar com Mercado Pago</button><p style="text-align:center;color:#93a0bb;font-size:13px">Pix, cartão ou boleto. Pagamento de 30 dias, sem renovação automática.</p></form><style>input[type=radio]:checked+.pc{border-color:#818cf8!important;background:#1b2350!important}</style><script>document.getElementById("f").onsubmit=async function(ev){ev.preventDefault();var m=document.getElementById("m"),p=document.querySelector("input[name=plan]:checked");if(!p){m.textContent="Escolha um plano.";return}m.textContent="Abrindo o pagamento…";try{var r=await fetch("/api/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan:p.value,name:document.getElementById("n").value,email:document.getElementById("e").value})}),j=await r.json();if(!r.ok)throw new Error(j.error||"erro");location.href=j.url}catch(x){m.textContent=x.message==="erro"?"Não foi possível iniciar o pagamento agora.":x.message}}</script>' : '<p style="text-align:center;color:#fca5a5">Vendas ainda não estão abertas. Fale com o suporte.</p>') + '<p style="text-align:center;margin-top:18px"><a href="/" style="color:#a5b4fc">Já tenho acesso: entrar</a></p>';
+    res.type('html').send(shell('Planos · AutoPage.ai', body));
+  });
+  app.post('/api/checkout', async (req, res) => {
+    if (kind(hostOf(req)).t !== 'app') return res.status(404).end();
+    if (limited('co:' + ipOf(req), 8, 3600e3)) return res.status(429).json({ error: 'Muitas tentativas. Tente mais tarde.' });
+    const b = req.body || {}, prices = await getPrices(), plan = String(b.plan || '');
+    if (!MPT()) return res.status(503).json({ error: 'Pagamento indisponível no momento.' });
+    if (!PLANS[plan] || !(prices[plan] > 0)) return res.status(400).json({ error: 'Plano indisponível.' });
+    const me = req.u && req.u.role === 'client' ? req.u.user : null;
+    const name = String(me ? me.name : b.name || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 80), email = String(me ? me.email : b.email || '').trim().toLowerCase().slice(0, 200);
+    if (!name || !EMAIL.test(email)) return res.status(400).json({ error: 'Informe nome e e-mail válidos.' });
+    if (!me && await store.get('uemail/' + email)) return res.status(409).json({ error: 'Esse e-mail já tem acesso. Entre para renovar ou trocar de plano.' });
+    const oid = crypto.randomBytes(8).toString('hex'), tok = mkToken({ o: oid }, 7 * 864e5);
+    await store.set('orders/' + oid, { id: oid, plan, name, email, uid: me ? me.id : '', amount: prices[plan], status: 'pending', at: Date.now() });
+    try {
+      const back = APP_URL() + '/planos/obrigado?o=' + oid + '&t=' + encodeURIComponent(tok);
+      const r2 = await fetch(MPU() + '/checkout/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + MPT() }, body: JSON.stringify({ items: [{ title: 'AutoPage.ai · Plano ' + PLANS[plan].name + ' (30 dias)', quantity: 1, unit_price: prices[plan], currency_id: 'BRL' }], payer: { email, name }, external_reference: oid, notification_url: APP_URL() + '/mp/webhook', back_urls: { success: back, pending: back, failure: APP_URL() + '/planos' }, auto_return: 'approved' }) });
+      const j = await r2.json();
+      if (!r2.ok || !j.init_point) throw new Error('mp');
+      res.json({ url: j.init_point });
+    } catch (e) { console.error('checkout', e.message); res.status(502).json({ error: 'Não foi possível iniciar o pagamento agora.' }); }
+  });
+  async function settle(paymentId) {
+    if (!/^\d{3,20}$/.test(String(paymentId)) || !MPT()) return false;
+    const r2 = await fetch(MPU() + '/v1/payments/' + paymentId, { headers: { Authorization: 'Bearer ' + MPT() } });
+    if (!r2.ok) return false;
+    const p = await r2.json();
+    if (p.status !== 'approved') return false;
+    return ordRun(async () => {
+      const o = await store.get('orders/' + String(p.external_reference || '').replace(/[^a-f0-9]/g, '')); if (!o || o.status === 'paid') return !!o;
+      if (!(+p.transaction_amount >= o.amount - 0.001)) return false;
+      let u = o.uid ? await store.get('users/' + o.uid) : null;
+      if (!u) { const idx = await store.get('uemail/' + o.email); u = idx ? await store.get('users/' + idx.id) : null; }
+      if (!u) {
+        const id = crypto.randomBytes(6).toString('hex');
+        u = { id, role: 'client', name: o.name, email: o.email, pw: pwHash(crypto.randomBytes(18).toString('hex')), needPw: true, status: 'active', plan: o.plan, maxSites: 0, note: 'Compra online', tmp: false, createdAt: Date.now(), lastLogin: 0 };
+        await store.set('uemail/' + o.email, { id });
+      }
+      u.plan = o.plan; u.maxSites = 0; u.planUntil = Math.max(Date.now(), u.planUntil || 0) + 30 * 864e5;
+      await store.set('users/' + u.id, u);
+      o.status = 'paid'; o.paidAt = Date.now(); o.uid = u.id; o.paymentId = String(paymentId); await store.set('orders/' + o.id, o);
+      return true;
+    });
+  }
+  app.all('/mp/webhook', async (req, res) => {
+    try {
+      const q = req.query || {}, b = req.body || {};
+      const type = q.type || q.topic || b.type || b.topic, id = q['data.id'] || q.id || (b.data && b.data.id) || (b.resource && String(b.resource).split('/').pop());
+      if (/payment/.test(String(type || '')) && id) await settle(String(id));
+    } catch (e) { console.error('mp webhook', e.message); }
+    res.status(200).json({ ok: true });
+  });
+  app.get('/planos/obrigado', (req, res) => {
+    if (kind(hostOf(req)).t !== 'app') return res.status(404).end();
+    res.type('html').send(shell('Obrigado · AutoPage.ai', '<div id=b style="max-width:420px;margin:auto;text-align:center"><h2>Confirmando seu pagamento…</h2><p style="color:#b7c0dc">Isso leva alguns segundos. Não feche esta página.</p></div><script>(function(){var q=new URLSearchParams(location.search),o=q.get("o"),t=q.get("t"),b=document.getElementById("b"),n=0,pid=q.get("payment_id")||q.get("collection_id");function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c]})}function poll(){fetch("/api/order?o="+encodeURIComponent(o)+"&t="+encodeURIComponent(t)+(pid?"&p="+encodeURIComponent(pid):"")).then(function(r){return r.json()}).then(function(j){if(j.status==="paid"){if(j.needPw)form(j);else b.innerHTML="<h2>✅ Pagamento aprovado!</h2><p>Seu plano está ativo.</p><p><a style=\\"color:#a5b4fc\\" href=\\"/\\">Entrar no painel</a></p>";return}if(++n>40){b.innerHTML="<h2>Ainda aguardando…</h2><p style=\\"color:#b7c0dc\\">Se você pagou por Pix ou boleto, a confirmação pode demorar. Volte a esta página em alguns minutos.</p>";return}setTimeout(poll,3000)}).catch(function(){setTimeout(poll,4000)})}function form(j){b.innerHTML="<h2>✅ Pagamento aprovado!</h2><p style=\\"color:#b7c0dc\\">Crie sua senha para acessar o painel.</p><p><b>"+esc(j.email)+"</b></p><input id=pw type=password placeholder=\\"Crie uma senha (8+ caracteres)\\" style=\\"width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff\\"><div id=m style=\\"color:#fca5a5;min-height:22px\\"></div><button id=go style=\\"width:100%;padding:13px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-weight:800;cursor:pointer\\">Criar senha e entrar</button>";document.getElementById("go").onclick=function(){fetch("/api/order/setpw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({o:o,t:t,password:document.getElementById("pw").value})}).then(function(r){return r.json().then(function(x){return{ok:r.ok,x:x}})}).then(function(r){if(r.ok)location.href="/";else document.getElementById("m").textContent=r.x.error||"Erro"})}}if(!o||!t){b.innerHTML="<h2>Link inválido</h2>"}else poll()})()</script>'));
+  });
+  const orderOf = async (o, t) => { const tk = readToken(String(t || '')); if (!tk || tk.o !== String(o || '')) return null; return store.get('orders/' + String(o).replace(/[^a-f0-9]/g, '')); };
+  app.get('/api/order', async (req, res) => {
+    const o = await orderOf(req.query.o, req.query.t); if (!o) return res.status(404).json({ error: 'not_found' });
+    if (o.status !== 'paid' && req.query.p) { try { await settle(String(req.query.p)); } catch (e) { /* aguarda webhook */ } }
+    const cur = o.status === 'paid' ? o : await store.get('orders/' + o.id), u = cur.status === 'paid' ? await store.get('users/' + cur.uid) : null;
+    res.json({ status: cur.status, email: cur.email, needPw: !!(u && u.needPw) });
+  });
+  app.post('/api/order/setpw', async (req, res) => {
+    if (limited('spw:' + ipOf(req), 10, 3600e3)) return res.status(429).json({ error: 'Muitas tentativas.' });
+    const b = req.body || {}, o = await orderOf(b.o, b.t); if (!o || o.status !== 'paid') return res.status(404).json({ error: 'Pedido não encontrado.' });
+    const u = await store.get('users/' + o.uid); if (!u || !u.needPw) return res.status(400).json({ error: 'A senha já foi criada. Entre com seu e-mail.' });
+    const pw = String(b.password || ''); if (pw.length < 8 || pw.length > 100) return res.status(400).json({ error: 'A senha precisa ter 8 caracteres ou mais.' });
+    u.pw = pwHash(pw); u.needPw = false; u.lastLogin = Date.now(); await store.set('users/' + u.id, u);
+    const secure = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
+    res.setHeader('Set-Cookie', 'ap_s=' + mkToken({ r: 'client', u: u.id }, 7 * 864e5) + '; HttpOnly; SameSite=Lax; Path=/; Max-Age=' + 7 * 86400 + secure);
+    res.json({ ok: true });
+  });
+  app.post('/api/admin/config', async (req, res) => {
+    if (!needAdmin(req, res)) return;
+    const pr = {}; for (const k of Object.keys(PLANS)) { const v = +((req.body.prices || {})[k]); if (v > 0 && v < 100000) pr[k] = Math.round(v * 100) / 100; }
+    await store.set('config/plans', { prices: pr }); res.json({ ok: true, prices: pr });
   });
 
   app.use((req, res) => res.status(404).type('text').send('Não encontrado'));
