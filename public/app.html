@@ -234,7 +234,9 @@ function defFrom(){DEF.style=P.style||DEF.style;DEF.font=P.font||DEF.font;DEF.la
 const COL=['#ef4444','#f59e0b','#10b981','#0ea5e9','#4f46e5','#8b5cf6','#ec4899'];
 let P=null,S=[],T=0;
 try{S=JSON.parse(localStorage.getItem('ap_sites_'+((window.__U&&window.__U.id)||'x'))||'[]')}catch(e){}
-const store=()=>{try{localStorage.setItem('ap_sites_'+((window.__U&&window.__U.id)||'x'),JSON.stringify(S))}catch(e){toast('Armazenamento cheio: exporte seus sites em JSON')}$('#cnt').textContent=S.length};
+// migração única: aplica o padrão visual fixo aos sites já criados (nova versão do padrão = novo número)
+try{if(localStorage.getItem('ap_vmig1')!=='1'){S.forEach(x=>{x.style='claro';x.layout='';x.font='jakarta'});localStorage.setItem('ap_sites_'+((window.__U&&window.__U.id)||'x'),JSON.stringify(S));localStorage.setItem('ap_vmig1','1')}}catch(e){}
+const store=()=>{try{localStorage.setItem('ap_sites',JSON.stringify(S))}catch(e){toast('Armazenamento cheio: exporte seus sites em JSON')}$('#cnt').textContent=S.length};
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(T);T=setTimeout(()=>e.classList.remove('on'),2200)}
 function theme(){const r=document.documentElement,d=matchMedia('(prefers-color-scheme:dark)').matches;const n=(r.dataset.theme||(d?'dark':'light'))==='dark'?'light':'dark';r.dataset.theme=n;$('#thb').textContent=n==='dark'?'☀️':'🌙'}
 function show(v){AIT++;try{defUI()}catch(e){}['create','proc','edit','dash','home','cli'].forEach(x=>$('#v-'+x).hidden=x!==v);$('#t-create').classList.toggle('on',v!=='dash');$('#t-dash').classList.toggle('on',v==='dash');$('#cnt').textContent=S.length;if(v==='dash'){dash();evs()}if(window.HX)HX(v);if(v==='create')try{recents()}catch(e){}scrollTo(0,0)}

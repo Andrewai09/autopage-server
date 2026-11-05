@@ -597,7 +597,22 @@ async function main() {
   });
 
   X.routes({ app, kind, hostOf, ipOf, limited, isAdmin, isAuth, ID, PLANS, planOf, pwHash, pwCheck, mkToken, EMAIL, needAdmin, allSites, canSite, appUrl: APP_URL });
-  if (require.main === module) X.startJobs(APP_URL);
+  // migração única: padrão visual fixo (tema claro, fonte Plus Jakarta Sans, layout dividido) em todos os sites já publicados; guarda os valores antigos em config/migr_visual1
+  async function migrateVisual() {
+    try {
+      if (await store.get('config/migr_visual1')) return;
+      const rows = await store.list('sites/', 5000, true), undo = {}; let n = 0;
+      for (const x of rows) {
+        const d = x.data || {}; let p; try { p = JSON.parse(d.j || '{}'); } catch (e) { continue; }
+        undo[x.path] = { style: p.style, layout: p.layout, font: p.font };
+        p.style = 'claro'; p.layout = ''; p.font = 'jakarta';
+        await store.set(x.path, { ...d, j: JSON.stringify(p) }); n++;
+      }
+      await store.set('config/migr_visual1', { at: Date.now(), n, undo });
+      console.log('padrão visual aplicado a', n, 'sites');
+    } catch (e) { console.error('migr visual', e.message); }
+  }
+  if (require.main === module) { X.startJobs(APP_URL); migrateVisual(); }
 
   app.use((req, res) => res.status(404).type('text').send('Não encontrado'));
   app.use((err, req, res, next) => { console.error(err.message); res.status(err.status || 500).json({ error: 'erro' }); });
