@@ -98,6 +98,13 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/api/checkout',{method:'POST',cookie:ck3,body:{plan:'pro'}});ok('cliente logado compra upgrade',r.s===200&&lastPref.payer.email==='joao@ex.com',r.t);
  payAmt=99;r=await rq('/mp/webhook?type=payment&data.id=124',{method:'POST'});r=await rq('/api/me',{cookie:ck3});ok('upgrade aplica o plano Pro',r.j.plan.key==='pro'&&r.j.plan.maxSites===10&&r.j.plan.until>Date.now()+59*864e5,r.t);
  global.fetch=_ff;
+ r=await rq('/api/admin/export',{});ok('backup exige admin',r.s===401,r.s);
+ r=await rq('/api/admin/export',{cookie:ck});ok('backup do admin sem hashes de senha',r.s===200&&r.j.users.length>0&&!r.t.includes('"pw"')&&Array.isArray(r.j.sites),r.s);
+ process.env.ADMIN_EMAIL='dono@ex.com';
+ r=await rq('/login',{method:'POST',raw:'password=segredo123'});ok('com ADMIN_EMAIL definido, e-mail em branco não entra',r.s===401,r.s);
+ r=await rq('/login',{method:'POST',raw:'email=outro%40ex.com&password=segredo123'});ok('com ADMIN_EMAIL, e-mail errado não entra',r.s===401,r.s);
+ r=await rq('/login',{method:'POST',raw:'email=DONO%40ex.com&password=segredo123'});ok('admin entra com e-mail e senha corretos',r.s===302,r.s);
+ delete process.env.ADMIN_EMAIL;
  // site por subdomínio
  r=await rq('/',{host:'pizzaria-do-ze.kattalo.online'});ok('subdomínio serve o site sem login',r.s===200&&r.t.includes('window.__SITE_ID="abc123"')&&!r.t.includes('type=password'),r.s);
  r=await rq('/',{host:'inexistente.kattalo.online'});ok('subdomínio inexistente 404',r.s===404);

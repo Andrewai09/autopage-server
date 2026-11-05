@@ -97,19 +97,22 @@ async function main() {
   const loginPage = (msg) => '<!doctype html><html lang=pt-BR><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>AutoPage.ai · Entrar</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;color:#e8ecff;font:16px system-ui"><form method=post action=/login style="width:min(340px,90vw);background:#141a33;padding:28px;border-radius:16px;display:grid;gap:12px"><h2 style="margin:0">🪄 AutoPage.ai</h2>' + (msg ? '<div style="color:#fca5a5">' + esc(msg) + '</div>' : '') + '<input type=email name=email placeholder="E-mail (admin: pode deixar em branco)" autocomplete=username style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><input type=password name=password placeholder=Senha autofocus required style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><button style="padding:12px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-weight:700">Entrar</button><a href=/planos style="color:#a5b4fc;text-align:center;font-size:14px">Quero contratar um plano</a></form></html>';
   app.post('/login', async (req, res) => {
     if (kind(hostOf(req)).t !== 'app') return res.status(404).end();
-    if (limited('login:' + ipOf(req), 8, 15 * 60e3)) return res.status(429).type('html').send(loginPage('Muitas tentativas. Aguarde 15 minutos.'));
+    const tooMany = () => res.status(429).type('html').send(loginPage('Muitas tentativas. Aguarde 15 minutos.'));
+    const bad = (code, msg) => (limited('login:' + ipOf(req), 10, 15 * 60e3) ? tooMany() : res.status(code).type('html').send(loginPage(msg)));
     const email = String(req.body.email || '').trim().toLowerCase().slice(0, 200), pw = String(req.body.password || '').slice(0, 200);
     const secure = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
     const setC = (tok) => res.setHeader('Set-Cookie', 'ap_s=' + tok + '; HttpOnly; SameSite=Lax; Path=/; Max-Age=' + 7 * 86400 + secure);
     const idx = email ? await store.get('uemail/' + email) : null, usr = idx ? await store.get('users/' + idx.id) : null;
     if (usr) {
-      if (limited('loginE:' + email, 8, 15 * 60e3)) return res.status(429).type('html').send(loginPage('Muitas tentativas. Aguarde 15 minutos.'));
-      if (!pwCheck(pw, usr.pw)) return res.status(401).type('html').send(loginPage('E-mail ou senha incorretos.'));
+      if (!pwCheck(pw, usr.pw)) return limited('loginE:' + email, 8, 15 * 60e3) ? tooMany() : bad(401, 'E-mail ou senha incorretos.');
       if (usr.status !== 'active') return res.status(403).type('html').send(loginPage('Acesso bloqueado. Fale com o suporte.'));
       usr.lastLogin = Date.now(); await store.set('users/' + usr.id, usr);
       setC(mkToken({ r: 'client', u: usr.id }, 7 * 864e5)); return res.redirect('/');
     }
-    if (!ADMIN_PASSWORD || !safeEq(pw, ADMIN_PASSWORD)) return res.status(401).type('html').send(loginPage('E-mail ou senha incorretos.'));
+    const AEM = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+    if (!ADMIN_PASSWORD || !safeEq(pw, ADMIN_PASSWORD) || (AEM && email !== AEM)) {
+      return bad(401, 'E-mail ou senha incorretos.');
+    }
     setC(mkToken({ r: 'admin', u: 'admin' }, 7 * 864e5)); res.redirect('/');
   });
   app.post('/logout', (req, res) => { res.setHeader('Set-Cookie', 'ap_s=; HttpOnly; Path=/; Max-Age=0'); res.redirect('/'); });
@@ -218,11 +221,18 @@ async function main() {
         let lastStatus = 502;
         for (const model of models) {
           const url = process.env.GEMINI_URL || 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent';
-          const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': GKEY }, body });
-          const j = await r.json();
+          let r, j;
+          for (let t = 0; t < 2; t++) { // modelo sobrecarregado (5xx): espera um instante e tenta de novo
+            r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': GKEY }, body });
+            j = await r.json();
+            if (r.status < 500) break;
+            console.error('gemini', model, r.status, 'tentativa', t + 1);
+            await new Promise(ok => setTimeout(ok, 1500));
+          }
           if (r.ok) { txt = (((j.candidates || [])[0] || {}).content || { parts: [] }).parts.map(p => p.text || '').join(''); break; }
           lastStatus = r.status; console.error('gemini', model, r.status, JSON.stringify(j).slice(0, 200));
-          if (r.status !== 404 && r.status !== 400) break; // só tenta o próximo modelo se este não existir
+          if (r.status === 429) break; // cota esgotada: trocar de modelo não ajuda
+          // 404/400 (modelo inexistente) e 5xx (sobrecarga) seguem para o próximo modelo
         }
         if (!txt) return res.status(lastStatus === 429 ? 429 : 502).json({ error: 'ia' });
       } else { // Anthropic (pago)
@@ -537,6 +547,13 @@ async function main() {
     const secure = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
     res.setHeader('Set-Cookie', 'ap_s=' + mkToken({ r: 'client', u: u.id }, 7 * 864e5) + '; HttpOnly; SameSite=Lax; Path=/; Max-Age=' + 7 * 86400 + secure);
     res.json({ ok: true });
+  });
+  app.get('/api/admin/export', async (req, res) => {
+    if (!needAdmin(req, res)) return;
+    const get = async (p) => (await store.list(p, 5000, true)).map(x => ({ path: x.path, data: x.data }));
+    const users = (await get('users/')).map(x => ({ path: x.path, data: { ...x.data, pw: undefined } }));
+    res.setHeader('Content-Disposition', 'attachment; filename="autopage-backup-' + new Date().toISOString().slice(0, 10) + '.json"');
+    res.type('json').send(JSON.stringify({ at: new Date().toISOString(), users, sites: await get('sites/'), orders: await get('orders/'), config: await get('config/') }));
   });
   app.post('/api/admin/config', async (req, res) => {
     if (!needAdmin(req, res)) return;
