@@ -159,7 +159,7 @@ async function main() {
       if (!ADMIN_PASSWORD) return res.status(503).type('text').send('Defina ADMIN_PASSWORD no servidor.');
       if (!isAuth(req)) return res.type('html').send(loginPage(''));
       const uu = req.u.role === 'admin' ? { id: 'admin', role: 'admin', name: 'Admin' } : { id: req.u.id, role: 'client', name: req.u.name, email: req.u.user.email };
-      return page(req, res, cfg({ meta: !!(META_ID && META_SECRET), site: false }) + 'window.__U=' + JSON.stringify(uu).replace(/</g, '\\u003c') + ';');
+      return page(req, res, cfg({ meta: !!(META_ID && META_SECRET), site: false, ship: !!process.env.ME_TOKEN }) + 'window.__U=' + JSON.stringify(uu).replace(/</g, '\\u003c') + ';');
     }
     const ptr = cdom ? { id: cdom.site } : await store.get('slug/' + k.slug);
     if (!ptr) return res.status(404).type('html').send('<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><body style="font:16px system-ui;display:grid;place-items:center;min-height:100vh;margin:0"><p>Site não encontrado.</p>');

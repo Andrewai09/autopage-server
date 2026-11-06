@@ -27,18 +27,28 @@ module.exports = function integ(c) {
   const allowed = (req) => isAdmin(req) || !!planOf(req.u.user).integ;
   const cep8 = (v) => { const d = String(v || '').replace(/\D/g, ''); return d.length === 8 ? d : ''; };
   const SVC_OK = /^\d{1,2}(,\d{1,2}){0,5}$/;
+  // frete da plataforma: um token único do administrador (ME_TOKEN) atende todas as lojas; o cliente só informa o CEP de origem
+  const PT = () => String(process.env.ME_TOKEN || '').trim();
+  const PSB = () => process.env.ME_SANDBOX === '1';
+  // credenciais de cotação: token do próprio cliente (se ele conectou) ou o da plataforma
+  const shipCred = (st, I) => {
+    const me = I.me, sh = I.ship || {};
+    if (me && me.tok && cep8(sh.cep)) { const tok = dec(me.tok); if (tok) return { tok, sb: me.sb, from: cep8(sh.cep), sh }; }
+    if (PT() && cep8(st.j.ocep)) return { tok: PT(), sb: PSB(), from: cep8(st.j.ocep), sh: {} };
+    return null;
+  };
+  X.shipPlat = () => !!PT();
 
   // ---------- frete (Melhor Envio)
   async function quote(st, I, cepTo, lines) {
-    const me = I.me, sh = I.ship || {};
-    if (!me || !me.tok || !cep8(sh.cep)) return { error: 'noint' };
-    const tok = dec(me.tok); if (!tok) return { error: 'noint' };
+    const cr = shipCred(st, I); if (!cr) return { error: 'noint' };
+    const me = { sb: cr.sb }, sh = cr.sh, tok = cr.tok;
     const its = st.j.items || [];
     const products = lines.map((l, k) => {
       const it = its[l.ix] || {}, g = num(it.w, 1, 30000, 0) || num(sh.g, 1, 30000, 300);
       return { id: String(k + 1), width: num(sh.w, 11, 100, 16), height: num(sh.h, 2, 100, 6), length: num(sh.l, 16, 100, 20), weight: Math.round(g) / 1000, insurance_value: Math.max(0, Number(l.p) || 0), quantity: l.q };
     });
-    const r = await jf(MEU(me.sb) + '/api/v2/me/shipment/calculate', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, Accept: 'application/json', 'Content-Type': 'application/json', 'User-Agent': UA() }, body: JSON.stringify({ from: { postal_code: cep8(sh.cep) }, to: { postal_code: cepTo }, products, options: { receipt: false, own_hand: false }, services: SVC_OK.test(sh.svcs || '') ? sh.svcs : '1,2' }) });
+    const r = await jf(MEU(me.sb) + '/api/v2/me/shipment/calculate', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, Accept: 'application/json', 'Content-Type': 'application/json', 'User-Agent': UA() }, body: JSON.stringify({ from: { postal_code: cr.from }, to: { postal_code: cepTo }, products, options: { receipt: false, own_hand: false }, services: SVC_OK.test(sh.svcs || '') ? sh.svcs : '1,2' }) });
     if (!r.ok || !Array.isArray(r.j)) return { error: r.s === 401 || r.s === 403 ? 'auth' : 'api' };
     const opts = r.j.filter(x => x && !x.error && Number(x.custom_price || x.price) > 0).map(x => ({ id: Number(x.id), name: clean(x.name, 40), company: clean(x.company && x.company.name, 30), price: Math.round(Number(x.custom_price || x.price) * 100) / 100, days: Math.round(Number(x.custom_delivery_time || x.delivery_time) || 0) })).sort((a, b) => a.price - b.price).slice(0, 6);
     return { options: opts };
@@ -54,7 +64,7 @@ module.exports = function integ(c) {
     try {
       const st = await siteOf(req); if (!st) return res.json({ ship: 0, mp: 0 });
       const I = await getI(st.owner);
-      res.json({ ship: st.j.ship && I.me && I.me.tok && cep8((I.ship || {}).cep) ? 1 : 0, mp: st.j.mpay && I.mp && I.mp.tok ? 1 : 0 });
+      res.json({ ship: st.j.ship && shipCred(st, I) ? 1 : 0, mp: st.j.mpay && I.mp && I.mp.tok ? 1 : 0 });
     } catch (e) { res.json({ ship: 0, mp: 0 }); }
   });
   app.all('/api/ship/quote', async (req, res) => {
@@ -91,7 +101,7 @@ module.exports = function integ(c) {
     const o = q.options.find(x => x.id === svc); if (!o) return { error: 'ship' };
     return { fee: o.price, ship: { id: o.id, name: o.name, company: o.company, days: o.days, cep } };
   };
-  X.shipOn = async (st) => { if (!st.j.ship) return false; const I = await getI(st.owner); return !!(I.me && I.me.tok && cep8((I.ship || {}).cep)); };
+  X.shipOn = async (st) => { if (!st.j.ship) return false; const I = await getI(st.owner); return !!shipCred(st, I); };
 
   // ---------- pagamento online (Mercado Pago do cliente)
   X.mpOn = async (st) => { if (!st.j.mpay) return false; const I = await getI(st.owner); return !!(I.mp && I.mp.tok); };

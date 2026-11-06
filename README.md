@@ -78,3 +78,6 @@ Planilha **+ fotos**: o botão "Exportar planilha + fotos (.zip)" gera `produtos
 
 ## Frete manual (sem token do Melhor Envio)
 Se o cliente não conseguir o token, vale o **frete manual**: no editor ele define a taxa de entrega, opcionalmente "frete grátis acima de R$ X" e um texto de prazo. Na aba **Vendas**, o pedido segue **Novo → Aceito → Separando → Processando → Enviado → Entregue** (ou Cancelado), com campo de **código de rastreio** e transportadora (botões "Salvar rastreio" e "Salvar e marcar Enviado"). "Avisar cliente" manda por WhatsApp a mensagem de cada status, com o código e o link de rastreio dos Correios quando o código tem o formato `AA123456789BR`. O servidor recalcula a taxa e o frete grátis; pedidos antigos "confirmado" aparecem como "Aceito".
+
+## Frete automático da plataforma (um token para todas as lojas)
+Defina `ME_TOKEN` no Render (token do **seu** Melhor Envio; `ME_SANDBOX=1` para testes). Com isso, o cálculo PAC/SEDEX funciona em todas as lojas que escolherem "Frete automático" e informarem só o **CEP de origem**, sem token do cliente. Se o cliente conectar a própria conta em Vendas → Integrações, o token dele tem prioridade. O token da plataforma só cota preços; compra de etiquetas e postagem continuam por conta de cada lojista (o preço cotado vem das condições da sua conta).
