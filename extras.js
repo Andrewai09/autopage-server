@@ -318,7 +318,7 @@ module.exports = function makeExtras(base) {
       const sd = await store.get('sites/' + id); if (!sd) return res.status(404).json({ error: 'nf' });
       let j = {}; try { j = JSON.parse(sd.j || '{}'); } catch (e) { /* vazio */ }
       const orders = (await store.list('sorders/' + id + '/', 3000, true)).map(r => ({ id: r.path.split('/').pop(), ...r.data }));
-      const products = (j.items || []).map((x, i) => ({ i, n: x.n, p: x.p, e: x.e, d: x.d || '', c: x.c || '', v: x.v || '', s: x.s === undefined ? '' : x.s, o: x.o ? 1 : 0, img: x.i ? 1 : 0, w: x.w || '' }));
+      const products = (j.items || []).map((x, i) => ({ i, n: x.n, p: x.p, e: x.e, d: x.d || '', c: x.c || '', v: x.v || '', s: x.s === undefined ? '' : x.s, o: x.o ? 1 : 0, img: x.i ? 1 : 0, w: x.w || '', x: x.x ? 1 : 0 }));
       res.json({ site: { id, name: sd.name || j.name, goal: j.goal, fee: j.fee || 0, min: j.min || 0, coupon: j.coupon || '' }, orders, products });
     });
     app.post('/api/sales/status', async (req, res) => {
@@ -352,6 +352,7 @@ module.exports = function makeExtras(base) {
         const o = pick(b.patch || {}); if (!o) return res.status(400).json({ error: 'name' });
         Object.keys(o).forEach(k => { if (((k === 's' || k === 'w') && o[k] === '') || (k === 'o' && !o[k])) delete j.items[i][k]; else j.items[i][k] = o[k]; });
         if ('s' in o && o.s === 0) j.items[i].o = 1;
+        if (['n', 'p', 'd', 'c', 'e'].some(k => k in o)) { delete j.items[i].x; delete j.items[i].xs; }
       } else return res.status(400).json({ error: 'bad' });
       await saveSite(id, sd, j);
       await X.audit(req.u.id || 'admin', 'sales.product', id + ' ' + b.op);

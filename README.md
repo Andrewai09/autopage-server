@@ -68,3 +68,6 @@ O login só vale para o site hospedado (no HTML baixado não há servidor, entã
 | Agendamento | sim (para reservar horário) | não | não |
 | Demais formatos (landing, perfil, portfólio, apresentação, convite, link na bio, cartão, currículo, captura, pet) | não se aplica | não se aplica | não se aplica |
 O editor mostra só as opções que fazem sentido para o formato escolhido. O login obrigatório vale para Loja, Catálogo, Cardápio e Agendamento (desligável no editor).
+
+## Modo exemplo (catálogo, loja e cardápio)
+Ao criar um site desses formatos, o editor já traz **10 produtos de exemplo com foto** do segmento (ilustrações geradas no navegador). Eles aparecem no site com a etiqueta "Exemplo" até o cliente trocar nome, preço ou foto; ao editar, a etiqueta some sozinha. Há botões para remover todos os exemplos ou carregá-los de novo. Não são fotos reais: o cliente deve enviar as próprias.
