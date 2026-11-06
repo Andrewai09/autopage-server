@@ -44,3 +44,10 @@ Tema, fonte e layout dos sites novos são fixos (padrão: claro, Plus Jakarta Sa
 | Pro | 10 | todos (inclui Loja com carrinho e Agendamento) | sim | 80 |
 | Premium | 15 | todos | sim | 200 |
 O painel de Vendas aparece para quem tem Catálogo, Cardápio ou Loja (a Loja só no Pro+). Os bloqueios são feitos no servidor (`403 format`, domínio `403`) e, na tela, os formatos pagos ficam com 🔒. Sites já publicados continuam funcionando. Tudo está definido em `PLANS` (`server.js`); o limite por cliente ainda pode ser ajustado na aba Clientes. A página `/planos` lista o que cada plano libera.
+
+## Pagamento online e frete (Mercado Pago + Melhor Envio)
+Disponível nos planos Pro e Premium. Cada cliente conecta **as próprias contas** em **Vendas → Integrações** (há passo a passo na tela):
+- **Mercado Pago**: o cliente cola o *Access Token* da conta dele; o checkout (Pix/cartão) é criado com o token dele, então o dinheiro cai direto na conta dele. O webhook `/api/mp/hook` confirma o pagamento consultando a API do Mercado Pago com o token do dono (não confia no corpo da notificação) e confere valor e referência do pedido.
+- **Melhor Envio**: o cliente cola o token e informa CEP de origem e embalagem padrão. O frete (PAC/SEDEX dos Correios, e outros códigos de serviço se quiser) é cotado no carrinho; o servidor recalcula o valor no pedido. Peso por produto na coluna *Peso (g)*. Etiqueta e postagem continuam no painel do Melhor Envio.
+- Em cada site: Editar → "Calcular frete automático" e/ou "Receber pagamento online" → Publicar.
+- Tokens ficam criptografados (AES-256-GCM, chave derivada de `SESSION_SECRET`) em `integ/<dono>` e nunca voltam ao navegador. **Defina `SESSION_SECRET` no Render** (e não troque depois, senão os tokens salvos deixam de abrir). Opcionais: `ME_CONTACT` (e-mail técnico enviado no User-Agent ao Melhor Envio), `ME_URL`/`MP_URL` para testes.
