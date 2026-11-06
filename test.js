@@ -95,10 +95,10 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/api/order/setpw',{method:'POST',body:{o:oid,t:'x',password:'SenhaBoa123'}});ok('setpw com token falso recusado',r.s===404,r.s);
  r=await rq('/api/order/setpw',{method:'POST',body:{o:oid,t:tok,password:'SenhaBoa123'}});const ck3=(r.h.get('set-cookie')||'').split(';')[0];ok('comprador cria a senha e já entra',r.s===200&&ck3.startsWith('ap_s='),r.t);
  r=await rq('/api/order/setpw',{method:'POST',body:{o:oid,t:tok,password:'OutraSenha123'}});ok('não dá para redefinir a senha pelo mesmo pedido',r.s===400,r.s);
- r=await rq('/api/me',{cookie:ck3});ok('/api/me do comprador: plano Essencial com 5 sites',r.j.plan.key==='basic'&&r.j.plan.maxSites===5&&r.j.canBuy===true,r.t);
+ r=await rq('/api/me',{cookie:ck3});ok('/api/me do comprador: plano Essencial com 3 sites',r.j.plan.key==='basic'&&r.j.plan.maxSites===3&&r.j.canBuy===true,r.t);
  r=await rq('/api/checkout',{method:'POST',body:{plan:'pro',name:'J',email:'joao@ex.com'}});ok('e-mail já cliente exige login para renovar',r.s===409,r.s);
  r=await rq('/api/checkout',{method:'POST',cookie:ck3,body:{plan:'pro'}});ok('cliente logado compra upgrade',r.s===200&&lastPref.payer.email==='joao@ex.com',r.t);
- payAmt=99;r=await rq('/mp/webhook?type=payment&data.id=124',{method:'POST'});r=await rq('/api/me',{cookie:ck3});ok('upgrade aplica o plano Pro',r.j.plan.key==='pro'&&r.j.plan.maxSites===15&&r.j.plan.until>Date.now()+59*864e5,r.t);
+ payAmt=99;r=await rq('/mp/webhook?type=payment&data.id=124',{method:'POST'});r=await rq('/api/me',{cookie:ck3});ok('upgrade aplica o plano Pro',r.j.plan.key==='pro'&&r.j.plan.maxSites===5&&r.j.plan.until>Date.now()+59*864e5,r.t);
  global.fetch=_ff;
  r=await rq('/api/admin/export',{});ok('backup exige admin',r.s===401,r.s);
  r=await rq('/api/admin/export',{cookie:ck});ok('backup do admin sem hashes de senha',r.s===200&&r.j.users.length>0&&!r.t.includes('"pw"')&&Array.isArray(r.j.sites),r.s);

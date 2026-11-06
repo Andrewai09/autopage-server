@@ -28,7 +28,7 @@ const cookies = (req) => Object.fromEntries(String(req.headers.cookie || '').spl
 const isAdmin = (req) => !!(req.u && req.u.role === 'admin');
 const isAuth = (req) => !!req.u;
 const FREE_FMTS = ['landing', 'links', 'card', 'profile'];
-const PLANS = { free: { name: 'Básico (grátis)', maxSites: 1, ai: 10, fmts: FREE_FMTS }, basic: { name: 'Essencial', maxSites: 5, ai: 30 }, pro: { name: 'Pro', maxSites: 15, ai: 80 }, premium: { name: 'Premium', maxSites: 50, ai: 200 } };
+const PLANS = { free: { name: 'Básico (grátis)', maxSites: 1, ai: 10, fmts: FREE_FMTS }, basic: { name: 'Essencial', maxSites: 3, ai: 30 }, pro: { name: 'Pro', maxSites: 5, ai: 80 }, premium: { name: 'Premium', maxSites: 10, ai: 200 } };
 const planOf = (u) => {
   const exp = !!(u.planUntil && u.planUntil < Date.now()), k = PLANS[u.plan] && !exp ? u.plan : 'free', p = PLANS[k];
   return { key: k, name: p.name, maxSites: (u.maxSites > 0 && !exp) ? u.maxSites : p.maxSites, ai: p.ai, fmts: p.fmts || null, until: u.planUntil || 0, expired: exp, wanted: exp ? u.plan : '' };

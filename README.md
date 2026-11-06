@@ -40,7 +40,7 @@ Tema, fonte e layout dos sites novos são fixos (padrão: claro, Plus Jakarta Sa
 | Plano | Sites publicados | Formatos |
 |---|---|---|
 | Básico (grátis) | 1 | Landing Page, Link na bio, Cartão de visita, Perfil profissional |
-| Essencial | 5 | todos |
-| Pro | 15 | todos |
-| Premium | 50 | todos |
+| Essencial | 3 | todos |
+| Pro | 5 | todos |
+| Premium | 10 | todos |
 O bloqueio de formato é feito no servidor (`403 format`) e, na tela, os formatos pagos aparecem com 🔒. Sites já publicados em outro formato continuam funcionando. Limite por cliente continua ajustável na aba Clientes. Para mudar a lista de formatos grátis, edite `FREE_FMTS` em `server.js`.
