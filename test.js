@@ -35,7 +35,7 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/',{host:'bad-redir.kattalo.online'});ok('redirect só para https (javascript: ignorado)',r.s===200,r.s);
  // agendamento com reserva
  const dtf=new Date(Date.now()-3*3600e3+3*864e5);while([0,6].includes(dtf.getUTCDay()))dtf.setUTCDate(dtf.getUTCDate()+1);const D=dtf.toISOString().slice(0,10);
- r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/bk0001',data:{j:JSON.stringify({id:'bk0001',name:'Studio Lara',goal:'booking',days:'semana',open:'09:00',close:'12:00'}),name:'Studio Lara'}}});
+ r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/bk0001',data:{j:JSON.stringify({id:'bk0001',name:'Studio Lara',goal:'booking',days:'semana',open:'09:00',close:'12:00',nolog:1}),name:'Studio Lara'}}});
  const bh='studio-lara.kattalo.online';
  r=await rq('/api/book',{host:bh,method:'POST',body:{d:D,t:'09:30',n:'Maria',s:'Esmaltação'},ct:'text/plain'});ok('agendar horário livre 200',r.s===200,r.s+' '+r.t);
  r=await rq('/api/book',{host:bh,method:'POST',body:{d:D,t:'09:30',n:'João'},ct:'text/plain'});ok('mesmo horário 409',r.s===409,r.s);
@@ -43,6 +43,7 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/api/book',{host:bh,method:'POST',body:{d:D,t:'11:45',n:'X'},ct:'text/plain'});ok('horário fora da grade 400',r.s===400,r.s);
  r=await rq('/api/book',{host:bh,method:'POST',body:{d:D,t:'12:00',n:'X'},ct:'text/plain'});ok('depois do fechamento 400',r.s===400,r.s);
  r=await rq('/api/book',{host:bh,method:'POST',body:{d:'2020-01-06',t:'10:00',n:'X'},ct:'text/plain'});ok('data passada 400',r.s===400,r.s);
+ r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/bk0002',data:{j:JSON.stringify({id:'bk0002',name:'Studio Login',goal:'booking',days:'todos',open:'09:00',close:'12:00'}),name:'Studio Login'}}});const bh2=(r.j&&r.j.slug||'studio-login')+'.kattalo.online';r=await rq('/api/book',{host:bh2,method:'POST',body:{d:D,t:'09:00',n:'Ana'},ct:'text/plain'});ok('agendamento exige login do comprador por padrão',r.s===401,r.t);
  r=await rq('/api/bookings?site=bk0001',{});ok('lista de agendamentos exige login',r.s===401,r.s);
  r=await rq('/api/bookings?site=bk0001',{cookie:ck});ok('admin lista agendamentos',r.s===200&&JSON.parse(r.t).items.some(x=>x.t==='09:30'&&x.n==='Maria'),r.t);
  r=await rq('/api/bookings/cancel',{method:'POST',cookie:ck,body:{site:'bk0001',d:D,t:'09:30'}});r=await rq('/api/book',{host:bh,method:'POST',body:{d:D,t:'09:30',n:'Ana'},ct:'text/plain'});ok('cancelar libera o horário',r.s===200,r.s);
