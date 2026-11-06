@@ -121,11 +121,10 @@ async function main() {
   const cfg = (o) => 'window.__ROOT=' + JSON.stringify(ROOT) + ';window.__CFG=' + JSON.stringify(o).replace(/</g, '\\u003c') + ';';
 
   app.get('/healthz', (req, res) => { X.tick(APP_URL).catch(e => console.error('tick', e.message)); res.json({ ok: true, store: store.kind }); });
-  app.get('/privacidade', (req, res) => res.type('html').send('<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Política de Privacidade</title><body style="font:16px/1.6 system-ui;max-width:720px;margin:40px auto;padding:0 16px"><h1>Política de Privacidade</h1><p>O AutoPage cria sites para negócios. Quando o cliente conecta o Instagram ou o Facebook, lemos somente dados públicos do perfil comercial (nome, bio, endereço, telefone, horário e legendas recentes) para montar o site. Não publicamos nada nas suas redes, não guardamos o token de acesso e não vendemos dados.</p><p>Para pedir a exclusão dos seus dados, fale com o administrador do serviço em ' + esc(ROOT) + '.</p></body>'));
   app.all('/meta/data-deletion', (req, res) => res.json({ url: 'https://' + APP_HOST + '/privacidade', confirmation_code: crypto.randomBytes(6).toString('hex') }));
 
   // ---- login
-  const loginPage = (msg) => '<!doctype html><html lang=pt-BR><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>AutoPage.ai · Entrar</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;color:#e8ecff;font:16px system-ui"><form method=post action=/login style="width:min(340px,90vw);background:#141a33;padding:28px;border-radius:16px;display:grid;gap:12px"><h2 style="margin:0">🪄 AutoPage.ai</h2>' + (msg ? '<div style="color:#fca5a5">' + esc(msg) + '</div>' : '') + '<input type=email name=email placeholder="E-mail (admin: pode deixar em branco)" autocomplete=username style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><input type=password name=password placeholder=Senha autofocus required style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><button style="padding:12px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-weight:700">Entrar</button><a href=/cadastro style="color:#a5b4fc;text-align:center;font-size:14px">Criar conta grátis (7 dias de Pro)</a><a href=/planos style="color:#a5b4fc;text-align:center;font-size:14px">Ver planos</a></form></html>';
+  const loginPage = (msg) => '<!doctype html><html lang=pt-BR><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>AutoPage.ai · Entrar</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;color:#e8ecff;font:16px system-ui"><form method=post action=/login style="width:min(340px,90vw);background:#141a33;padding:28px;border-radius:16px;display:grid;gap:12px"><h2 style="margin:0">🪄 AutoPage.ai</h2>' + (msg ? '<div style="color:#fca5a5">' + esc(msg) + '</div>' : '') + '<input type=email name=email placeholder="E-mail (admin: pode deixar em branco)" autocomplete=username style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><input type=password name=password placeholder=Senha autofocus required style="padding:12px;border-radius:10px;border:1px solid #2b3566;background:#0b1020;color:#fff"><button style="padding:12px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-weight:700">Entrar</button><a href=/esqueci style="color:#a5b4fc;text-align:center;font-size:14px">Esqueci minha senha</a><a href=/cadastro style="color:#a5b4fc;text-align:center;font-size:14px">Criar conta grátis (7 dias de Pro)</a><a href=/planos style="color:#a5b4fc;text-align:center;font-size:14px">Ver planos</a><div style="text-align:center;font-size:12px;color:#8b95c0"><a href=/termos style="color:#8b95c0">Termos</a> · <a href=/privacidade style="color:#8b95c0">Privacidade</a></div></form></html>';
   app.post('/login', async (req, res) => {
     if (kind(hostOf(req)).t !== 'app') return res.status(404).end();
     const tooMany = () => res.status(429).type('html').send(loginPage('Muitas tentativas. Aguarde 15 minutos.'));
@@ -207,6 +206,7 @@ async function main() {
           const rows0 = await store.list('sites/', 500, true), own = rows0.filter(x => x.data && x.data.owner === req.u.id).length, pl = planOf(req.u.user);
           if (own >= pl.maxSites) return res.status(403).json({ error: 'limit', max: pl.maxSites });
         }
+        if (!adm && X.needVerify(req.u.user)) return res.status(403).json({ error: 'verify' });
         if (!adm) { const pl2 = planOf(req.u.user), g = String(p.goal || 'landing'); if (pl2.fmts && !pl2.fmts.includes(g) && !(prev && prev.goal === g)) return res.status(403).json({ error: 'format' }); }
         let slug = prev && prev.slug;
         if (!slug) {
@@ -374,6 +374,7 @@ async function main() {
       if (!st || !/^\d{4}-\d\d-\d\d$/.test(d) || !n) return res.status(400).json({ error: 'bad' });
       const bu = st && (X.buyerRequired(st) || b.bt) ? await X.buyerOf(st, b.bt).catch(() => null) : null;
       if (st && X.buyerRequired(st) && !bu) return res.status(401).json({ error: 'login' });
+      if (X.buyerBlocked(bu)) return res.status(403).json({ error: 'verify' });
       const dt = new Date(d + 'T12:00:00Z'); if (isNaN(dt)) return res.status(400).json({ error: 'bad' });
       const now = brNow(), today = ymd(now);
       if (d < today || d > ymd(new Date(now.getTime() + 120 * 864e5))) return res.status(400).json({ error: 'date' });

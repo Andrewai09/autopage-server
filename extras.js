@@ -38,6 +38,7 @@ module.exports = function makeExtras(base) {
   const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const wrap = (t, body) => '<div style="font:16px/1.55 system-ui,Arial;max-width:520px;margin:auto;padding:24px"><h2 style="margin:0 0 12px">🪄 ' + esc(t) + '</h2>' + body + '<p style="color:#6b7280;font-size:13px;margin-top:24px">AutoPage.ai · ' + esc(APP_HOST) + '</p></div>';
   const btn = (u, t) => '<p><a href="' + esc(u) + '" style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:700">' + esc(t) + '</a></p>';
+  X.wrap = wrap; X.btn = btn; X.esc = esc;
   X.mail = {
     welcome: (u, url) => ({ subject: 'Bem-vindo ao AutoPage.ai', html: wrap('Bem-vindo, ' + clean(u.name, 60), '<p>Seu acesso está pronto. Crie seu primeiro site a partir do link de uma rede social.</p>' + btn(url, 'Abrir meu painel')) }),
     receipt: (u, o, planName, until, url) => ({ subject: 'Pagamento aprovado · plano ' + planName, html: wrap('Pagamento aprovado', '<p>Recebemos <b>R$ ' + (+o.amount).toFixed(2).replace('.', ',') + '</b> pelo plano <b>' + esc(planName) + '</b>.</p><p>Seu plano vale até <b>' + new Date(until).toLocaleDateString('pt-BR') + '</b>.</p>' + btn(url, 'Entrar no painel')) }),
@@ -130,13 +131,14 @@ module.exports = function makeExtras(base) {
       if (kind(hostOf(req)).t !== 'app') return res.status(404).end();
       if (!SIGNUP_ON()) return res.type('html').send(page('Cadastro', '<p>Cadastros fechados no momento. <a style="color:#a5b4fc" href=/planos>Ver planos</a></p>'));
       const ref = clean(req.query.ref, 20).replace(/[^a-z0-9]/g, '');
-      res.type('html').send(page('Criar conta · AutoPage.ai', '<form id=f style="width:min(360px,92vw);background:#141a33;padding:28px;border-radius:16px;display:grid;gap:12px"><h2 style="margin:0">🪄 Criar conta grátis</h2><div style="color:#b7c0dc;font-size:14px">Ganhe <b>7 dias do plano Pro</b> para testar. Sem cartão.</div><input id=n placeholder="Seu nome" required maxlength=80 style="' + inp + '"><input id=e type=email placeholder="Seu e-mail" required style="' + inp + '"><input id=p type=password placeholder="Crie uma senha (8+ caracteres)" required minlength=8 style="' + inp + '"><input id=w tabindex=-1 autocomplete=off style="position:absolute;left:-9999px" aria-hidden=true><div id=m style="color:#fca5a5;min-height:20px"></div><button style="padding:12px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-weight:700;cursor:pointer">Criar conta e entrar</button><a href=/ style="color:#a5b4fc;text-align:center;font-size:14px">Já tenho conta</a></form><script>document.getElementById("f").onsubmit=async function(ev){ev.preventDefault();var m=document.getElementById("m");m.textContent="Criando…";try{var r=await fetch("/api/signup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:n.value,email:e.value,password:p.value,w:w.value,ref:' + JSON.stringify(ref) + '})}),j=await r.json();if(!r.ok)throw new Error(j.error||"Erro");location.href="/"}catch(x){m.textContent=x.message}}</script>'));
+      res.type('html').send(page('Criar conta · AutoPage.ai', '<form id=f style="width:min(360px,92vw);background:#141a33;padding:28px;border-radius:16px;display:grid;gap:12px"><h2 style="margin:0">🪄 Criar conta grátis</h2><div style="color:#b7c0dc;font-size:14px">Ganhe <b>7 dias do plano Pro</b> para testar. Sem cartão.</div><input id=n placeholder="Seu nome" required maxlength=80 style="' + inp + '"><input id=e type=email placeholder="Seu e-mail" required style="' + inp + '"><input id=p type=password placeholder="Crie uma senha (8+ caracteres)" required minlength=8 style="' + inp + '"><input id=w tabindex=-1 autocomplete=off style="position:absolute;left:-9999px" aria-hidden=true><label style="font-size:13px;color:#b7c0dc;display:flex;gap:8px;align-items:flex-start"><input id=tc type=checkbox required style="margin-top:3px"><span>Li e aceito os <a target=_blank style="color:#a5b4fc" href=/termos>Termos de Uso</a> e a <a target=_blank style="color:#a5b4fc" href=/privacidade>Política de Privacidade</a>.</span></label><div id=m style="color:#fca5a5;min-height:20px"></div><button style="padding:12px;border:0;border-radius:10px;background:#4f46e5;color:#fff;font-weight:700;cursor:pointer">Criar conta e entrar</button><a href=/ style="color:#a5b4fc;text-align:center;font-size:14px">Já tenho conta</a></form><script>document.getElementById("f").onsubmit=async function(ev){ev.preventDefault();var m=document.getElementById("m");m.textContent="Criando…";try{var r=await fetch("/api/signup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:n.value,email:e.value,password:p.value,terms:tc.checked,w:w.value,ref:' + JSON.stringify(ref) + '})}),j=await r.json();if(!r.ok)throw new Error(j.error||"Erro");location.href="/"}catch(x){m.textContent=x.message}}</script>'));
     });
     app.post('/api/signup', async (req, res) => {
       if (kind(hostOf(req)).t !== 'app') return res.status(404).end();
       if (!SIGNUP_ON()) return res.status(403).json({ error: 'Cadastros fechados no momento.' });
-      if (limited('su:' + ipOf(req), 5, 3600e3)) return res.status(429).json({ error: 'Muitas tentativas. Tente mais tarde.' });
       const b = req.body || {};
+      if (!b.w && b.terms !== true) return res.status(400).json({ error: 'É preciso aceitar os Termos de Uso e a Política de Privacidade.' });
+      if (limited('su:' + ipOf(req), 5, 3600e3)) return res.status(429).json({ error: 'Muitas tentativas. Tente mais tarde.' });
       if (b.w) return res.json({ ok: true }); // honeypot
       const name = clean(b.name, 80), email = String(b.email || '').trim().toLowerCase().slice(0, 200), pw = String(b.password || '');
       if (!name || !EMAIL.test(email)) return res.status(400).json({ error: 'Informe nome e um e-mail válido.' });
@@ -144,10 +146,11 @@ module.exports = function makeExtras(base) {
       if (await store.get('uemail/' + email)) return res.status(409).json({ error: 'Esse e-mail já tem conta. Entre com sua senha.' });
       const ref = clean(b.ref, 20).replace(/[^a-z0-9]/g, ''), refU = ref && ID.test(ref) ? await store.get('users/' + ref) : null;
       const id = crypto.randomBytes(6).toString('hex');
-      const u = { id, role: 'client', name, email, pw: pwHash(pw), status: 'active', plan: 'pro', planUntil: Date.now() + 7 * DAY, trialUsed: true, maxSites: 0, note: 'Cadastro online (teste de 7 dias)', tmp: false, createdAt: Date.now(), lastLogin: Date.now(), refBy: refU ? refU.id : '' };
+      const u = { id, role: 'client', name, email, pw: pwHash(pw), status: 'active', plan: 'pro', planUntil: Date.now() + 7 * DAY, trialUsed: true, maxSites: 0, note: 'Cadastro online (teste de 7 dias)', tmp: false, createdAt: Date.now(), lastLogin: Date.now(), refBy: refU ? refU.id : '', terms: Date.now(), ...(X.mailOn() ? { ev: 0 } : {}) };
       await store.set('users/' + id, u); await store.set('uemail/' + email, { id });
       await X.audit(email, 'signup', refU ? 'indicado por ' + refU.email : 'sem indicação');
       X.sendMail({ to: email, ...X.mail.welcome(u, appUrl() + '/') }).catch(() => {});
+      X.verifyMail(u).catch(() => {});
       res.setHeader('Set-Cookie', 'ap_s=' + mkToken({ r: 'client', u: id }, 7 * DAY) + '; HttpOnly; SameSite=Lax; Path=/; Max-Age=' + 7 * 86400 + secureC(req));
       res.json({ ok: true });
     });
@@ -161,7 +164,7 @@ module.exports = function makeExtras(base) {
     });
     X.meExtra = async (u) => {
       const users = (await store.list('users/', 2000, true)).map(x => x.data).filter(Boolean);
-      return { trialOk: !u.trialUsed && planOf(u).key === 'free', ref: { code: u.id, link: appUrl() + '/cadastro?ref=' + u.id, signups: users.filter(x => x.refBy === u.id).length, rewards: u.refRewards || 0 } };
+      return { verifyPending: X.needVerify(u), trialOk: !u.trialUsed && planOf(u).key === 'free', ref: { code: u.id, link: appUrl() + '/cadastro?ref=' + u.id, signups: users.filter(x => x.refBy === u.id).length, rewards: u.refRewards || 0 } };
     };
 
     // --- cupons (admin)
@@ -259,6 +262,7 @@ module.exports = function makeExtras(base) {
         if (limited('ods:' + st.id, 600, 86400e3)) return res.status(429).json({ error: 'rate' });
         const bu = (X.buyerRequired(st) || b.bt) ? await X.buyerOf(st, b.bt).catch(() => null) : null;
         if (X.buyerRequired(st) && !bu) return res.status(401).json({ error: 'login' });
+        if (X.buyerBlocked(bu)) return res.status(403).json({ error: 'verify' });
         const its = st.j.items || [], raw = Array.isArray(b.items) ? b.items.slice(0, 40) : [];
         if (!raw.length) return res.status(400).json({ error: 'bad' });
         const lines = []; let sub = 0;
@@ -383,7 +387,8 @@ module.exports = function makeExtras(base) {
       res.json({ ok: true, items: j.items.length });
     });
 
-    require('./buyers')({ app, kind, hostOf, ipOf, limited, ID, pwHash, pwCheck, store, clean, rid, cors, siteOf, appUrl, X });
+    require('./ops')({ app, kind, hostOf, ipOf, limited, isAuth, isAdmin, pwHash, store, clean, esc, EMAIL, appUrl, X, ROOT });
+    require('./buyers')({ ROOT, app, kind, hostOf, ipOf, limited, ID, pwHash, pwCheck, store, clean, rid, cors, siteOf, appUrl, X });
     require('./integ')({ app, kind, hostOf, ipOf, limited, isAdmin, isAuth, ID, planOf, store, clean, num, rid, cors, siteOf, wasMine, appUrl, ROOT, X });
 
     // --- estatísticas por site

@@ -81,3 +81,12 @@ Se o cliente não conseguir o token, vale o **frete manual**: no editor ele defi
 
 ## Frete automático da plataforma (um token para todas as lojas)
 Defina `ME_TOKEN` no Render (token do **seu** Melhor Envio; `ME_SANDBOX=1` para testes). Com isso, o cálculo PAC/SEDEX funciona em todas as lojas que escolherem "Frete automático" e informarem só o **CEP de origem**, sem token do cliente. Se o cliente conectar a própria conta em Vendas → Integrações, o token dele tem prioridade. O token da plataforma só cota preços; compra de etiquetas e postagem continuam por conta de cada lojista (o preço cotado vem das condições da sua conta).
+
+
+## Operação: senha, e-mail, termos e alerta de queda
+
+- **Esqueci a senha (cliente):** link na tela de login → `/esqueci` → e-mail com link de 1 hora (`/redefinir`). O link vale uma vez só (assinado, amarrado à senha atual) e um aviso de “senha alterada” é enviado.
+- **Esqueci a senha (comprador):** link no modal de login da loja; mesmo princípio (`/buyer/reset`).
+- **Confirmação de e-mail:** só ativa quando o e-mail está configurado (`RESEND_API_KEY` + `MAIL_FROM`). Clientes novos precisam confirmar para publicar sites; compradores novos precisam confirmar para finalizar pedidos/agendamentos (login com Google já conta como confirmado). Sem e-mail configurado, nada é bloqueado e “esqueci a senha” avisa que o envio está desligado.
+- **Termos de Uso e Política de Privacidade (LGPD):** `/termos` e `/privacidade`; cadastro exige o aceite. Variáveis opcionais: `LEGAL_NAME` (razão social/nome), `LEGAL_DOC` (CNPJ/CPF), `LEGAL_EMAIL` (contato/encarregado). **Os textos são um modelo: peça revisão de um advogado.**
+- **Alerta de queda:** `.github/workflows/uptime.yml` consulta `/healthz` a cada 5 minutos; se falhar, o GitHub envia e-mail (mantenha as notificações de Actions ligadas). Mude o endereço pela variável do repositório `UPTIME_URL`.

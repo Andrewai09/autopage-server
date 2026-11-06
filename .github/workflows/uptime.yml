@@ -1,0 +1,26 @@
+# Monitor de disponibilidade: a cada 5 minutos consulta /healthz.
+# Se o servidor não responder, o job falha e o GitHub envia e-mail ao dono do repositório
+# (Settings > Notifications > Actions). Também ajuda a manter a instância gratuita acordada.
+name: uptime
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verificar /healthz
+        env:
+          URL: ${{ vars.UPTIME_URL || 'https://app.kattalo.online/healthz' }}
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/h -w '%{http_code}' --max-time 45 "$URL" || echo 000)
+            if [ "$code" = "200" ] && grep -q '"ok":true' /tmp/h; then echo "OK ($code)"; exit 0; fi
+            echo "Tentativa $i falhou (HTTP $code)"; sleep 20
+          done
+          echo "::error::Servidor fora do ar: $URL"
+          exit 1

@@ -172,12 +172,20 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
   const m=/^https:\/\/mp\.test\/v1\/payments\/(\d+)$/.exec(u);if(m)return{ok:true,status:200,json:async()=>({status:'approved',external_reference:xPref&&xPref.external_reference,transaction_amount:xAmt})};return _f2(u,o)};
  const tick=()=>new Promise(k=>setTimeout(k,60));
  r=await rq('/cadastro');ok('página de cadastro abre',r.s===200&&r.t.includes('7 dias'),r.s);
- r=await rq('/api/signup',{method:'POST',body:{name:'Ana',email:'ana@ex.com',password:'SenhaBoa123'}});const ckA=(r.h.get('set-cookie')||'').split(';')[0];ok('cadastro cria conta e já entra',r.s===200&&ckA.startsWith('ap_s='),r.t);
+ r=await rq('/api/signup',{method:'POST',body:{name:'Sem',email:'sem@ex.com',password:'SenhaBoa123'}});ok('cadastro exige aceite dos termos',r.s===400,r.t);
+ r=await rq('/api/signup',{method:'POST',body:{name:'Ana',email:'ana@ex.com',password:'SenhaBoa123',terms:true}});const ckA=(r.h.get('set-cookie')||'').split(';')[0];ok('cadastro cria conta e já entra',r.s===200&&ckA.startsWith('ap_s='),r.t);
  r=await rq('/api/me',{cookie:ckA});const refA=r.j.ref&&r.j.ref.code;ok('cadastro dá 7 dias de Pro, sem teste extra, com link de indicação',r.j.plan.key==='pro'&&r.j.plan.until>Date.now()+6*864e5&&r.j.trialOk===false&&/\/cadastro\?ref=/.test(r.j.ref.link),r.t);
  await tick();ok('e-mail de boas-vindas enviado',mails.some(m=>/Bem-vindo/.test(m.subject)&&m.to[0]==='ana@ex.com'));
- r=await rq('/api/signup',{method:'POST',body:{name:'Ana',email:'ana@ex.com',password:'SenhaBoa123'}});ok('e-mail repetido 409',r.s===409,r.s);
- r=await rq('/api/signup',{method:'POST',body:{name:'X',email:'x@ex.com',password:'curta'}});ok('senha curta recusada no cadastro',r.s===400,r.s);
- r=await rq('/api/signup',{method:'POST',body:{name:'Bot',email:'bot@ex.com',password:'SenhaBoa123',w:'spam'}});r=await rq('/login',{method:'POST',raw:'email=bot%40ex.com&password=SenhaBoa123'});ok('honeypot não cria conta',r.s===401,r.s);
+ const tokOf=(rx,to)=>{const m=mails.filter(x=>x.to[0]===to&&rx.test(x.subject)).pop();const h=m&&/href="[^"]*[?]t=([^"&]+)"/.exec(m.html);return h?decodeURIComponent(h[1]):''};
+ r=await rq('/api/db',{method:'POST',cookie:ckA,body:{op:'set',path:'sites/ana00v',data:{j:JSON.stringify({name:'Ana V',goal:'landing',items:[]})}}});ok('e-mail não confirmado bloqueia publicação',r.s===403&&r.j.error==='verify',r.t);
+ r=await rq('/api/me',{cookie:ckA});ok('/api/me informa verificação pendente',r.j.verifyPending===true,r.t);
+ {const tv=tokOf(/Confirme seu e-mail/,'ana@ex.com');ok('e-mail de confirmação enviado',!!tv);
+ r=await rq('/verificar?t='+encodeURIComponent(tv));ok('link de confirmação funciona',r.s===200&&r.t.includes('confirmado'),r.s);
+ r=await rq('/verificar?t='+encodeURIComponent(tv+'x'));ok('link adulterado rejeitado',r.s===400);
+ r=await rq('/api/me',{cookie:ckA});ok('verificação some após confirmar',r.j.verifyPending===false,r.t);}
+ r=await rq('/api/signup',{method:'POST',body:{name:'Ana',email:'ana@ex.com',password:'SenhaBoa123',terms:true}});ok('e-mail repetido 409',r.s===409,r.s);
+ r=await rq('/api/signup',{method:'POST',body:{name:'X',email:'x@ex.com',password:'curta',terms:true}});ok('senha curta recusada no cadastro',r.s===400,r.s);
+ r=await rq('/api/signup',{method:'POST',body:{name:'Bot',email:'bot@ex.com',password:'SenhaBoa123',terms:true,w:'spam'}});r=await rq('/login',{method:'POST',raw:'email=bot%40ex.com&password=SenhaBoa123'});ok('honeypot não cria conta',r.s===401,r.s);
  // teste grátis para cliente criado pelo admin
  r=await rq('/api/admin/clients',{method:'POST',cookie:ck,body:{name:'Bia',email:'bia@ex.com',plan:'free'}});const pwB=r.j.password;
  r=await rq('/login',{method:'POST',raw:'email=bia%40ex.com&password='+pwB});const ckB=(r.h.get('set-cookie')||'').split(';')[0];
@@ -193,7 +201,7 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/api/admin/coupons',{method:'POST',cookie:ck,body:{code:'lanc20',pct:20,max:2}});ok('admin cria cupom',r.s===200&&r.j.coupon.code==='LANC20',r.t);
  r=await rq('/api/coupon?code=lanc20');ok('cupom válido devolve o desconto',r.s===200&&r.j.pct===20,r.t);
  r=await rq('/api/coupon?code=nada');ok('cupom inexistente 404',r.s===404,r.s);
- r=await rq('/api/signup',{method:'POST',body:{name:'Caio',email:'caio@ex.com',password:'SenhaBoa123',ref:refA}});const ckC=(r.h.get('set-cookie')||'').split(';')[0];
+ r=await rq('/api/signup',{method:'POST',body:{name:'Caio',email:'caio@ex.com',password:'SenhaBoa123',terms:true,ref:refA}});const ckC=(r.h.get('set-cookie')||'').split(';')[0];
  const untilA0=(await rq('/api/me',{cookie:ckA})).j.plan.until;
  r=await rq('/api/checkout',{method:'POST',cookie:ckC,body:{plan:'basic',coupon:'invalido'}});ok('checkout com cupom inválido recusado',r.s===400,r.s);
  r=await rq('/api/checkout',{method:'POST',cookie:ckC,body:{plan:'basic',coupon:'lanc20'}});ok('checkout aplica 20% no valor cobrado',r.s===200&&xPref.items[0].unit_price===39.92,r.t+JSON.stringify(xPref&&xPref.items));
@@ -249,6 +257,39 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  const idA=(await store.get('uemail/ana@ex.com')).id,uA=await store.get('users/'+idA);uA.planUntil=Date.now()+2*864e5;await store.set('users/'+idA,uA);mails.length=0;
  r=await rq('/api/admin/jobs',{method:'POST',cookie:ck});await tick();ok('aviso de vencimento enviado ao cliente',r.j.expiring>=1&&mails.some(m=>/vence em/.test(m.subject)&&m.to[0]==='ana@ex.com'),r.t+JSON.stringify(mails.map(m=>m.subject)));
  mails.length=0;r=await rq('/api/admin/jobs',{method:'POST',cookie:ck});ok('aviso não repete',r.j.expiring===0&&!mails.length,r.t);
+ // ---- operação: esqueci a senha (cliente), termos, comprador
+ r=await rq('/esqueci');ok('página esqueci a senha abre',r.s===200&&r.t.includes('Esqueci'),r.s);
+ r=await rq('/');ok('login tem link de esqueci a senha',r.t.includes('/esqueci')||r.t.includes('Esqueci'),r.s);
+ mails.length=0;r=await rq('/api/forgot',{method:'POST',body:{email:'ana@ex.com'}});await tick();
+ ok('pedido de redefinição envia e-mail',r.s===200&&r.j.mail===1&&mails.some(m=>/Redefinir sua senha/.test(m.subject)&&m.to[0]==='ana@ex.com'),r.t);
+ mails.length=0;r=await rq('/api/forgot',{method:'POST',body:{email:'naoexiste@ex.com'}});await tick();ok('e-mail inexistente: mesma resposta e nenhum envio',r.s===200&&r.j.ok&&!mails.length,r.t);
+ {const tr=tokOf(/Redefinir sua senha/,'ana@ex.com')||(await(async()=>{mails.length=0;await rq('/api/forgot',{method:'POST',body:{email:'ana@ex.com'}});await tick();return tokOf(/Redefinir sua senha/,'ana@ex.com')})());
+ ok('e-mail traz o token de redefinição',!!tr);
+ r=await rq('/redefinir?t='+encodeURIComponent(tr));ok('página de nova senha abre',r.s===200&&r.t.includes('nova senha'),r.s);
+ r=await rq('/api/reset',{method:'POST',body:{t:tr+'x',password:'NovaSenha456'}});ok('token adulterado rejeitado',r.s===400,r.t);
+ r=await rq('/api/reset',{method:'POST',body:{t:tr,password:'curta'}});ok('senha curta recusada na redefinição',r.s===400,r.t);
+ mails.length=0;r=await rq('/api/reset',{method:'POST',body:{t:tr,password:'NovaSenha456'}});await tick();ok('redefinição altera a senha e avisa por e-mail',r.s===200&&mails.some(m=>/senha foi alterada/.test(m.subject)),r.t);
+ r=await rq('/api/reset',{method:'POST',body:{t:tr,password:'OutraSenha789'}});ok('link de redefinição só vale uma vez',r.s===400,r.t);
+ r=await rq('/login',{method:'POST',raw:'email=ana%40ex.com&password=NovaSenha456'});ok('login com a nova senha',r.s===302||r.s===200&&!/incorret/i.test(r.t),r.s);
+ r=await rq('/login',{method:'POST',raw:'email=ana%40ex.com&password=SenhaBoa123'});ok('senha antiga não entra mais',r.s===401,r.s);}
+ r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/bz0001',data:{j:JSON.stringify({name:'Loja Bia',goal:'menu',items:[{n:'Pizza',p:30}]}),name:'Loja Bia'}}});
+ {const H=r.j.slug+'.kattalo.online';mails.length=0;
+ r=await rq('/api/buyer/register',{method:'POST',body:{name:'Bia',email:'bia@ex.com',password:'SenhaBoa123'},host:H});await tick();
+ const bt=r.j.token;ok('comprador novo nasce não confirmado e recebe e-mail',r.s===200&&r.j.vf===0&&mails.some(m=>/Confirme seu e-mail/.test(m.subject)&&m.to[0]==='bia@ex.com'),r.t);
+ r=await rq('/api/order',{method:'POST',body:{items:[{n:'x',q:1}],bt},host:H});ok('pedido bloqueado até confirmar e-mail',r.s===403&&r.j.error==='verify',r.t);
+ r=await rq('/api/buyer/me',{method:'POST',body:{bt:tokOf(/Confirme seu e-mail/,'bia@ex.com')},host:H});ok('token de confirmação não serve como sessão',r.s===401,r.s);
+ r=await rq('/buyer/verify?t='+encodeURIComponent(tokOf(/Confirme seu e-mail/,'bia@ex.com')));ok('comprador confirma e-mail',r.s===200&&r.t.includes('confirmado'),r.s);
+ r=await rq('/api/order',{method:'POST',body:{items:[{n:'x',q:1}],bt},host:H});ok('depois de confirmar não é mais bloqueado',!(r.j&&r.j.error==='verify'),r.t);
+ mails.length=0;r=await rq('/api/buyer/forgot',{method:'POST',body:{email:'bia@ex.com'},host:H});await tick();
+ ok('comprador pede redefinição e recebe e-mail',r.s===200&&r.j.mail===1&&mails.some(m=>/Redefinir sua senha/.test(m.subject)&&m.to[0]==='bia@ex.com'),r.t);
+ const br=tokOf(/Redefinir sua senha/,'bia@ex.com');
+ r=await rq('/api/buyer/me',{method:'POST',body:{bt:br},host:H});ok('token de redefinição não serve como sessão',r.s===401,r.s);
+ r=await rq('/buyer/reset?t='+encodeURIComponent(br));ok('página de nova senha do comprador abre',r.s===200&&r.t.includes('nova senha'),r.s);
+ r=await rq('/api/buyer/reset',{method:'POST',body:{t:br,password:'NovaSenha456'}});ok('comprador redefine a senha',r.s===200,r.t);
+ r=await rq('/api/buyer/reset',{method:'POST',body:{t:br,password:'Outra123456'}});ok('link do comprador só vale uma vez',r.s===400,r.t);
+ r=await rq('/api/buyer/login',{method:'POST',body:{email:'bia@ex.com',password:'NovaSenha456'},host:H});ok('comprador entra com a nova senha',r.s===200,r.t);}
+ r=await rq('/termos');ok('termos de uso',r.s===200&&r.t.includes('Termos de Uso')&&r.t.includes('LGPD')===false&&r.t.includes('Política de Privacidade'));
+ r=await rq('/privacidade');ok('privacidade cita LGPD, direitos e contato',r.s===200&&r.t.includes('LGPD')&&r.t.includes('art. 18')&&r.t.includes('mailto:'));
  global.fetch=_f2;delete process.env.RESEND_API_KEY;
  // páginas legais + saúde + headers
  r=await rq('/privacidade');ok('política de privacidade',r.s===200&&r.t.includes('Política'));
