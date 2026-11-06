@@ -409,6 +409,7 @@ module.exports = function makeExtras(base) {
     });
     app.post('/api/domain', async (req, res) => {
       if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
+      if (!isAdmin(req) && !planOf(req.u.user).domain) return res.status(403).json({ error: 'Domínio próprio está disponível nos planos Pro e Premium.' });
       const b = req.body || {}, site = String(b.site || ''), host = String(b.domain || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
       if (!ID.test(site) || !HOST.test(host) || host.length > 100) return res.status(400).json({ error: 'Informe um domínio válido, como meusite.com.br.' });
       if (host === APP_HOST || host === ROOT || host.endsWith('.' + ROOT)) return res.status(400).json({ error: 'Use um domínio seu, fora de ' + ROOT + '.' });

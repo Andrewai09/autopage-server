@@ -2083,7 +2083,8 @@ const HX0=HX;HX=function(v){HX0(v);const t=document.getElementById('t-vnd');if(t
 /* formatos liberados por plano */
 function applyFmts(pl){const f=pl&&pl.fmts;document.querySelectorAll('input[name=goal]').forEach(i=>{const lk=!!f&&!f.includes(i.value),l=i.closest('label');i.disabled=lk;if(l){l.style.opacity=lk?'.5':'';const t=l.querySelector('.lkm');if(lk&&!t)l.insertAdjacentHTML('beforeend','<div class="lkm mu" style="color:var(--br);font-weight:700">🔒 Disponível nos planos pagos</div>');if(!lk&&t)t.remove()}});const s=document.getElementById('e-goal');if(s)[...s.options].forEach(o=>{const lk=!!f&&!f.includes(o.value);o.disabled=lk;o.textContent=o.textContent.replace(/ 🔒$/,'')+(lk?' 🔒':'')})}
 (function(){if(U.role==='admin')return;fx('/api/me').then(m=>applyFmts(m.plan)).catch(()=>{})})();
-const lH=loadHome;loadHome=async function(){await lH();if(HM&&HM.me)applyFmts(HM.me.plan)};
+function planCard(pl){applyFmts(pl);const b=document.getElementById('hm');if(b&&!document.getElementById('plf'))b.insertAdjacentHTML('beforeend','<div class="cd" id="plf" style="margin-top:14px"><h3 style="margin:0 0 6px">O que o seu plano '+esc(pl.name)+' libera</h3><ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.7"><li>'+pl.maxSites+' site'+(pl.maxSites>1?'s':'')+' publicado'+(pl.maxSites>1?'s':'')+'</li>'+(pl.feat||[]).map(f=>'<li>'+esc(f)+'</li>').join('')+'</ul>'+(pl.key!=='premium'?'<div style="margin-top:8px"><a class="btn sm pri" href="/planos">Ver planos e fazer upgrade</a></div>':'')+'</div>')}
+const rC=renderClient;renderClient=function(me,st){rC(me,st);planCard(me.plan)};
 
 </script>
 </body>

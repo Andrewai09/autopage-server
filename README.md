@@ -36,11 +36,11 @@ Tema, fonte e layout dos sites novos são fixos (padrão: claro, Plus Jakarta Sa
 - Gestão de produtos no painel: preço, nome, estoque, esgotado, ordem, adicionar/excluir (máx. 60 itens). A mudança vale na hora no site publicado.
 - Dados em `sorders/<site>/…` e contador `sctr/<site>`.
 
-## Planos (sites e formatos)
-| Plano | Sites publicados | Formatos |
-|---|---|---|
-| Básico (grátis) | 1 | Landing Page, Link na bio, Cartão de visita, Perfil profissional |
-| Essencial | 3 | todos |
-| Pro | 5 | todos |
-| Premium | 10 | todos |
-O bloqueio de formato é feito no servidor (`403 format`) e, na tela, os formatos pagos aparecem com 🔒. Sites já publicados em outro formato continuam funcionando. Limite por cliente continua ajustável na aba Clientes. Para mudar a lista de formatos grátis, edite `FREE_FMTS` em `server.js`.
+## Planos (o que cada um libera)
+| Plano | Sites | Formatos | Domínio próprio | IA/dia |
+|---|---|---|---|---|
+| Básico (grátis) | 1 | Landing, Link na bio, Cartão, Perfil profissional | não | 10 |
+| Essencial | 3 | + Catálogo Zap, Cardápio, Portfólio, Apresentação, Convite, Currículo, Pet, Captura | não | 30 |
+| Pro | 5 | todos (inclui Loja com carrinho e Agendamento) | sim | 80 |
+| Premium | 10 | todos | sim | 200 |
+O painel de Vendas aparece para quem tem Catálogo, Cardápio ou Loja (a Loja só no Pro+). Os bloqueios são feitos no servidor (`403 format`, domínio `403`) e, na tela, os formatos pagos ficam com 🔒. Sites já publicados continuam funcionando. Tudo está definido em `PLANS` (`server.js`); o limite por cliente ainda pode ser ajustado na aba Clientes. A página `/planos` lista o que cada plano libera.

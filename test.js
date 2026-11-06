@@ -56,6 +56,8 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/api/admin/overview',{cookie:ck2});ok('cliente não acessa painel admin',r.s===401,r.s);
  r=await rq('/api/db',{method:'POST',cookie:ck2,body:{op:'set',path:'sites/fmt001',data:{j:JSON.stringify({name:'Loja',goal:'ecommerce',items:[]}),name:'Loja'}}});ok('plano Básico grátis bloqueia formato pago (loja)',r.s===403&&r.j.error==='format',r.t);
  r=await rq('/api/me',{cookie:ck2});ok('/api/me lista os formatos do plano grátis',Array.isArray(r.j.plan.fmts)&&r.j.plan.fmts.includes('landing')&&!r.j.plan.fmts.includes('ecommerce'),r.t);
+ r=await rq('/api/domain',{method:'POST',cookie:ck2,body:{site:'fmt001',domain:'meusite.com.br'}});ok('domínio próprio bloqueado fora do Pro/Premium',r.s===403&&/Pro/.test(r.j.error||''),r.t);
+ r=await rq('/api/me',{cookie:ck2});ok('/api/me traz recursos do plano',r.j.plan.domain===false&&r.j.plan.feat.length>0,r.t);
  r=await rq('/api/admin/clients',{method:'POST',cookie:ck2,body:{name:'x',email:'x@x.com'}});ok('cliente não cria clientes',r.s===401,r.s);
  r=await rq('/api/db',{method:'POST',cookie:ck2,body:{op:'set',path:'sites/cli001',data:{j:JSON.stringify({id:'cli001',name:'Loja da Maria',goal:'landing'}),name:'Loja da Maria'}}});ok('cliente publica o 1º site',r.s===200&&r.j.slug==='loja-da-maria',r.t);
  r=await rq('/api/db',{method:'POST',cookie:ck2,body:{op:'set',path:'sites/cli002',data:{j:JSON.stringify({id:'cli002',name:'Segundo',goal:'landing'}),name:'Segundo'}}});ok('plano gratuito limita a 1 site (403)',r.s===403&&r.j.error==='limit',r.t);
