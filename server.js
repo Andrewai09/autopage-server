@@ -102,10 +102,21 @@ async function main() {
     next();
   });
 
+  // página (~300 KB): monta uma vez por variante e serve comprimida (gzip) quando o navegador aceita
+  const zlib = require('zlib'), PG = new Map();
   const page = (req, res, extra) => {
-    const html = APP_HTML.replace('<script>', '<script>' + extra + SHIM + '</script><script>');
+    let e = PG.get(extra);
+    if (!e) {
+      const html = APP_HTML.replace('<script>', '<script>' + extra + SHIM + '</script><script>');
+      e = { raw: Buffer.from(html), gz: zlib.gzipSync(html, { level: 6 }) };
+      if (PG.size >= 300) PG.delete(PG.keys().next().value);
+      PG.set(extra, e);
+    }
     res.setHeader('Cache-Control', 'no-store');
-    res.type('html').send(html);
+    res.setHeader('Vary', 'Accept-Encoding');
+    res.type('html');
+    if (/\bgzip\b/.test(String(req.headers['accept-encoding'] || ''))) { res.setHeader('Content-Encoding', 'gzip'); return res.send(e.gz); }
+    res.send(e.raw);
   };
   const cfg = (o) => 'window.__ROOT=' + JSON.stringify(ROOT) + ';window.__CFG=' + JSON.stringify(o).replace(/</g, '\\u003c') + ';';
 
