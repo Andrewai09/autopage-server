@@ -29,3 +29,9 @@ Nos formatos *Perfil profissional* e *Currículo online* é possível enviar o c
 
 ## Padrão visual
 Tema, fonte e layout dos sites novos são fixos (padrão: claro, Plus Jakarta Sans, layout dividido) e não variam por segmento. Mudança em "Padrão visual dos novos sites" na tela de criar, ou "Usar este visual como padrão" no editor. Fontes: Plus Jakarta Sans, Inter, Poppins, Playfair Display+Inter, Space Grotesk+Inter.
+
+## Vendas (catálogo, cardápio digital e loja com carrinho)
+- Cada pedido feito no site publicado é **registrado no servidor** (`POST /api/order`, validado contra os itens, estoque, cupom, frete e pedido mínimo) e **também enviado ao WhatsApp** da loja com o número do pedido (#N). Se a API estiver indisponível (ou no HTML baixado), o pedido segue direto pelo WhatsApp.
+- Aba **🛒 Vendas** (login do cliente): faturamento, pedidos, ticket médio, gráfico de 14 dias, mais vendidos, estoque baixo, status do pedido (novo → confirmado → entregue / cancelado, com devolução de estoque), botão "Avisar cliente" pelo WhatsApp e exportação CSV.
+- Gestão de produtos no painel: preço, nome, estoque, esgotado, ordem, adicionar/excluir (máx. 60 itens). A mudança vale na hora no site publicado.
+- Dados em `sorders/<site>/…` e contador `sctr/<site>`.

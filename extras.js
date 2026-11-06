@@ -245,6 +245,113 @@ module.exports = function makeExtras(base) {
       await store.del('msgs/' + s + '/' + id); res.json({ ok: true });
     });
 
+    // --- vendas: pedidos registrados dos sites de venda (catálogo, cardápio, loja) + painel do cliente
+    const COMM = ['catalog', 'ecommerce', 'menu'], STS = ['novo', 'confirmado', 'entregue', 'cancelado'];
+    const num = (v, a, b, d) => { const n = Number(v); return Number.isFinite(n) ? Math.min(b, Math.max(a, n)) : d; };
+    const saveSite = async (id, sd, j) => { await store.set('sites/' + id, { ...sd, j: JSON.stringify(j), at: Date.now() }); };
+    app.all('/api/order', async (req, res) => {
+      if (cors(req, res)) return;
+      if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
+      try {
+        if (limited('od:' + ipOf(req), 20, 3600e3)) return res.status(429).json({ error: 'rate' });
+        const st = await siteOf(req), b = req.body || {};
+        if (!st || !COMM.includes(st.j.goal)) return res.status(400).json({ error: 'bad' });
+        if (limited('ods:' + st.id, 600, 86400e3)) return res.status(429).json({ error: 'rate' });
+        const its = st.j.items || [], raw = Array.isArray(b.items) ? b.items.slice(0, 40) : [];
+        if (!raw.length) return res.status(400).json({ error: 'bad' });
+        const lines = []; let sub = 0;
+        for (const r of raw) {
+          const q = Math.floor(num(r.q, 1, 99, 0)); if (!q) return res.status(400).json({ error: 'bad' });
+          const nm = clean(r.n, 80); let ix = Number.isInteger(r.i) ? r.i : -1;
+          if (!its[ix] || clean(its[ix].n, 80) !== nm) ix = its.findIndex(x => clean(x.n, 80) === nm);
+          if (ix < 0) return res.status(400).json({ error: 'item', m: nm });
+          const it = its[ix];
+          if (it.o) return res.status(409).json({ error: 'out', m: it.n });
+          lines.push({ ix, n: clean(it.n, 80), v: clean(r.v, 40), q, p: Math.max(0, Number(it.p) || 0) });
+        }
+        // estoque: soma por produto; recusa se faltar
+        const need = {}; lines.forEach(l => { need[l.ix] = (need[l.ix] || 0) + l.q; });
+        for (const k of Object.keys(need)) { const it = its[k]; if (it.s !== '' && it.s != null && Number.isFinite(Number(it.s)) && need[k] > Number(it.s)) return res.status(409).json({ error: 'stock', m: it.n, left: Math.max(0, Number(it.s)) }); }
+        sub = lines.reduce((t, l) => t + l.p * l.q, 0);
+        const mode = b.mode === 'entrega' ? 'entrega' : 'retirada', cm = /^([A-Za-z0-9]{2,20}):(\d{1,2})$/.exec(String(st.j.coupon || '').trim());
+        const d = cm && String(b.cup || '').trim().toUpperCase() === cm[1].toUpperCase() ? +cm[2] : 0;
+        const fee = mode === 'entrega' && !st.j.nodeliv ? Math.max(0, Number(st.j.fee) || 0) : 0;
+        if (Number(st.j.min) > 0 && sub < Number(st.j.min)) return res.status(409).json({ error: 'min', m: st.j.min });
+        const total = Math.round((sub * (1 - d / 100) + fee) * 100) / 100;
+        const ctr = (await store.get('sctr/' + st.id)) || { n: 0 }; ctr.n = (ctr.n || 0) + 1; await store.set('sctr/' + st.id, ctr);
+        const o = { no: ctr.n, items: lines.map(l => ({ n: l.n, v: l.v, q: l.q, p: l.p })), sub: Math.round(sub * 100) / 100, d, fee, total, mode, name: clean(b.name, 80), tel: clean(b.tel, 30), addr: clean(b.addr, 200), pay: clean(b.pay, 30), obs: clean(b.obs, 300), st: 'novo', at: Date.now() };
+        if (!o.name) return res.status(400).json({ error: 'bad' });
+        const key = Date.now().toString(36) + rid();
+        await store.set('sorders/' + st.id + '/' + key, o);
+        // baixa de estoque
+        const ks = Object.keys(need).filter(k => its[k].s !== '' && its[k].s != null && Number.isFinite(Number(its[k].s)));
+        if (ks.length) {
+          const sd = await store.get('sites/' + st.id);
+          if (sd) { const j = JSON.parse(sd.j || '{}'); ks.forEach(k => { const it = (j.items || [])[k]; if (it) { it.s = Math.max(0, Number(it.s) - need[k]); if (it.s === 0) it.o = 1; } }); await saveSite(st.id, sd, j); }
+        }
+        const ow = st.owner !== 'admin' ? await store.get('users/' + st.owner) : null, to = ow ? ow.email : String(process.env.ADMIN_EMAIL || '').trim();
+        if (to && X.mailOn()) X.sendMail({ to, ...X.mail.lead(st.name, { n: o.name, c: o.tel, m: 'Pedido #' + o.no + ' · ' + o.items.map(i => i.q + 'x ' + i.n).join(', ') + ' · Total R$ ' + o.total.toFixed(2).replace('.', ',') }, appUrl() + '/') }).catch(() => {});
+        if (Math.random() < 0.03) store.trim('sorders/' + st.id + '/', 5000).catch(() => {});
+        res.json({ ok: true, no: o.no, total: o.total });
+      } catch (e) { console.error('order', e.message); res.status(500).json({ error: 'server' }); }
+    });
+    const commSites = async (req) => (await ownSites(req)).filter(x => COMM.includes(x.goal));
+    app.get('/api/sales/sites', async (req, res) => {
+      if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
+      const mine = await commSites(req), out = [];
+      for (const s of mine) {
+        const os = (await store.list('sorders/' + s.id + '/', 2000, true)).map(r => r.data), t7 = Date.now() - 7 * DAY;
+        out.push({ id: s.id, name: s.name, slug: s.slug, goal: s.goal, orders: os.length, novos: os.filter(o => o.st === 'novo').length, rev7: Math.round(os.filter(o => o.st !== 'cancelado' && o.at >= t7).reduce((t, o) => t + o.total, 0) * 100) / 100 });
+      }
+      res.json({ sites: out });
+    });
+    app.get('/api/sales', async (req, res) => {
+      if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
+      const id = String(req.query.site || ''); if (!ID.test(id)) return res.status(400).json({ error: 'bad' });
+      if (!(await wasMine(req, id))) return res.status(403).json({ error: 'forbidden' });
+      const sd = await store.get('sites/' + id); if (!sd) return res.status(404).json({ error: 'nf' });
+      let j = {}; try { j = JSON.parse(sd.j || '{}'); } catch (e) { /* vazio */ }
+      const orders = (await store.list('sorders/' + id + '/', 3000, true)).map(r => ({ id: r.path.split('/').pop(), ...r.data }));
+      const products = (j.items || []).map((x, i) => ({ i, n: x.n, p: x.p, e: x.e, d: x.d || '', c: x.c || '', v: x.v || '', s: x.s === undefined ? '' : x.s, o: x.o ? 1 : 0, img: x.i ? 1 : 0 }));
+      res.json({ site: { id, name: sd.name || j.name, goal: j.goal, fee: j.fee || 0, min: j.min || 0, coupon: j.coupon || '' }, orders, products });
+    });
+    app.post('/api/sales/status', async (req, res) => {
+      if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
+      const b = req.body || {}, id = String(b.site || ''), oid = String(b.id || '');
+      if (!ID.test(id) || !/^[a-z0-9]{1,40}$/.test(oid) || !STS.includes(b.st)) return res.status(400).json({ error: 'bad' });
+      if (!(await wasMine(req, id))) return res.status(403).json({ error: 'forbidden' });
+      const o = await store.get('sorders/' + id + '/' + oid); if (!o) return res.status(404).json({ error: 'nf' });
+      if (o.st === 'cancelado') return res.status(409).json({ error: 'cancelled' });
+      if (b.st === 'cancelado') { // devolve o estoque dos produtos com estoque controlado
+        const sd = await store.get('sites/' + id);
+        if (sd) { const j = JSON.parse(sd.j || '{}'); let ch = false; o.items.forEach(l => { const it = (j.items || []).find(x => clean(x.n, 80) === l.n); if (it && it.s !== '' && it.s != null && Number.isFinite(Number(it.s))) { it.s = Number(it.s) + l.q; if (it.s > 0) delete it.o; ch = true; } }); if (ch) await saveSite(id, sd, j); }
+      }
+      o.st = b.st; o.up = Date.now(); await store.set('sorders/' + id + '/' + oid, o);
+      res.json({ ok: true });
+    });
+    app.post('/api/sales/product', async (req, res) => {
+      if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
+      const b = req.body || {}, id = String(b.site || '');
+      if (!ID.test(id)) return res.status(400).json({ error: 'bad' });
+      if (!(await wasMine(req, id))) return res.status(403).json({ error: 'forbidden' });
+      const sd = await store.get('sites/' + id); if (!sd) return res.status(404).json({ error: 'nf' });
+      const j = JSON.parse(sd.j || '{}'); j.items = Array.isArray(j.items) ? j.items : [];
+      const pick = (x) => { const o = {}; if ('n' in x) { o.n = clean(x.n, 80); if (!o.n) return null; } if ('p' in x) o.p = Math.round(num(x.p, 0, 1e6, 0) * 100) / 100; if ('e' in x) o.e = clean(x.e, 8) || '📦'; if ('d' in x) o.d = clean(x.d, 140); if ('c' in x) o.c = clean(x.c, 40); if ('v' in x) o.v = clean(x.v, 120); if ('s' in x) o.s = (x.s === '' || x.s == null) ? '' : Math.floor(num(x.s, 0, 99999, 0)); if ('o' in x) o.o = x.o ? 1 : 0; return o; };
+      const i = Number(b.i);
+      if (b.op === 'add') { if (j.items.length >= 60) return res.status(409).json({ error: 'limit' }); const o = pick({ n: b.item && b.item.n, p: 0, e: '📦', d: '', c: '', v: '', ...(b.item || {}) }); if (!o) return res.status(400).json({ error: 'name' }); j.items.push({ n: o.n, p: o.p, e: o.e, d: o.d, c: o.c, v: o.v, ...(o.s !== undefined && o.s !== '' ? { s: o.s } : {}), ...(o.o ? { o: 1 } : {}) }); }
+      else if (b.op === 'del') { if (!Number.isInteger(i) || !j.items[i]) return res.status(400).json({ error: 'bad' }); j.items.splice(i, 1); }
+      else if (b.op === 'move') { const k = i + (b.dir > 0 ? 1 : -1); if (!Number.isInteger(i) || !j.items[i] || !j.items[k]) return res.status(400).json({ error: 'bad' }); [j.items[i], j.items[k]] = [j.items[k], j.items[i]]; }
+      else if (b.op === 'update') {
+        if (!Number.isInteger(i) || !j.items[i]) return res.status(400).json({ error: 'bad' });
+        const o = pick(b.patch || {}); if (!o) return res.status(400).json({ error: 'name' });
+        Object.keys(o).forEach(k => { if ((k === 's' && o[k] === '') || (k === 'o' && !o[k])) delete j.items[i][k]; else j.items[i][k] = o[k]; });
+        if ('s' in o && o.s === 0) j.items[i].o = 1;
+      } else return res.status(400).json({ error: 'bad' });
+      await saveSite(id, sd, j);
+      await X.audit(req.u.id || 'admin', 'sales.product', id + ' ' + b.op);
+      res.json({ ok: true, items: j.items.length });
+    });
+
     // --- estatísticas por site
     app.get('/api/stats/site', async (req, res) => {
       if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });

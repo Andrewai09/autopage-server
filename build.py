@@ -33,7 +33,7 @@ s=s.replace("n=sel||guess(r.hd+' '+$('#c-bio').value),nm=","n=sel||guess(r.hd+' 
 # painéis Admin/Cliente
 ui=open('hosted/ui.html').read();uj=open('hosted/qr.js').read()+'\n'+open('hosted/ui.js').read()
 r('<section id="v-create">',ui+'<section id="v-create">')
-r("['create','proc','edit','dash'].forEach","['create','proc','edit','dash','home','cli'].forEach")
+r("['create','proc','edit','dash'].forEach","['create','proc','edit','dash','home','cli','vnd'].forEach")
 r("if(v==='dash'){dash();evs()}","if(v==='dash'){dash();evs()}if(window.HX)HX(v);")
 i=s.rindex("</script>\n</body>");s=s[:i]+uj+"\n"+s[i:]
 # rascunhos locais por usuário
