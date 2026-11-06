@@ -353,6 +353,23 @@ module.exports = function makeExtras(base) {
         Object.keys(o).forEach(k => { if (((k === 's' || k === 'w') && o[k] === '') || (k === 'o' && !o[k])) delete j.items[i][k]; else j.items[i][k] = o[k]; });
         if ('s' in o && o.s === 0) j.items[i].o = 1;
         if (['n', 'p', 'd', 'c', 'e'].some(k => k in o)) { delete j.items[i].x; delete j.items[i].xs; }
+      } else if (b.op === 'import') {
+        const rows = Array.isArray(b.rows) ? b.rows.slice(0, 400) : [], rep = b.mode === 'replace';
+        const old = {}; j.items.forEach(x => { if (x.i) old[String(x.n).trim().toLowerCase()] = x.i; });
+        const items = rep ? [] : j.items, idx = {}; items.forEach((x, k) => { idx[String(x.n).trim().toLowerCase()] = k; });
+        let up = 0, add = 0, lim = 0;
+        for (const r of rows) {
+          const o = pick(r && typeof r === 'object' ? r : {}); if (!o || !o.n) continue;
+          const k = o.n.toLowerCase(), has = Object.prototype.hasOwnProperty.call(idx, k);
+          if (!has && items.length >= 60) { lim++; continue; }
+          if (has) { const it = items[idx[k]]; Object.keys(o).forEach(f => { if (f === 'n') return; if (((f === 's' || f === 'w') && o[f] === '') || (f === 'o' && !o[f])) delete it[f]; else it[f] = o[f]; }); if ('s' in o && o.s === 0) it.o = 1; delete it.x; delete it.xs; up++; }
+          else { const it = { n: o.n, p: o.p || 0, e: o.e || '📦', d: o.d || '', c: o.c || '', v: o.v || '' }; if (o.s !== undefined && o.s !== '') it.s = o.s; if (o.w !== undefined && o.w !== '') it.w = o.w; if (o.o || o.s === 0) it.o = 1; if (rep && old[k]) it.i = old[k]; idx[k] = items.length; items.push(it); add++; }
+        }
+        if (!up && !add) return res.status(400).json({ error: 'empty' });
+        j.items = items.filter(x => !x.x);
+        await saveSite(id, sd, j);
+        await X.audit(req.u.id || 'admin', 'sales.product', id + ' import ' + add + '+' + up);
+        return res.json({ ok: true, add, up, lim, items: j.items.length });
       } else return res.status(400).json({ error: 'bad' });
       await saveSite(id, sd, j);
       await X.audit(req.u.id || 'admin', 'sales.product', id + ' ' + b.op);
