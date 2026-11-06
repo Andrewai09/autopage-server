@@ -119,7 +119,7 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/login',{method:'POST',raw:'email=DONO%40ex.com&password=segredo123'});ok('admin entra com e-mail e senha corretos',r.s===302,r.s);
  delete process.env.ADMIN_EMAIL;
  // site por subdomínio
- r=await rq('/',{host:'pizzaria-do-ze.kattalo.online'});ok('subdomínio serve o site sem login',r.s===200&&r.t.includes('window.__SITE_ID="abc123"')&&!r.t.includes('type=password'),r.s);
+ r=await rq('/',{host:'pizzaria-do-ze.kattalo.online'});ok('subdomínio serve o site sem login',r.s===200&&r.t.includes('window.__SITE_ID="abc123"')&&!r.t.includes('name=password'),r.s);
  r=await rq('/',{host:'inexistente.kattalo.online'});ok('subdomínio inexistente 404',r.s===404);
  r=await rq('/',{host:'mail.kattalo.online'});ok('subdomínio reservado 404',r.s===404);
  r=await rq('/',{host:'localhost'});ok('localhost abre o app',r.t.includes('type=password'));
