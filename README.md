@@ -58,3 +58,13 @@ Nos sites de **Loja com carrinho, Catálogo Zap e Cardápio digital** hospedados
 - **Google**: botão "Continuar com o Google" (aparece quando o Google está configurado). Fluxo por redirecionamento no domínio do app (`/auth/google/start` → `/auth/google/cb`), então funciona em qualquer subdomínio e domínio próprio sem cadastrar cada um no Google.
 Para ligar o Google: no Google Cloud Console crie um **ID do cliente OAuth** (tipo *Aplicativo da Web*), em **URIs de redirecionamento autorizados** coloque `https://app.SEUDOMINIO/auth/google/cb`, e defina no Render `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`. Sem essas variáveis o botão some e só o e-mail/senha funciona.
 O login só vale para o site hospedado (no HTML baixado não há servidor, então segue direto pelo WhatsApp). O lojista pode desligar a exigência no editor (Loja: "Exigir login do comprador"). O e-mail do comprador aparece no pedido do painel de Vendas. Ainda não há confirmação de e-mail nem "esqueci a senha".
+
+### O que cada formato oferece (editor)
+| Formato | Login do comprador | Pagamento online (Mercado Pago) | Frete automático (Melhor Envio) |
+|---|---|---|---|
+| Loja com carrinho | sim | sim (no carrinho) | sim (CEP no carrinho) |
+| Catálogo Zap | sim | sim (botão "Pagar online" no produto) | não |
+| Cardápio digital | sim | sim (botão "Pagar online" no item) | não |
+| Agendamento | sim (para reservar horário) | não | não |
+| Demais formatos (landing, perfil, portfólio, apresentação, convite, link na bio, cartão, currículo, captura, pet) | não se aplica | não se aplica | não se aplica |
+O editor mostra só as opções que fazem sentido para o formato escolhido. O login obrigatório vale para Loja, Catálogo, Cardápio e Agendamento (desligável no editor).

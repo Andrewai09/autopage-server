@@ -361,6 +361,8 @@ async function main() {
       const st = await bookingSite(req); const b = req.body || {};
       const d = String(b.d || ''), t = String(b.t || ''), n = String(b.n || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 80), sv = String(b.s || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 80);
       if (!st || !/^\d{4}-\d\d-\d\d$/.test(d) || !n) return res.status(400).json({ error: 'bad' });
+      const bu = st && (X.buyerRequired(st) || b.bt) ? await X.buyerOf(st, b.bt).catch(() => null) : null;
+      if (st && X.buyerRequired(st) && !bu) return res.status(401).json({ error: 'login' });
       const dt = new Date(d + 'T12:00:00Z'); if (isNaN(dt)) return res.status(400).json({ error: 'bad' });
       const now = brNow(), today = ymd(now);
       if (d < today || d > ymd(new Date(now.getTime() + 120 * 864e5))) return res.status(400).json({ error: 'date' });
@@ -373,7 +375,7 @@ async function main() {
         const key = 'book/' + st.id + '/' + d, doc = (await store.get(key)) || { items: [] };
         if (doc.items.some(x => x.t === t)) return 409;
         if (doc.items.length >= 48) return 400;
-        doc.items.push({ t, n, s: sv, at: Date.now() }); await store.set(key, doc); return 200;
+        doc.items.push({ t, n, s: sv, at: Date.now(), ...(bu ? { be: bu.email } : {}) }); await store.set(key, doc); return 200;
       });
       res.status(out).json(out === 200 ? { ok: true } : { error: out === 409 ? 'taken' : 'full' });
     } catch (e) { console.error('book', e.message); res.status(500).json({ error: 'server' }); }

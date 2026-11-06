@@ -10,7 +10,7 @@ module.exports = function buyers(c) {
   const EM = /^[^\s@<>]{1,64}@[^\s@<>]{1,190}\.[A-Za-z]{2,24}$/;
   const kid = (email) => crypto.createHash('sha256').update(email).digest('hex').slice(0, 24);
   const GID = () => process.env.GOOGLE_CLIENT_ID || '', GSEC = () => process.env.GOOGLE_CLIENT_SECRET || '';
-  const required = (st) => !!st && !st.j.nolog && ['catalog', 'ecommerce', 'menu'].includes(st.j.goal);
+  const required = (st) => !!st && !st.j.nolog && ['catalog', 'ecommerce', 'menu', 'booking'].includes(st.j.goal);
   const pub = (b) => ({ name: b.name, email: b.email, tel: b.tel || '' });
   const token = (siteId, id) => sign({ s: siteId, b: id, e: Date.now() + 30 * 864e5 });
   const load = async (siteId, t) => { const o = unsign(t); if (!o || o.s !== siteId) return null; const b = await store.get('buyers/' + siteId + '/' + o.b); return b ? { id: o.b, ...b } : null; };
