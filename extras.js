@@ -246,7 +246,7 @@ module.exports = function makeExtras(base) {
     });
 
     // --- vendas: pedidos registrados dos sites de venda (catálogo, cardápio, loja) + painel do cliente
-    const COMM = ['catalog', 'ecommerce', 'menu'], STS = ['novo', 'confirmado', 'entregue', 'cancelado'];
+    const COMM = ['catalog', 'ecommerce', 'menu'], STS = ['novo', 'aceito', 'separando', 'processando', 'enviado', 'entregue', 'cancelado'], normSt = (s) => (s === 'confirmado' ? 'aceito' : s);
     const num = (v, a, b, d) => { const n = Number(v); return Number.isFinite(n) ? Math.min(b, Math.max(a, n)) : d; };
     const saveSite = async (id, sd, j) => { await store.set('sites/' + id, { ...sd, j: JSON.stringify(j), at: Date.now() }); };
     app.all('/api/order', async (req, res) => {
@@ -279,6 +279,7 @@ module.exports = function makeExtras(base) {
         const d = cm && String(b.cup || '').trim().toUpperCase() === cm[1].toUpperCase() ? +cm[2] : 0;
         let fee = mode === 'entrega' && !st.j.nodeliv ? Math.max(0, Number(st.j.fee) || 0) : 0, shipI = null;
         if (mode === 'entrega' && await X.shipOn(st)) { const sf = await X.shipFee(st, b, lines); if (sf.error) return res.status(409).json({ error: 'ship' }); fee = sf.fee; shipI = sf.ship; }
+        else if (fee > 0 && Number(st.j.free) > 0 && sub * (1 - d / 100) >= Number(st.j.free)) fee = 0; // frete manual: grátis acima do valor definido
         const online = String(b.pay) === 'online'; if (online && !(await X.mpOn(st))) return res.status(409).json({ error: 'pay' });
         if (Number(st.j.min) > 0 && sub < Number(st.j.min)) return res.status(409).json({ error: 'min', m: st.j.min });
         const total = Math.round((sub * (1 - d / 100) + fee) * 100) / 100;
@@ -317,7 +318,7 @@ module.exports = function makeExtras(base) {
       if (!(await wasMine(req, id))) return res.status(403).json({ error: 'forbidden' });
       const sd = await store.get('sites/' + id); if (!sd) return res.status(404).json({ error: 'nf' });
       let j = {}; try { j = JSON.parse(sd.j || '{}'); } catch (e) { /* vazio */ }
-      const orders = (await store.list('sorders/' + id + '/', 3000, true)).map(r => ({ id: r.path.split('/').pop(), ...r.data }));
+      const orders = (await store.list('sorders/' + id + '/', 3000, true)).map(r => ({ id: r.path.split('/').pop(), ...r.data, st: normSt(r.data.st) }));
       const products = (j.items || []).map((x, i) => ({ i, n: x.n, p: x.p, e: x.e, d: x.d || '', c: x.c || '', v: x.v || '', s: x.s === undefined ? '' : x.s, o: x.o ? 1 : 0, img: x.i ? 1 : 0, w: x.w || '', x: x.x ? 1 : 0 }));
       res.json({ site: { id, name: sd.name || j.name, goal: j.goal, fee: j.fee || 0, min: j.min || 0, coupon: j.coupon || '' }, orders, products });
     });
@@ -325,6 +326,8 @@ module.exports = function makeExtras(base) {
       if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
       const b = req.body || {}, id = String(b.site || ''), oid = String(b.id || '');
       if (!ID.test(id) || !/^[a-z0-9]{1,40}$/.test(oid) || !STS.includes(b.st)) return res.status(400).json({ error: 'bad' });
+      const hasTrk = 'trk' in b, trk = String(b.trk == null ? '' : b.trk).trim().toUpperCase().replace(/\s+/g, ' ');
+      if (hasTrk && trk && !/^[A-Z0-9][A-Z0-9 ._-]{2,39}$/.test(trk)) return res.status(400).json({ error: 'trk' });
       if (!(await wasMine(req, id))) return res.status(403).json({ error: 'forbidden' });
       const o = await store.get('sorders/' + id + '/' + oid); if (!o) return res.status(404).json({ error: 'nf' });
       if (o.st === 'cancelado') return res.status(409).json({ error: 'cancelled' });
@@ -332,7 +335,11 @@ module.exports = function makeExtras(base) {
         const sd = await store.get('sites/' + id);
         if (sd) { const j = JSON.parse(sd.j || '{}'); let ch = false; o.items.forEach(l => { const it = (j.items || []).find(x => clean(x.n, 80) === l.n); if (it && it.s !== '' && it.s != null && Number.isFinite(Number(it.s))) { it.s = Number(it.s) + l.q; if (it.s > 0) delete it.o; ch = true; } }); if (ch) await saveSite(id, sd, j); }
       }
-      o.st = b.st; o.up = Date.now(); await store.set('sorders/' + id + '/' + oid, o);
+      const prev = normSt(o.st);
+      if (hasTrk) { if (trk) { o.trk = trk; o.car = clean(b.car, 30) || o.car || 'Correios'; } else { delete o.trk; delete o.car; } }
+      o.st = b.st; o.up = Date.now();
+      if (prev !== b.st) { o.hist = (Array.isArray(o.hist) ? o.hist : []).concat({ st: b.st, at: Date.now() }).slice(-14); }
+      await store.set('sorders/' + id + '/' + oid, o);
       res.json({ ok: true });
     });
     app.post('/api/sales/product', async (req, res) => {

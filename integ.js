@@ -123,7 +123,7 @@ module.exports = function integ(c) {
       else if (stt === 'rejected' || stt === 'cancelled') pg = o.pg === 'pago' ? 'pago' : 'recusado';
       else if (stt === 'refunded' || stt === 'charged_back') pg = 'estornado';
       else if (o.pg !== 'pago') pg = 'aguardando';
-      if (pg !== o.pg || o.pgid !== pid) { o.pg = pg; o.pgid = pid; o.pgat = Date.now(); if (pg === 'pago' && o.st === 'novo') o.st = 'confirmado'; await store.set('sorders/' + s + '/' + m[2], o); }
+      if (pg !== o.pg || o.pgid !== pid) { o.pg = pg; o.pgid = pid; o.pgat = Date.now(); if (pg === 'pago' && o.st === 'novo') o.st = 'aceito'; await store.set('sorders/' + s + '/' + m[2], o); }
       res.status(200).end();
     } catch (e) { console.error('mphook', e.message); res.status(200).end(); }
   });
