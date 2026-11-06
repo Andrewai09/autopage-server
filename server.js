@@ -32,9 +32,9 @@ const ESS_FMTS = [...FREE_FMTS, 'catalog', 'menu', 'portfolio', 'presentation', 
 // o que cada plano libera: fmts = formatos (null = todos), domain = domínio próprio, ai = usos de IA por dia
 const PLANS = {
   free: { name: 'Básico (grátis)', maxSites: 1, ai: 10, fmts: FREE_FMTS, domain: false, feat: ['Landing, Link na bio, Cartão e Perfil profissional', 'Painel com visitas e cliques', '10 usos de IA por dia'] },
-  basic: { name: 'Essencial', maxSites: 3, ai: 30, fmts: ESS_FMTS, domain: false, feat: ['+ Catálogo Zap, Cardápio, Portfólio, Convite e outros', 'Painel de vendas (catálogo e cardápio)', '30 usos de IA por dia'] },
-  pro: { name: 'Pro', maxSites: 5, ai: 80, fmts: null, domain: true, feat: ['Todos os formatos, incl. Loja com carrinho e Agendamento', 'Painel de vendas completo', 'Domínio próprio', '80 usos de IA por dia'] },
-  premium: { name: 'Premium', maxSites: 10, ai: 200, fmts: null, domain: true, feat: ['Tudo do Pro', 'Mais sites publicados', '200 usos de IA por dia'] }
+  basic: { name: 'Essencial', maxSites: 5, ai: 30, fmts: ESS_FMTS, domain: false, feat: ['+ Catálogo Zap, Cardápio, Portfólio, Convite e outros', 'Painel de vendas (catálogo e cardápio)', '30 usos de IA por dia'] },
+  pro: { name: 'Pro', maxSites: 10, ai: 80, fmts: null, domain: true, feat: ['Todos os formatos, incl. Loja com carrinho e Agendamento', 'Painel de vendas completo', 'Domínio próprio', '80 usos de IA por dia'] },
+  premium: { name: 'Premium', maxSites: 15, ai: 200, fmts: null, domain: true, feat: ['Tudo do Pro', 'Mais sites publicados', '200 usos de IA por dia'] }
 };
 const planOf = (u) => {
   const exp = !!(u.planUntil && u.planUntil < Date.now()), k = PLANS[u.plan] && !exp ? u.plan : 'free', p = PLANS[k];

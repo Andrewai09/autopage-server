@@ -40,7 +40,7 @@ Tema, fonte e layout dos sites novos são fixos (padrão: claro, Plus Jakarta Sa
 | Plano | Sites | Formatos | Domínio próprio | IA/dia |
 |---|---|---|---|---|
 | Básico (grátis) | 1 | Landing, Link na bio, Cartão, Perfil profissional | não | 10 |
-| Essencial | 3 | + Catálogo Zap, Cardápio, Portfólio, Apresentação, Convite, Currículo, Pet, Captura | não | 30 |
-| Pro | 5 | todos (inclui Loja com carrinho e Agendamento) | sim | 80 |
-| Premium | 10 | todos | sim | 200 |
+| Essencial | 5 | + Catálogo Zap, Cardápio, Portfólio, Apresentação, Convite, Currículo, Pet, Captura | não | 30 |
+| Pro | 10 | todos (inclui Loja com carrinho e Agendamento) | sim | 80 |
+| Premium | 15 | todos | sim | 200 |
 O painel de Vendas aparece para quem tem Catálogo, Cardápio ou Loja (a Loja só no Pro+). Os bloqueios são feitos no servidor (`403 format`, domínio `403`) e, na tela, os formatos pagos ficam com 🔒. Sites já publicados continuam funcionando. Tudo está definido em `PLANS` (`server.js`); o limite por cliente ainda pode ser ajustado na aba Clientes. A página `/planos` lista o que cada plano libera.
