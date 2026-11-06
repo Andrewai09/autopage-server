@@ -130,8 +130,8 @@ details.mr{margin-top:12px}details.mr summary{cursor:pointer;font-weight:700;fon
 <b id="pt" style="margin-right:auto"></b>
 <button class="btn" onclick="dev(0)">🖥️</button><button class="btn" onclick="dev(1)">📱</button>
 <button class="btn" id="und" hidden onclick="undo()">↩️ Desfazer</button><button class="btn" onclick="dxOpen()">📦 Produtos (planilha)</button><button class="btn" id="b-imp" onclick="improve()">🔎 Melhorar site</button><button class="btn" id="b-qr" hidden onclick="qrCur()">▦ QR Code</button><button class="btn" id="b-ver" hidden onclick="verOpen()">🕘 Versões</button><button class="btn" onclick="sav(1)">💾 Salvar</button>
-<button class="btn" onclick="cph()">📋 Copiar HTML</button>
-<button class="btn" onclick="dl()">⬇️ Baixar .html</button>
+<button class="btn" data-adm onclick="cph()">📋 Copiar HTML</button>
+<button class="btn" data-adm onclick="dl()">⬇️ Baixar .html</button>
 <button class="btn pri" onclick="pub()">🌐 Publicar</button>
 </div>
 <div class="mtab"><button class="btn pri" id="mt0" onclick="mt(0)">✏️ Editar</button><button class="btn" id="mt1" onclick="mt(1)">👁️ Prévia</button></div>
@@ -198,7 +198,7 @@ details.mr{margin-top:12px}details.mr summary{cursor:pointer;font-weight:700;fon
 <div style="font-size:40px">🎉</div><h2>Site publicado!</h2>
 <div id="qr" style="display:grid;place-items:center;margin:10px"></div><div class="chip" id="pl" style="word-break:break-all"></div>
 <p class="mu">O link público de cada site abre para qualquer pessoa, sem login. Visitas e cliques aparecem em Meus sites. Para hospedar fora, baixe o .html.</p>
-<button class="btn" onclick="cph()">📋 Copiar HTML</button> <button class="btn" onclick="cpl()">🔗 Copiar link</button> <button class="btn" onclick="shr()">📤 Compartilhar</button> <button class="btn" onclick="window.open('https://wa.me/?text='+encodeURIComponent($('#pl').textContent),'_blank')">💬 Enviar no WhatsApp</button> <button class="btn pri" onclick="$('#mo').hidden=true">Fechar</button>
+<button class="btn" data-adm onclick="cph()">📋 Copiar HTML</button> <button class="btn" onclick="cpl()">🔗 Copiar link</button> <button class="btn" onclick="shr()">📤 Compartilhar</button> <button class="btn" onclick="window.open('https://wa.me/?text='+encodeURIComponent($('#pl').textContent),'_blank')">💬 Enviar no WhatsApp</button> <button class="btn pri" onclick="$('#mo').hidden=true">Fechar</button>
 </div></div>
 <div class="mo" id="dxm" hidden><div class="cd" style="max-width:560px;width:100%;max-height:92vh;overflow:auto">
 <h2 style="margin-top:0">📦 Exportar e importar produtos</h2>
@@ -469,9 +469,10 @@ if(Array.isArray(r.secs)&&r.secs.length)P.secs=r.secs.slice(0,10).map(x=>({t:t(x
 if(Array.isArray(r.items)&&r.items.length){const o=P.items;P.items=r.items.slice(0,24).map(x=>{const n=t(x.n,60)||'Item',m=o.find(y=>y.n.toLowerCase()===n.toLowerCase())||{};return{n:n,p:Math.max(0,Number(x.p)||0),e:t(x.e,4)||'⭐',i:m.i,v:m.v,c:t(x.c,30),d:t(x.d,120)}});items()}
 Object.assign(P,sane(P));AIERR=null;if(!q){items();rf();toast('Dados lidos. Revise antes de publicar')}return true}catch(e){AIERR=e;if(!q)toast(aiMsg());return false}}
 async function cmd(){const t=$('#e-cmd').value.trim();if(!t)return;const s=window.claude?await claude.use('sample'):null;if(!s){toast('IA indisponível neste ambiente');return}snap();toast('Claude está ajustando…');try{const o={name:P.name,slogan:P.slogan,color:P.color,style:P.style||SM[P.niche],goal:P.goal,items:P.items.map(x=>({n:x.n,p:x.p,e:x.e,c:x.c||'',d:x.d||''}))};const r=await s.json('Você edita o site de um pequeno negócio brasileiro. Estado atual (JSON): '+JSON.stringify(o)+'. Pedido do usuário: "'+t+'". Responda SOMENTE o JSON completo atualizado, com as mesmas chaves: name, slogan, color (hex #rrggbb), style (claro, escuro ou elegante), goal (landing, catalog ou ecommerce) e items [{n,p,e,c,d}].');if(r.name)P.name=String(r.name);if(r.slogan)P.slogan=String(r.slogan);if(/^#[0-9a-f]{6}$/i.test(r.color))P.color=r.color;if(GL[r.goal])P.goal=r.goal;if(['claro','escuro','elegante'].includes(r.style))P.style=r.style;if(Array.isArray(r.items)&&r.items.length){const o=P.items;P.items=r.items.slice(0,24).map(x=>{const n=String(x.n||'Item'),m=o.find(y=>y.n.toLowerCase()===n.toLowerCase())||{};return{n:n,p:Number(x.p)||0,e:String(x.e||'⭐'),i:m.i,c:x.c!=null?String(x.c):m.c,v:m.v,d:x.d!=null?String(x.d):m.d}})}edit(sane(P),1);$('#e-cmd').value='';toast('Pronto!')}catch(e){toast('Não consegui aplicar agora')}}
-async function dl(){const pe=phErr();if(pe){toast(pe);return}const d=window.claude?await claude.use('downloads'):null;if(!d)return cph();try{await d.save({filename:slug(P.name)+'.html',data:siteHTML(P)})}catch(e){toast('Download cancelado')}}
+const ADM=()=>!window.__U||window.__U.role==='admin';
+async function dl(){if(!ADM()){toast('Disponível só para o administrador');return}const pe=phErr();if(pe){toast(pe);return}const d=window.claude?await claude.use('downloads'):null;if(!d)return cph();try{await d.save({filename:slug(P.name)+'.html',data:siteHTML(P)})}catch(e){toast('Download cancelado')}}
 function sav(t){const i=S.findIndex(s=>s.id===P.id);P.at=Date.now();const c=JSON.parse(JSON.stringify(P));if(i<0)S.unshift(c);else S[i]=c;store();if(t)toast('Site salvo em Meus sites')}
-async function cph(){const pe=phErr();if(pe){toast(pe);return}try{await navigator.clipboard.writeText(siteHTML(P));toast('HTML copiado. Cole em um arquivo .html')}catch(e){toast('Cópia bloqueada neste ambiente')}}
+async function cph(){if(!ADM()){toast('Disponível só para o administrador');return}const pe=phErr();if(pe){toast(pe);return}try{await navigator.clipboard.writeText(siteHTML(P));toast('HTML copiado. Cole em um arquivo .html')}catch(e){toast('Cópia bloqueada neste ambiente')}}
 const BASE='https://claude.ai/artifact/KDVHmGMDecU8LceEKqBiiz';const LINK=(id,sl)=>window.__ROOT?'https://'+(sl||id)+'.'+window.__ROOT:BASE+'#site-'+id;let DB=null;
 async function dbs(){if(DB)return DB;try{DB=window.claude?await claude.use('db'):null}catch(e){DB=null}return DB}
 async function pub(){const pe=phErr();if(pe){toast(pe);return}const db=await dbs();if(!db){toast('Banco indisponível aqui: use Baixar .html');return}const base=sane(P);let removed=0,done=false;
@@ -2206,6 +2207,8 @@ const vD0=vndDraw;vndDraw=function(){vD0();const b=$('#vd');if(b&&!$('#intg'))b.
 function vndExp(){const rows=[DXH.join(';')].concat(VS.d.products.map(p=>[p.n,String(p.p).replace('.',','),p.c,p.d,p.v,p.s===''?'':p.s,p.w===''?'':p.w,p.o?'sim':'',p.e].map(dxCell).join(';')));dxSave(slug(VS.d.site.name)+'-produtos.csv','\ufeff'+rows.join('\r\n')+'\r\n','text/csv').then(ok=>ok&&toast('Planilha exportada'))}
 function vndTpl(){dxExp('modelo')}
 async function vndImp(f){if(!f)return;if(f.size>2e6){toast('Arquivo grande demais (máx. 2 MB)');return}try{const rows=dxParse(await f.text());if(rows.length<2){toast('Planilha vazia');return}const g=dxObjs(rows);if(g.err){toast(g.err);return}const m=(document.querySelector('input[name=vnm]:checked')||{}).value||'merge';const r=await fx('/api/sales/product',{site:VS.site,op:'import',mode:m,rows:g.objs.map(q=>{const o=Object.assign({},q);delete o.f;delete o.i;return o})});toast('✅ '+r.add+' novo(s), '+r.up+' atualizado(s)'+(r.lim?', '+r.lim+' acima do limite de 60':'')+'. Já vale no site.');await vndSite()}catch(e){toast(e.message==='empty'?'Nenhum produto válido na planilha':'Falha ao importar')}}
+
+(function(){if(U.role==='admin')return;const h=()=>document.querySelectorAll('[data-adm]').forEach(e=>{e.hidden=true;e.style.display='none'});h();new MutationObserver(h).observe(document.body,{childList:true,subtree:true})})();
 
 </script>
 </body>
