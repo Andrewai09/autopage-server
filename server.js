@@ -27,10 +27,11 @@ const readToken = (t) => { try { const [p, s] = String(t).split('.'); if (!p || 
 const cookies = (req) => Object.fromEntries(String(req.headers.cookie || '').split(';').map(c => c.trim().split('=')).filter(a => a[0]).map(a => [a[0], a.slice(1).join('=')]));
 const isAdmin = (req) => !!(req.u && req.u.role === 'admin');
 const isAuth = (req) => !!req.u;
-const PLANS = { free: { name: 'Gratuito', maxSites: 1, ai: 10 }, basic: { name: 'Básico', maxSites: 3, ai: 30 }, pro: { name: 'Pro', maxSites: 10, ai: 80 }, premium: { name: 'Premium', maxSites: 30, ai: 200 } };
+const FREE_FMTS = ['landing', 'links', 'card', 'profile'];
+const PLANS = { free: { name: 'Básico (grátis)', maxSites: 1, ai: 10, fmts: FREE_FMTS }, basic: { name: 'Essencial', maxSites: 5, ai: 30 }, pro: { name: 'Pro', maxSites: 15, ai: 80 }, premium: { name: 'Premium', maxSites: 50, ai: 200 } };
 const planOf = (u) => {
   const exp = !!(u.planUntil && u.planUntil < Date.now()), k = PLANS[u.plan] && !exp ? u.plan : 'free', p = PLANS[k];
-  return { key: k, name: p.name, maxSites: (u.maxSites > 0 && !exp) ? u.maxSites : p.maxSites, ai: p.ai, until: u.planUntil || 0, expired: exp, wanted: exp ? u.plan : '' };
+  return { key: k, name: p.name, maxSites: (u.maxSites > 0 && !exp) ? u.maxSites : p.maxSites, ai: p.ai, fmts: p.fmts || null, until: u.planUntil || 0, expired: exp, wanted: exp ? u.plan : '' };
 };
 const pwHash = (pw) => { const salt = crypto.randomBytes(16).toString('hex'); return salt + ':' + crypto.scryptSync(String(pw), salt, 32).toString('hex'); };
 const pwCheck = (pw, h) => { try { const [salt, hx] = String(h).split(':'); return safeEq(crypto.scryptSync(String(pw), salt, 32).toString('hex'), hx); } catch (e) { return false; } };
@@ -188,6 +189,7 @@ async function main() {
           const rows0 = await store.list('sites/', 500, true), own = rows0.filter(x => x.data && x.data.owner === req.u.id).length, pl = planOf(req.u.user);
           if (own >= pl.maxSites) return res.status(403).json({ error: 'limit', max: pl.maxSites });
         }
+        if (!adm) { const pl2 = planOf(req.u.user), g = String(p.goal || 'landing'); if (pl2.fmts && !pl2.fmts.includes(g) && !(prev && prev.goal === g)) return res.status(403).json({ error: 'format' }); }
         let slug = prev && prev.slug;
         if (!slug) {
           const base = slugify(p.name); let c = base, n = 1;

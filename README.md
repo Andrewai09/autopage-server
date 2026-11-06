@@ -35,3 +35,12 @@ Tema, fonte e layout dos sites novos são fixos (padrão: claro, Plus Jakarta Sa
 - Aba **🛒 Vendas** (login do cliente): faturamento, pedidos, ticket médio, gráfico de 14 dias, mais vendidos, estoque baixo, status do pedido (novo → confirmado → entregue / cancelado, com devolução de estoque), botão "Avisar cliente" pelo WhatsApp e exportação CSV.
 - Gestão de produtos no painel: preço, nome, estoque, esgotado, ordem, adicionar/excluir (máx. 60 itens). A mudança vale na hora no site publicado.
 - Dados em `sorders/<site>/…` e contador `sctr/<site>`.
+
+## Planos (sites e formatos)
+| Plano | Sites publicados | Formatos |
+|---|---|---|
+| Básico (grátis) | 1 | Landing Page, Link na bio, Cartão de visita, Perfil profissional |
+| Essencial | 5 | todos |
+| Pro | 15 | todos |
+| Premium | 50 | todos |
+O bloqueio de formato é feito no servidor (`403 format`) e, na tela, os formatos pagos aparecem com 🔒. Sites já publicados em outro formato continuam funcionando. Limite por cliente continua ajustável na aba Clientes. Para mudar a lista de formatos grátis, edite `FREE_FMTS` em `server.js`.
