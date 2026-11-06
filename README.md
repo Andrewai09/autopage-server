@@ -51,3 +51,10 @@ Disponível nos planos Pro e Premium. Cada cliente conecta **as próprias contas
 - **Melhor Envio**: o cliente cola o token e informa CEP de origem e embalagem padrão. O frete (PAC/SEDEX dos Correios, e outros códigos de serviço se quiser) é cotado no carrinho; o servidor recalcula o valor no pedido. Peso por produto na coluna *Peso (g)*. Etiqueta e postagem continuam no painel do Melhor Envio.
 - Em cada site: Editar → "Calcular frete automático" e/ou "Receber pagamento online" → Publicar.
 - Tokens ficam criptografados (AES-256-GCM, chave derivada de `SESSION_SECRET`) em `integ/<dono>` e nunca voltam ao navegador. **Defina `SESSION_SECRET` no Render** (e não troque depois, senão os tokens salvos deixam de abrir). Opcionais: `ME_CONTACT` (e-mail técnico enviado no User-Agent ao Melhor Envio), `ME_URL`/`MP_URL` para testes.
+
+## Conta do comprador (login obrigatório para comprar)
+Nos sites de **Loja com carrinho, Catálogo Zap e Cardápio digital** hospedados, o comprador precisa entrar para finalizar o pedido (o servidor recusa pedidos sem login, `401 login`). Duas formas:
+- **E-mail e senha**: cadastro na própria loja (senha de 8+ caracteres, guardada com scrypt, limite de tentativas por IP e por e-mail). Contas são separadas por loja.
+- **Google**: botão "Continuar com o Google" (aparece quando o Google está configurado). Fluxo por redirecionamento no domínio do app (`/auth/google/start` → `/auth/google/cb`), então funciona em qualquer subdomínio e domínio próprio sem cadastrar cada um no Google.
+Para ligar o Google: no Google Cloud Console crie um **ID do cliente OAuth** (tipo *Aplicativo da Web*), em **URIs de redirecionamento autorizados** coloque `https://app.SEUDOMINIO/auth/google/cb`, e defina no Render `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`. Sem essas variáveis o botão some e só o e-mail/senha funciona.
+O login só vale para o site hospedado (no HTML baixado não há servidor, então segue direto pelo WhatsApp). O lojista pode desligar a exigência no editor (Loja: "Exigir login do comprador"). O e-mail do comprador aparece no pedido do painel de Vendas. Ainda não há confirmação de e-mail nem "esqueci a senha".

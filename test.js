@@ -62,6 +62,11 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/api/integrations/mp',{method:'POST',cookie:ck2,body:{token:'APP_USR-xxxxxxxxxxxxxxxxxxxxxxxx'}});ok('conectar Mercado Pago bloqueado fora do Pro',r.s===403,r.t);
  r=await rq('/api/integrations',{});ok('integrações sem login 401',r.s===401,r.s);
  r=await rq('/api/ship/quote',{method:'POST',body:{cep:'01001000',items:[{n:'x',q:1}]},host:'pizzaria-do-ze.kattalo.online'});ok('cotação de frete recusada se o site não ativou',r.s===400,r.t);
+ r=await rq('/api/buyer/caps',{host:'pizzaria-do-ze.kattalo.online'});ok('caps de login do comprador responde',r.s===200&&typeof r.j.login==='number',r.t);
+ r=await rq('/api/buyer/register',{method:'POST',body:{name:'Ana',email:'ana@ex.com',password:'123'},host:'pizzaria-do-ze.kattalo.online'});ok('cadastro de comprador recusa senha curta',r.s===400,r.t);
+ r=await rq('/api/buyer/login',{method:'POST',body:{email:'nao@ex.com',password:'qualquer123'},host:'pizzaria-do-ze.kattalo.online'});ok('login de comprador inexistente 401',r.s===401,r.t);
+ r=await rq('/api/buyer/me',{method:'POST',body:{bt:'abc.def'},host:'pizzaria-do-ze.kattalo.online'});ok('token de comprador inválido 401',r.s===401,r.t);
+ r=await rq('/auth/google/start?site=abc123');ok('Google desligado sem credenciais (404)',r.s===404,r.s);
  r=await rq('/api/admin/clients',{method:'POST',cookie:ck2,body:{name:'x',email:'x@x.com'}});ok('cliente não cria clientes',r.s===401,r.s);
  r=await rq('/api/db',{method:'POST',cookie:ck2,body:{op:'set',path:'sites/cli001',data:{j:JSON.stringify({id:'cli001',name:'Loja da Maria',goal:'landing'}),name:'Loja da Maria'}}});ok('cliente publica o 1º site',r.s===200&&r.j.slug==='loja-da-maria',r.t);
  r=await rq('/api/db',{method:'POST',cookie:ck2,body:{op:'set',path:'sites/cli002',data:{j:JSON.stringify({id:'cli002',name:'Segundo',goal:'landing'}),name:'Segundo'}}});ok('plano gratuito limita a 1 site (403)',r.s===403&&r.j.error==='limit',r.t);

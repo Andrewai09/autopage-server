@@ -257,6 +257,8 @@ module.exports = function makeExtras(base) {
         const st = await siteOf(req), b = req.body || {};
         if (!st || !COMM.includes(st.j.goal)) return res.status(400).json({ error: 'bad' });
         if (limited('ods:' + st.id, 600, 86400e3)) return res.status(429).json({ error: 'rate' });
+        const bu = (X.buyerRequired(st) || b.bt) ? await X.buyerOf(st, b.bt).catch(() => null) : null;
+        if (X.buyerRequired(st) && !bu) return res.status(401).json({ error: 'login' });
         const its = st.j.items || [], raw = Array.isArray(b.items) ? b.items.slice(0, 40) : [];
         if (!raw.length) return res.status(400).json({ error: 'bad' });
         const lines = []; let sub = 0;
@@ -281,7 +283,7 @@ module.exports = function makeExtras(base) {
         if (Number(st.j.min) > 0 && sub < Number(st.j.min)) return res.status(409).json({ error: 'min', m: st.j.min });
         const total = Math.round((sub * (1 - d / 100) + fee) * 100) / 100;
         const ctr = (await store.get('sctr/' + st.id)) || { n: 0 }; ctr.n = (ctr.n || 0) + 1; await store.set('sctr/' + st.id, ctr);
-        const o = { no: ctr.n, items: lines.map(l => ({ n: l.n, v: l.v, q: l.q, p: l.p })), sub: Math.round(sub * 100) / 100, d, fee, total, mode, name: clean(b.name, 80), tel: clean(b.tel, 30), addr: clean(b.addr, 200), pay: online ? 'online' : clean(b.pay, 30), ...(shipI ? { ship: shipI } : {}), ...(online ? { pg: 'aguardando' } : {}), obs: clean(b.obs, 300), st: 'novo', at: Date.now() };
+        const o = { no: ctr.n, items: lines.map(l => ({ n: l.n, v: l.v, q: l.q, p: l.p })), sub: Math.round(sub * 100) / 100, d, fee, total, mode, name: clean(b.name, 80), ...(bu ? { be: bu.email, bid: bu.id } : {}), tel: clean(b.tel, 30), addr: clean(b.addr, 200), pay: online ? 'online' : clean(b.pay, 30), ...(shipI ? { ship: shipI } : {}), ...(online ? { pg: 'aguardando' } : {}), obs: clean(b.obs, 300), st: 'novo', at: Date.now() };
         if (!o.name) return res.status(400).json({ error: 'bad' });
         const key = Date.now().toString(36) + rid();
         let pu = null;
@@ -356,6 +358,7 @@ module.exports = function makeExtras(base) {
       res.json({ ok: true, items: j.items.length });
     });
 
+    require('./buyers')({ app, kind, hostOf, ipOf, limited, ID, pwHash, pwCheck, store, clean, rid, cors, siteOf, appUrl, X });
     require('./integ')({ app, kind, hostOf, ipOf, limited, isAdmin, isAuth, ID, planOf, store, clean, num, rid, cors, siteOf, wasMine, appUrl, ROOT, X });
 
     // --- estatísticas por site
