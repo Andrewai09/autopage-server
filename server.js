@@ -179,11 +179,13 @@ async function main() {
   const landingHtml = async () => {
     const appUrl = (process.env.APP_URL || ('https://' + APP_HOST)).replace(/\/$/, '');
     let prices = {}; try { prices = ((await store.get('config/plans')) || {}).prices || {}; } catch (e) { /* sem preços */ }
-    const hot = PLANS.pro && prices.pro > 0 ? 'pro' : (PLANS.basic && prices.basic > 0 ? 'basic' : '');
-    const cards = Object.entries(PLANS).filter(([k]) => k === 'free' || prices[k] > 0).map(([k, p]) => {
-      const price = k === 'free' ? 'Grátis' : 'R$ ' + (+prices[k]).toFixed(2).replace('.', ',') + ' <small>/mês</small>';
+    const hot = PLANS.pro ? 'pro' : '';
+    const cards = Object.entries(PLANS).map(([k, p]) => {
+      const has = prices[k] > 0;
+      const price = k === 'free' ? 'Grátis' : has ? 'R$ ' + (+prices[k]).toFixed(2).replace('.', ',') + ' <small>/mês</small>' : 'Consulte <small>valor em breve</small>';
       const feat = ['Até ' + p.maxSites + (p.maxSites === 1 ? ' site publicado' : ' sites publicados')].concat(p.feat || []);
-      return '<div class="pc rv' + (k === hot ? ' hot' : '') + '"><h3>' + esc(p.name) + '</h3><div class="pr">' + price + '</div><ul>' + feat.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><a class="btn ' + (k === hot ? 'p' : 'g') + '" href="' + appUrl + (k === 'free' ? '' : '/planos') + '">' + (k === 'free' ? 'Começar grátis' : 'Escolher ' + esc(p.name)) + '</a></div>';
+      const href = appUrl + (k !== 'free' && has ? '/planos' : '');
+      return '<div class="pc rv' + (k === hot ? ' hot' : '') + '">' + (k === hot ? '<span class="pb">Mais completo</span>' : '') + '<h3>' + esc(p.name) + '</h3><div class="pr">' + price + '</div><ul>' + feat.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><a class="btn ' + (k === hot ? 'p' : 'g') + '" href="' + href + '">' + (k === 'free' ? 'Começar grátis' : has ? 'Escolher ' + esc(p.name) : 'Quero o ' + esc(p.name)) + '</a></div>';
     }).join('');
     return LANDING_SRC.split('{{APP}}').join(appUrl).replace('<!--PLANS-->', cards);
   };
