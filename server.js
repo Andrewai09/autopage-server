@@ -171,7 +171,7 @@ async function main() {
     const ptr = cdom ? { id: cdom.site } : await store.get('slug/' + k.slug); if (!ptr) return res.status(404).end();
     const sd = await store.get('sites/' + ptr.id); let sj = {}; try { sj = JSON.parse((sd && sd.j) || '{}'); } catch (e) { /* vazio */ }
     const o = ogData(sj.cover) || ogData(sj.logo); if (!o) return res.status(404).end();
-    res.setHeader('Cache-Control', 'public, max-age=300'); res.setHeader('X-Content-Type-Options', 'nosniff'); res.type(o.type); res.send(o.buf);
+    res.setHeader('Cache-Control', 'public, max-age=60'); res.setHeader('X-Content-Type-Options', 'nosniff'); res.type(o.type); res.send(o.buf);
   });
 
   // ---- landing do produto AutoPage.ai (autopageai.<root> e /sobre no app). O domínio raiz fica livre para o site da Kattalo
@@ -189,7 +189,7 @@ async function main() {
   };
   const sendLanding = async (res) => {
     res.setHeader('Content-Security-Policy', "default-src 'none'; img-src data: https:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
-    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.setHeader('Cache-Control', 'public, max-age=60');
     res.type('html').send(await landingHtml());
   };
   app.get('/sobre', async (req, res) => { if (!LANDING_SRC || kind(hostOf(req)).t !== 'app') return res.status(404).end(); return sendLanding(res); });
