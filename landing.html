@@ -35,12 +35,7 @@ h1 span,h2 span{background:var(--g);-webkit-background-clip:text;background-clip
 .lead{font-size:clamp(17px,2vw,20px);color:var(--mu);max-width:560px}
 .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
 .trust{display:flex;gap:18px;flex-wrap:wrap;margin-top:22px;font-size:13px;color:var(--mu);font-weight:600}.trust b{color:var(--ok)}
-.vis{position:relative;display:grid;place-items:center;min-height:430px}
 .ph{width:250px;height:480px;border-radius:36px;background:#0a0f20;border:8px solid #1e2748;box-shadow:0 40px 80px -30px #000,0 0 0 1px #ffffff14;padding:14px 12px;position:relative;overflow:hidden}
-.ph.b{position:absolute;width:210px;height:400px;left:-6px;top:50px;transform:rotate(-8deg);opacity:.9;animation:fl 7s ease-in-out infinite}.ph.m{z-index:2;animation:fl2 6s ease-in-out infinite}
-.ph.c{position:absolute;width:210px;height:400px;right:-6px;top:30px;transform:rotate(7deg);opacity:.9;animation:fl 8s ease-in-out infinite reverse}
-@keyframes fl{50%{transform:translateY(-12px) rotate(-8deg)}}@keyframes fl2{50%{transform:translateY(-14px)}}
-.ph.c{animation-name:fl3}@keyframes fl3{50%{transform:translateY(-10px) rotate(7deg)}}
 .mk{border-radius:16px;padding:14px 12px;margin-bottom:9px;font-size:11px;line-height:1.3}
 .mk h6{font-size:15px;line-height:1.15;margin:6px 0;font-weight:800}.mk .bt{display:block;text-align:center;border-radius:99px;padding:8px;font-weight:800;font-size:11px;margin-top:8px}
 .mk.h{background:linear-gradient(135deg,#4f46e5,#7c3aed)}.mk.h .bt{background:#fff;color:#111}
@@ -48,6 +43,25 @@ h1 span,h2 span{background:var(--g);-webkit-background-clip:text;background-clip
 .mk.pr{background:#fff;color:#111;text-align:center}.mk.pr strong{display:block;font-size:24px;color:#16a34a;line-height:1.1}.mk.pr .bt{background:linear-gradient(#22c55e,#15803d);color:#fff}
 .mk.dk{background:#05070f;border:1px solid var(--bd)}.mk.dk .pl{height:70px;border-radius:10px;background:#111827;display:grid;place-items:center;font-size:22px}
 .mk.g1{background:linear-gradient(135deg,#0ea5e9,#2563eb)}.mk.g1 .bt{background:#fff;color:#111}
+
+.vis{position:relative;container-type:inline-size;width:100%;max-width:520px;margin:0 auto;aspect-ratio:1/1.14}
+.hp{position:absolute;aspect-ratio:9/17.5;border-radius:7cqw;background:#0a0f20;border:1.6cqw solid #222b4d;box-shadow:0 5cqw 10cqw -4cqw #000,inset 0 0 0 1px #ffffff14;overflow:hidden;container-type:inline-size;font-size:4cqw;line-height:1.3;font-family:system-ui,sans-serif}
+.hp:after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(125deg,#ffffff1a,transparent 30%);pointer-events:none}
+.hp.m{width:52%;left:24%;top:0;z-index:3;animation:hf 6s ease-in-out infinite;box-shadow:0 6cqw 14cqw -4cqw #000,0 0 0 1px #ffffff14,0 0 12cqw -2cqw #7c3aed77}
+.hp.l{width:46%;left:-2%;top:12%;transform:rotate(-7deg);z-index:1;animation:hl 7s ease-in-out infinite}
+.hp.r{width:46%;right:-2%;top:9%;transform:rotate(7deg);z-index:2;animation:hr 8s ease-in-out infinite}
+@keyframes hf{50%{transform:translateY(-2.4cqw)}}@keyframes hl{50%{transform:translateY(-2cqw) rotate(-7deg)}}@keyframes hr{50%{transform:translateY(-2.4cqw) rotate(7deg)}}
+.hp .hs{display:flex;justify-content:space-between;padding:3.4cqw 6cqw 1cqw;font:700 3.2cqw system-ui;color:#cbd5e1}.hp .hs i{font-style:normal;letter-spacing:-.2em;opacity:.8}
+.hp small{display:block;font-size:3.1cqw;opacity:.75;line-height:1.3}.hp h6{font-size:6.4cqw;line-height:1.15;margin:1.4cqw 0 2cqw;font-weight:800}
+.lk{display:block;text-align:center;background:#ffffff12;border:1px solid #ffffff22;border-radius:99px;padding:3cqw 2cqw;margin-top:2.6cqw;font:700 3.6cqw system-ui;color:#e5e7eb}.lk.g{background:linear-gradient(#22c55e,#15803d);border-color:transparent;color:#fff}
+.lb{padding:4cqw 6cqw;text-align:center;background:radial-gradient(circle at 50% 0,#4f46e555,transparent 60%);height:100%}.lb .av{width:20cqw;height:20cqw;border-radius:50%;margin:3cqw auto 2.4cqw;display:grid;place-items:center;font-size:10cqw;background:var(--g);box-shadow:0 0 0 1cqw #ffffff33}.lb b{font-size:5.4cqw;display:block}.lb small{margin-bottom:4cqw}
+.ag{padding:3cqw 6cqw;text-align:left}.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:1.2cqw;text-align:center;margin:3cqw 0}.cal span{font-size:2.6cqw;opacity:.6;font-weight:700}.cal em{font-style:normal;font-size:3.2cqw;padding:1.4cqw 0;border-radius:1.6cqw;background:#ffffff0f}.cal em.on,.slots .on{background:var(--g);color:#fff;font-weight:800}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:2cqw;margin-bottom:2cqw}.slots span{background:#ffffff12;border:1px solid #ffffff1f;border-radius:2cqw;padding:2.4cqw;text-align:center;font:700 3.4cqw system-ui}
+.pz{padding:0 0 18cqw}.ph1{background:linear-gradient(135deg,#4f46e5,#7c3aed);margin:1cqw 3.4cqw 0;border-radius:4cqw;padding:4cqw}.ph1 small{opacity:.85}.ph1 h6{font-size:6.6cqw;margin:1cqw 0 3cqw}
+.ch2{display:flex;gap:1.6cqw;flex-wrap:wrap}.ch2 em{font-style:normal;font:700 3cqw system-ui;padding:1.4cqw 3cqw;border-radius:99px;background:#ffffff22}.ch2 em.on{background:#fff;color:#4338ca}
+.it{display:flex;gap:3cqw;align-items:center;background:#ffffff0d;border:1px solid #ffffff14;border-radius:3.4cqw;margin:2.4cqw 3.4cqw 0;padding:2.6cqw 3cqw}.it>i{font-style:normal;font-size:8cqw;width:13cqw;height:13cqw;display:grid;place-items:center;border-radius:2.6cqw;background:#ffffff14;flex:none}.it>div{flex:1;min-width:0}.it b{font-size:4cqw;display:block}.it strong{color:#34d399;font-size:3.8cqw}.it u{text-decoration:none;width:7cqw;height:7cqw;border-radius:50%;background:var(--g);display:grid;place-items:center;font-weight:800;font-size:4.6cqw;flex:none}
+.cart{position:absolute;left:3.4cqw;right:3.4cqw;bottom:4cqw;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(#22c55e,#15803d);border-radius:3.4cqw;padding:3.4cqw 4cqw;font:700 3.6cqw system-ui;box-shadow:0 3cqw 6cqw -2cqw #16a34a}.cart em{font-style:normal;background:#00000026;border-radius:99px;padding:1.2cqw 3cqw;font-size:3.2cqw}
+@media(prefers-reduced-motion:reduce){.hp{animation:none!important}}
 .sec{padding:84px 0}.sec.alt{background:var(--bg2);border-block:1px solid var(--bd)}
 .kk{color:#a5b4fc;font-weight:800;font-size:13px;letter-spacing:.14em;text-transform:uppercase;text-align:center}
 h2{font-size:clamp(26px,4.2vw,42px);line-height:1.12;letter-spacing:-.02em;font-weight:800;text-align:center;margin:10px auto 14px;max-width:780px}
@@ -119,8 +133,8 @@ details p{color:var(--mu);padding:0 0 16px;font-size:15px}
 footer{border-top:1px solid var(--bd);padding:34px 0 40px;color:var(--mu);font-size:14px}footer .w{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;align-items:center}footer nav{display:flex;gap:16px;flex-wrap:wrap}footer a:hover{color:#fff}
 .rv{opacity:0;transform:translateY(22px);transition:opacity .6s,transform .6s}.rv.on{opacity:1;transform:none}
 #spg{position:fixed;top:0;left:0;height:3px;width:0;z-index:70;background:var(--g)}
-@media(max-width:900px){.hero .w,.sp{grid-template-columns:1fr}.hero{padding:44px 0 40px}.vis{min-height:380px;margin-top:10px}.ph{width:220px;height:420px}.ph.b,.ph.c{width:180px;height:340px}.steps{grid-template-columns:1fr}.sec{padding:60px 0}.nav nav a:not(.btn){display:none}.sp h2,.sp .kk,.sp .sub{text-align:center}.sp .sub{margin-left:auto;margin-right:auto}}
-@media(max-width:480px){.cta .btn{width:100%}.hero h1{font-size:34px}.ph.b{left:-40px}.ph.c{right:-40px}}
+@media(max-width:900px){.hero .w,.sp{grid-template-columns:1fr}.hero{padding:44px 0 40px}.vis{margin-top:10px}.steps{grid-template-columns:1fr}.sec{padding:60px 0}.nav nav a:not(.btn){display:none}.sp h2,.sp .kk,.sp .sub{text-align:center}.sp .sub{margin-left:auto;margin-right:auto}}
+@media(max-width:480px){.cta .btn{width:100%}.hero h1{font-size:34px}}
 @media(min-width:1700px){body{zoom:1.25}}@media(min-width:2500px){body{zoom:1.8}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}html{scroll-behavior:auto}}
 </style>
@@ -141,10 +155,25 @@ footer{border-top:1px solid var(--bd);padding:34px 0 40px;color:var(--mu);font-s
 <div class="cta"><a class="btn p" href="{{APP}}/planos">Criar meu site agora →</a><a class="btn g" href="#solucoes">Ver o que dá para criar</a></div>
 <div class="trust"><span><b>✓</b> Sem precisar de programador</span><span><b>✓</b> Edição ao vivo</span><span><b>✓</b> Pagamento pelo Mercado Pago</span></div>
 </div>
-<div class="vis" aria-hidden="true">
-<div class="ph b"><div class="mk dk"><div class="pl">▶</div><h6>Aula gratuita</h6><span class="bt" style="background:#0ea5e9;color:#fff">Quero assistir</span></div><div class="mk l"><b>✅ Aprenda no seu ritmo</b>Aulas curtas e práticas</div></div>
-<div class="ph m"><div class="mk h"><span style="opacity:.85">🍕 Pizzaria Bella</span><h6>Peça pelo WhatsApp em 1 toque</h6>Cardápio, horários e entrega.<span class="bt">Fazer pedido →</span></div><div class="mk l"><b>Margherita</b>Molho, mussarela e manjericão · R$ 42</div><div class="mk l"><b>Calabresa</b>Calabresa, cebola e azeitona · R$ 46</div><div class="mk l"><b>🛒 Carrinho</b>2 itens · R$ 88</div></div>
-<div class="ph c"><div class="mk g1">Curso Foco<h6>Aprenda do zero ao resultado</h6><span class="bt">Quero garantir →</span></div><div class="mk pr">por apenas<strong>R$ 97</strong><span class="bt">Comprar agora</span></div></div>
+<div class="vis" role="img" aria-label="Exemplos de sites criados no AutoPage: link na bio, cardápio e agendamento">
+<div class="hp l"><div class="hs">9:41<i>▪▪▪</i></div><div class="lb">
+<div class="av">🧑‍🎨</div><b>Marina Lopes</b><small>Designer · Orçamento pelo WhatsApp</small>
+<span class="lk g">💬 Chamar no WhatsApp</span><span class="lk">📸 Instagram</span><span class="lk">🖼️ Meu portfólio</span><span class="lk">📅 Agendar conversa</span>
+</div></div>
+<div class="hp r"><div class="hs">9:41<i>▪▪▪</i></div><div class="ag">
+<h6>Agende seu horário</h6><small>Escolha o dia e o horário</small>
+<div class="cal"><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span><em>10</em><em>11</em><em class="on">12</em><em>13</em><em>14</em><em>15</em><em>16</em></div>
+<div class="slots"><span>09:00</span><span class="on">10:30</span><span>14:00</span><span>16:30</span></div>
+<span class="lk g">Confirmar horário ✓</span>
+</div></div>
+<div class="hp m"><div class="hs">9:41<i>▪▪▪</i></div>
+<div class="pz"><div class="ph1"><small>🍕 Pizzaria Bella</small><h6>Peça pelo WhatsApp em 1 toque</h6><span class="ch2"><em class="on">Pizzas</em><em>Bebidas</em><em>Sobremesas</em></span></div>
+<div class="it"><i>🍕</i><div><b>Margherita</b><small>Molho, mussarela e manjericão</small><strong>R$ 42</strong></div><u>+</u></div>
+<div class="it"><i>🌶️</i><div><b>Calabresa</b><small>Calabresa, cebola e azeitona</small><strong>R$ 46</strong></div><u>+</u></div>
+<div class="it"><i>🧀</i><div><b>Quatro queijos</b><small>Mussarela, parmesão, gorgonzola</small><strong>R$ 52</strong></div><u>+</u></div>
+<div class="it"><i>🥤</i><div><b>Refrigerante 2L</b><small>Gelado, para acompanhar</small><strong>R$ 12</strong></div><u>+</u></div>
+</div>
+<div class="cart"><span>🛒 2 itens · <b>R$ 88</b></span><em>Ver pedido →</em></div></div>
 </div>
 </div></section>
 
