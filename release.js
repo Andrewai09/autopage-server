@@ -7,7 +7,6 @@ module.exports = function release({ app, needAdmin, X, limited, ipOf }) {
   const base = () => (process.env.RENDER_API_URL || 'https://api.render.com').replace(/\/$/, '');
   const cfg = () => ({ key: process.env.RENDER_API_KEY || '', sid: process.env.RENDER_SERVICE_ID || '' });
   const ready = () => { const c = cfg(); return !!(c.key && /^srv-[a-z0-9]+$/.test(c.sid)); };
-  const who = (req) => (req.u && req.u.role === 'admin') ? 'admin' : 'admin';
 
   async function rf(path, { method = 'GET', body } = {}) {
     const c = cfg();
@@ -21,7 +20,7 @@ module.exports = function release({ app, needAdmin, X, limited, ipOf }) {
       const t = await r.text(); let j = null; try { j = t ? JSON.parse(t) : null; } catch (e) { /* texto */ }
       return { s: r.status, j };
     } finally { clearTimeout(tm); }
-  };
+  }
   const fail = (res, r, fallback) => {
     const code = r && r.s === 401 ? 'A chave do Render (RENDER_API_KEY) foi recusada.' : r && r.s === 404 ? 'Serviço ou versão não encontrado no Render.' : fallback;
     res.status(502).json({ error: code });
@@ -66,7 +65,7 @@ module.exports = function release({ app, needAdmin, X, limited, ipOf }) {
     try {
       const r = await rf('/v1/services/' + cfg().sid, { method: 'PATCH', body: { autoDeploy: on ? 'yes' : 'no' } });
       if (r.s !== 200) return fail(res, r, 'O Render não aceitou a alteração.');
-      await X.audit(who(req), on ? 'release.auto_on' : 'release.auto_off', 'deploy automático ' + (on ? 'ativado' : 'desativado'));
+      await X.audit('admin', on ? 'release.auto_on' : 'release.auto_off', 'deploy automático ' + (on ? 'ativado' : 'desativado'));
       res.json({ ok: true, auto: r.j && r.j.autoDeploy ? r.j.autoDeploy === 'yes' : on });
     } catch (e) { res.status(502).json({ error: 'Render não respondeu. Tente de novo.' }); }
   });
@@ -76,7 +75,7 @@ module.exports = function release({ app, needAdmin, X, limited, ipOf }) {
     try {
       const r = await rf('/v1/services/' + cfg().sid + '/deploys', { method: 'POST', body: { clearCache: 'do_not_clear' } });
       if (r.s !== 200 && r.s !== 201 && r.s !== 202) return fail(res, r, 'O Render não iniciou a publicação.');
-      await X.audit(who(req), 'release.deploy', 'publicação manual da última versão' + (r.j && r.j.id ? ' · ' + r.j.id : ''));
+      await X.audit('admin', 'release.deploy', 'publicação manual da última versão' + (r.j && r.j.id ? ' · ' + r.j.id : ''));
       res.json({ ok: true, id: r.j && r.j.id || '' });
     } catch (e) { res.status(502).json({ error: 'Render não respondeu. Tente de novo.' }); }
   });
@@ -95,7 +94,7 @@ module.exports = function release({ app, needAdmin, X, limited, ipOf }) {
       try { await X.backupNow('antes de voltar versão'); } catch (e) { /* backup é extra */ }
       const r = await rf('/v1/services/' + cfg().sid + '/rollback', { method: 'POST', body: { deployId: id } });
       if (r.s !== 200 && r.s !== 201 && r.s !== 202) return fail(res, r, 'O Render não conseguiu voltar para essa versão.');
-      await X.audit(who(req), 'release.rollback', (hit.commit || id) + ' · ' + (hit.msg || '').slice(0, 80));
+      await X.audit('admin', 'release.rollback', (hit.commit || id) + ' · ' + (hit.msg || '').slice(0, 80));
       res.json({ ok: true });
     } catch (e) { res.status(502).json({ error: 'Render não respondeu. Tente de novo.' }); }
   });
