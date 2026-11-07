@@ -19,6 +19,7 @@ const GRAPH = 'https://graph.facebook.com/' + (process.env.META_GRAPH_VERSION ||
 const RESERVED = new Set(['app', 'www', 'api', 'admin', 'mail', 'ftp', 'cpanel', 'webmail', 'painel', 'login', 'static', 'assets', 'autopage', 'sites', 'superdelivery', 'thefull', 'adv', 'arrematekids', ...String(process.env.RESERVED_SUBS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean)]);
 const APP_HTML = fs.readFileSync(path.join(__dirname, 'public', 'app.html'), 'utf8');
 const SHIM = fs.readFileSync(path.join(__dirname, 'public', 'shim.js'), 'utf8');
+const RENDER = require('./render'); RENDER.init(APP_HTML);
 
 const sign = (s) => crypto.createHmac('sha256', SECRET).update(s).digest('base64url');
 const safeEq = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
@@ -192,6 +193,7 @@ async function main() {
         const sd0 = await store.get('sites/' + ptr.id);
         const sj0 = sd0 && JSON.parse(sd0.j || '{}');
         if (sj0) head = siteHead(sj0, hostOf(req));
+        if (sj0 && sj0.goal === 'sales' && !/[?&]nr=1/.test(req.url || '')) { const full = RENDER.sales(sj0, hostOf(req), !!(ogData(sj0.cover) || ogData(sj0.logo))); if (full) { res.setHeader('Cache-Control', 'no-store'); return res.type('html').send(full); } }
       }
       if (!/[?&]nr=1/.test(req.url || '')) {
         const sd = await store.get('sites/' + ptr.id);
@@ -686,7 +688,7 @@ async function main() {
   app.use((req, res) => res.status(404).type('text').send('Não encontrado'));
   app.use((err, req, res, next) => { console.error(err.message); res.status(err.status || 500).json({ error: 'erro' }); });
   const srv = app.listen(PORT, () => console.log('AutoPage server na porta ' + PORT + ' · armazenamento: ' + store.kind + ' · app: ' + APP_HOST));
-  return { app, srv, store };
+  return { app, srv, store, X };
 }
 if (require.main === module) main().catch(e => { console.error(e); process.exit(1); });
 module.exports = { main };

@@ -108,7 +108,7 @@ module.exports = function integ(c) {
   X.mpPref = async (st, o, key) => {
     const I = await getI(st.owner), tok = I.mp && dec(I.mp.tok); if (!tok) return null;
     const ap = appUrl(), body = { items: [{ title: ('Pedido #' + o.no + ' - ' + st.name).slice(0, 120), quantity: 1, currency_id: 'BRL', unit_price: o.total }], external_reference: st.id + ':' + key, notification_url: ap + '/api/mp/hook?s=' + st.id, payer: Object.assign({ name: o.name }, o.em ? { email: o.em } : {}), statement_descriptor: clean(st.name, 22).replace(/[^A-Za-z0-9 ]/g, '') || undefined };
-    if (st.slug && c.ROOT && !/^http:/.test(ap)) { const base = 'https://' + st.slug + '.' + c.ROOT + '/'; body.back_urls = { success: base + '?pedido=' + o.no, pending: base + '?pedido=' + o.no, failure: base }; body.auto_return = 'approved'; }
+    if (st.slug && c.ROOT && !/^http:/.test(ap)) { const base = 'https://' + st.slug + '.' + c.ROOT + '/'; body.back_urls = { success: base + '?pedido=' + o.no + (o.kd ? '&ok=1' : ''), pending: base + '?pedido=' + o.no, failure: base }; body.auto_return = 'approved'; }
     const r = await jf(MPU() + '/checkout/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: JSON.stringify(body) });
     if (!r.ok || !r.j) return null;
     const u = /^TEST-/.test(tok) ? (r.j.sandbox_init_point || r.j.init_point) : r.j.init_point;
@@ -133,8 +133,9 @@ module.exports = function integ(c) {
       else if (stt === 'rejected' || stt === 'cancelled') pg = o.pg === 'pago' ? 'pago' : 'recusado';
       else if (stt === 'refunded' || stt === 'charged_back') pg = 'estornado';
       else if (o.pg !== 'pago') pg = 'aguardando';
-      let dv = false; if (pg !== o.pg || o.pgid !== pid) { o.pg = pg; o.pgid = pid; o.pgat = Date.now(); if (pg === 'pago' && o.st === 'novo') o.st = 'aceito'; if (pg === 'pago' && o.kd && !o.sent) { o.sent = 1; dv = true; } await store.set('sorders/' + s + '/' + m[2], o); }
+      let dv = false, rf = false; if (pg === 'estornado' && o.pg !== 'estornado' && o.kd) rf = true; if (pg !== o.pg || o.pgid !== pid) { o.pg = pg; o.pgid = pid; o.pgat = Date.now(); if (pg === 'pago' && o.st === 'novo') o.st = 'aceito'; if (pg === 'pago' && o.kd && !o.sent) { o.sent = 1; dv = true; } await store.set('sorders/' + s + '/' + m[2], o); }
       if (dv) deliver(sd, s, m[2], o).catch((e) => console.error('deliver', e.message));
+      if (rf) refundAlert(sd, o).catch((e) => console.error('refund', e.message));
       res.status(200).end();
     } catch (e) { console.error('mphook', e.message); res.status(200).end(); }
   });
@@ -149,6 +150,25 @@ module.exports = function integ(c) {
     const cur = await store.get('sorders/' + s + '/' + key); if (cur) { cur.mok = r && r.ok ? 1 : 0; await store.set('sorders/' + s + '/' + key, cur); }
     const ow = sd.owner && sd.owner !== 'admin' ? await store.get('users/' + sd.owner) : null, to = ow ? ow.email : String(process.env.ADMIN_EMAIL || '').trim();
     if (to && X.mailOn()) await X.sendMail({ to, ...X.mail.lead(nm, { n: o.name, c: o.em, m: 'Venda aprovada · R$ ' + Number(o.total).toFixed(2).replace('.', ',') + (r && r.ok ? ' · acesso enviado ao comprador' : ' · ATENÇÃO: o e-mail de acesso NÃO foi enviado, envie manualmente') }, appUrl() + '/') });
+  };
+
+  const sellerMail = async (sd) => { const ow = sd.owner && sd.owner !== 'admin' ? await store.get('users/' + sd.owner) : null; return ow ? ow.email : String(process.env.ADMIN_EMAIL || '').trim(); };
+  // estorno/chargeback: o acesso já enviado não é revogado sozinho (fica na sua plataforma de conteúdo): o vendedor é avisado para agir
+  const refundAlert = async (sd, o) => { const to = await sellerMail(sd); if (!to || !X.mailOn()) return; const j = JSON.parse(sd.j || '{}'); await X.sendMail({ to, ...X.mail.lead(clean(j.name, 60), { n: o.name, c: o.em, m: 'ESTORNO/chargeback do pedido #' + o.no + ' · R$ ' + Number(o.total).toFixed(2).replace('.', ',') + ' · se você já liberou o acesso, remova-o na sua plataforma de conteúdo' }, appUrl() + '/') }); };
+  // checkout abandonado: um único lembrete ao comprador que informou o e-mail, entre 2 h e 48 h depois (roda no tick do /healthz, a cada ~6 h)
+  X.cartJob = async () => {
+    if (!X.mailOn()) return { sent: 0 };
+    const all = await store.list('sorders/', 3000, true); let sent = 0; const now = Date.now();
+    for (const x of all) {
+      const o = x.data; if (!o || !o.kd || o.pg !== 'aguardando' || o.rem || !o.em || !/^https:\/\//.test(o.url || '')) continue;
+      const age = now - (o.at || 0); if (age < 2 * 3600e3 || age > 48 * 3600e3) continue;
+      const sid = String(x.path).split('/')[1], sd = await store.get('sites/' + sid); if (!sd) continue;
+      const j = JSON.parse(sd.j || '{}'), nm = clean(j.name, 80);
+      o.rem = now; await store.set(x.path, o);
+      await X.sendMail({ to: o.em, subject: 'Você deixou sua compra pela metade: ' + nm, html: X.wrap('Falta pouco', '<p>Olá, ' + X.esc(o.name) + '! Você começou a comprar <b>' + X.esc(nm) + '</b>, mas o pagamento não foi concluído.</p>' + X.btn(o.url, 'Finalizar minha compra') + '<p style="color:#6b7280;font-size:13px">Este é o único lembrete. Se já pagou ou não quer mais, é só ignorar este e-mail.</p>' + (j.sle ? '<p style="color:#6b7280;font-size:13px">Dúvidas: ' + X.esc(j.sle) + '</p>' : '')) });
+      if (++sent >= 40) break;
+    }
+    return { sent };
   };
   app.all('/api/dpay', async (req, res) => {
     if (cors(req, res)) return;
@@ -167,10 +187,18 @@ module.exports = function integ(c) {
       const o = { no: ctr.n, items: [{ n: clean(st.j.name || st.name, 80), v: '', q: 1, p: price }], sub: price, d: 0, fee: 0, total: price, mode: 'digital', name: nm, em, kd: 1, pay: 'online', pg: 'aguardando', st: 'novo', at: Date.now() };
       const key = Date.now().toString(36) + rid();
       const pu = await X.mpPref(st, o, key).catch(() => null); if (!pu) return res.status(502).json({ error: 'pay' });
-      o.pgref = pu.id; await store.set('sorders/' + st.id + '/' + key, o);
+      o.pgref = pu.id; o.url = pu.url; await store.set('sorders/' + st.id + '/' + key, o);
       if (Math.random() < 0.03) store.trim('sorders/' + st.id + '/', 5000).catch(() => {});
       res.json({ ok: true, no: o.no, url: pu.url });
     } catch (e) { console.error('dpay', e.message); res.status(500).json({ error: 'server' }); }
+  });
+  app.get('/api/dpay/stats', async (req, res) => {
+    if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
+    const sid = String(req.query.site || '');
+    if (!ID.test(sid) || !(await wasMine(req, sid))) return res.status(403).json({ error: 'forbidden' });
+    const all = (await store.list('sorders/' + sid + '/', 5000, true)).map((x) => x.data).filter((o) => o && o.kd);
+    const paid = all.filter((o) => o.pg === 'pago'), rev = paid.reduce((t, o) => t + (Number(o.total) || 0), 0);
+    res.json({ paid: paid.length, rev: Math.round(rev * 100) / 100, wait: all.filter((o) => o.pg === 'aguardando').length, refunded: all.filter((o) => o.pg === 'estornado').length, noMail: paid.filter((o) => o.mok === 0).length });
   });
   app.all('/api/dpay/cfg', async (req, res) => {
     if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });

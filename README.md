@@ -119,3 +119,13 @@ Recursos: cronômetro (reinicia para cada visitante, opcional), botão de compra
 - **Conteúdo:** gerar textos com IA (só a partir da descrição do produto, sem depoimentos nem resultados inventados), editor em linhas (benefícios, módulos, bônus, FAQ, depoimentos), prints/resultados com zoom (campo de galeria), mockup do produto quando não há capa, ordem e visibilidade das seções.
 - **Rodapé legal:** razão social, CNPJ/CPF, e-mail, links de Termos e Privacidade do **vendedor**, aviso de resultados (padrão quando há depoimentos/prints) e selo editável. Os modelos `/termos` e `/privacidade` da plataforma são para os clientes do AutoPage, não para a loja do vendedor.
 - **Checkout próprio (opcional):** com “Receber pagamento online” ligado e o Mercado Pago do cliente conectado (Pro/Premium), o botão pede nome e e-mail, o servidor cria o pedido com o preço da página (o navegador não define valor) e leva ao Mercado Pago. Quando o webhook confirma o pagamento (status aprovado e valor igual), o comprador recebe o e-mail de acesso e o vendedor é avisado; webhook repetido não reenvia. O link de acesso fica em `sdl/<site>` no servidor, nunca no JSON público do site. Exige `RESEND_API_KEY`; se o e-mail falhar, o aviso ao vendedor diz para enviar à mão. Sem o checkout ligado, vale o link de compra externo. Reembolsos ficam no Mercado Pago.
+
+### Melhorias de vendas e SEO (nov/2026)
+
+- **HTML completo no servidor:** `render.js` roda o mesmo gerador do app num escopo isolado e o servidor entrega a página de vendas pronta (título, `og:*`, h1 e conteúdo no HTML). Se a renderização falhar, cai no modo antigo (montado no navegador).
+- **Evento de compra:** a URL de retorno do Mercado Pago aprovado leva `ok=1`; com consentimento, dispara `Purchase` (Meta, GA4, TikTok) uma vez por pedido. Quem abrir a URL à mão também dispara o evento no próprio navegador: use a plataforma de anúncios para conferir com as vendas reais.
+- **Recuperação de checkout:** um lembrete por pedido não pago, 2 h a 48 h depois (roda no tick do `/healthz`, a cada ~6 h).
+- **Estorno:** o vendedor é avisado por e-mail; o acesso já enviado não é revogado automaticamente.
+- **Teste A/B de headline:** campo “Headline alternativa”; metade dos visitantes vê a B (guardado no navegador); visitas e cliques por variante aparecem em “Meus sites”. Sem teste de significância estatística.
+- **Meus sites:** páginas de vendas mostram vendas pagas, receita, aguardando, estornos e e-mails de acesso que falharam.
+- **Correção:** o botão “Reenviar e-mail de confirmação” chamava por engano a função de restaurar versão (nome duplicado).

@@ -508,10 +508,10 @@ module.exports = function makeExtras(base) {
   X.tick = async (appUrl) => { // chamado pelo /healthz: roda as rotinas no máximo a cada 6 h, mesmo com o servidor dormindo entre acessos
     if (Date.now() - lastTick < 6 * 3600e3) return;
     lastTick = Date.now();
-    await X.expiryJob(appUrl()); await X.backupIfDue();
+    await X.expiryJob(appUrl()); await X.backupIfDue(); if (X.cartJob) await X.cartJob().catch((e) => console.error('cartJob', e.message));
   };
   X.startJobs = (appUrl) => {
-    const run = () => { X.expiryJob(appUrl()).catch(e => console.error('expiryJob', e.message)); X.backupIfDue().catch(e => console.error('backup', e.message)); };
+    const run = () => { X.expiryJob(appUrl()).catch(e => console.error('expiryJob', e.message)); X.backupIfDue().catch(e => console.error('backup', e.message)); if (X.cartJob) X.cartJob().catch(e => console.error('cartJob', e.message)); };
     setTimeout(run, 90e3).unref(); setInterval(run, 6 * 3600e3).unref();
   };
   return X;

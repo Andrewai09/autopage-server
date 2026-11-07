@@ -9,7 +9,7 @@ const http=require('http');
 const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>new Promise((ok,no)=>{const h={host};if(cookie)h.cookie=cookie;let b;if(raw){b=raw;h['content-type']='application/x-www-form-urlencoded'}else if(body){b=JSON.stringify(body);h['content-type']=ct||'application/json'}
  if(b)h['content-length']=Buffer.byteLength(b);const q=http.request({host:'127.0.0.1',port:3917,path,method,headers:h},res=>{let t='';res.on('data',c=>t+=c);res.on('end',()=>{let j=null;try{j=JSON.parse(t)}catch(e){}ok({s:res.statusCode,t,j,h:{get:k=>{const v=res.headers[k.toLowerCase()];return Array.isArray(v)?v[0]:v}}})})});q.on('error',no);if(b)q.write(b);q.end()});
 (async()=>{
- const {srv,store}=await main();
+ const {srv,store,X:X0}=await main();
  const realFetch=global.fetch;
  // login
  let r=await rq('/');ok('app sem login mostra tela de login',r.s===200&&r.t.includes('type=password')&&!r.t.includes('claude.use'),r.s);
@@ -167,10 +167,10 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
 
  // ---- extras: cadastro, cupom, indicação, contato, versões, domínio, backup, e-mail
  process.env.RESEND_API_KEY='RK';process.env.RESEND_URL='https://mail.test/emails';
- const mails=[];let xPref=null,xAmt=0;const _f2=global.fetch;
+ const mails=[];let xPref=null,xAmt=0,payStatus='approved';const _f2=global.fetch;
  global.fetch=async(u,o)=>{u=String(u);if(u==='https://mail.test/emails'){mails.push(JSON.parse(o.body));return{ok:true,status:200,json:async()=>({id:'m'})}}
   if(u==='https://mp.test/checkout/preferences'){xPref=JSON.parse(o.body);return{ok:true,status:201,json:async()=>({id:'p',init_point:'https://mp.test/pay/x'})}}
-  const m=/^https:\/\/mp\.test\/v1\/payments\/(\d+)$/.exec(u);if(m)return{ok:true,status:200,json:async()=>({status:'approved',external_reference:xPref&&xPref.external_reference,transaction_amount:xAmt})};return _f2(u,o)};
+  const m=/^https:\/\/mp\.test\/v1\/payments\/(\d+)$/.exec(u);if(m)return{ok:true,status:200,json:async()=>({status:payStatus,external_reference:xPref&&xPref.external_reference,transaction_amount:xAmt})};return _f2(u,o)};
  const tick=()=>new Promise(k=>setTimeout(k,60));
  r=await rq('/cadastro');ok('página de cadastro abre',r.s===200&&r.t.includes('7 dias'),r.s);
  r=await rq('/api/signup',{method:'POST',body:{name:'Sem',email:'sem@ex.com',password:'SenhaBoa123'}});ok('cadastro exige aceite dos termos',r.s===400,r.t);
@@ -293,7 +293,7 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/privacidade');ok('privacidade cita LGPD, direitos e contato',r.s===200&&r.t.includes('LGPD')&&r.t.includes('art. 18')&&r.t.includes('mailto:'));
  // ---- página de vendas
  {const sj={name:'Curso Foco',goal:'sales',sl:'video',sp:97,sd:197,sg:7,st:24,sk:'https://pay.exemplo.com/foco',sv:'https://youtu.be/dQw4w9WgXcQ',sb:'Aprenda rápido\nAplique já',sm:'Fundamentos | Base\nPrática | Exercícios',faq:'Como recebo? | Por e-mail',tests:'Ana: ótimo',slogan:'Domine o foco em 7 dias',color:'#0ea5e9',phone:'+55 11 91234-5678'};
- r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/vend01',data:{j:JSON.stringify(sj),name:sj.name}}});const sl1=r.j&&r.j.slug;ok('publica página de vendas',!!sl1,r.t);r=await rq('/',{host:sl1+'.kattalo.online'});ok('página de vendas é servida no subdomínio',r.s===200&&r.t.includes('__SITE_ID'),r.s);
+ r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/vend01',data:{j:JSON.stringify(sj),name:sj.name}}});const sl1=r.j&&r.j.slug;ok('publica página de vendas',!!sl1,r.t);r=await rq('/',{host:sl1+'.kattalo.online'});ok('página de vendas é servida no subdomínio',r.s===200&&r.t.includes('<h1>Domine o foco em 7 dias</h1>')&&r.t.includes('og:title')&&r.t.includes('property="og:url"')&&!r.t.includes('__SITE_ID')&&r.t.includes('/api/db'),r.s);
  const px='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
  const sj2={name:'Curso <img src=x onerror=alert(1)> "Foco"',goal:'sales',ss:'Sub & "aspas" <b>',cover:px,sp:10,phone:'+55 11 91234-5678'};
  r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/vend03',data:{j:JSON.stringify(sj2),name:'Curso Foco 2'}}});const sl3=r.j&&r.j.slug;
@@ -324,6 +324,21 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  ok('vendedor é avisado da venda',mails.some(m=>m.to[0]==='ana@ex.com'&&/Nova mensagem/.test(m.subject)&&m.html.includes('Venda aprovada')));
  const n1=mails.filter(m=>/Seu acesso/.test(m.subject)).length;r=await rq('/api/mp/hook?s=dp0001&type=payment&data.id=322',{host:H,method:'POST'});await tick();await tick();
  ok('webhook repetido não reenvia o acesso',mails.filter(m=>/Seu acesso/.test(m.subject)).length===n1);
+ ok('URL de retorno aprovada leva ok=1 (evento de compra)',/[?&]pedido=\d+&ok=1/.test((xPref.back_urls||{}).success||'')&&!/ok=1/.test((xPref.back_urls||{}).pending||''),JSON.stringify(xPref.back_urls));
+ // recuperação de checkout: só 1 lembrete, entre 2 h e 48 h, só pedido aguardando com e-mail
+ r=await rq('/api/dpay',{host:H,method:'POST',body:{name:'Davi Reis',email:'davi@ex.com'}});const okey=(await store.list('sorders/dp0001/',50,true)).find(x=>x.data.em==='davi@ex.com');
+ ok('pedido aguardando guarda o link de pagamento',!!okey&&okey.data.url==='https://mp.test/pay/x'&&okey.data.pg==='aguardando',JSON.stringify(okey&&okey.data));
+ {const nA=mails.length;await X0.cartJob();ok('lembrete não sai antes de 2 h',mails.length===nA);
+ okey.data.at=Date.now()-3*3600e3;await store.set(okey.path,okey.data);await X0.cartJob();await tick();
+ const rm=mails.filter(m=>m.to[0]==='davi@ex.com'&&/pela metade/.test(m.subject)).pop();ok('lembrete de checkout abandonado enviado com o link',!!rm&&rm.html.includes('https://mp.test/pay/x'),rm&&rm.subject);
+ const nB=mails.length;await X0.cartJob();ok('lembrete é enviado uma única vez',mails.length===nB);
+ const cj=(await store.list('sorders/dp0001/',50,true)).filter(x=>x.data.pg==='pago').length;ok('pedido já pago não recebe lembrete',!mails.some(m=>m.to[0]==='carla@ex.com'&&/pela metade/.test(m.subject))&&cj>=1);}
+ // estorno avisa o vendedor
+ {const nR=mails.length;payStatus='refunded';xAmt=97;await rq('/api/mp/hook?s=dp0001&type=payment&data.id=323',{host:H,method:'POST'});await tick();await tick();payStatus='approved';
+ ok('estorno avisa o vendedor',mails.slice(nR).some(m=>m.to[0]==='ana@ex.com'&&m.html.includes('ESTORNO')),mails.length-nR);}
+ r=await rq('/api/dpay/stats?site=dp0001',{cookie:ckA});ok('painel: estatísticas de vendas do dono (pagas, receita, estorno)',r.s===200&&r.j.paid===1&&r.j.rev===97&&r.j.refunded>=0&&r.j.wait>=0,r.t);
+ r=await rq('/api/dpay/stats?site=dp0001',{cookie:ckB});ok('estatísticas de vendas só do dono',r.s===403,r.s);
+ r=await rq('/api/dpay/stats?site=dp0001');ok('estatísticas de vendas exigem login',r.s===401,r.s);
  const dj2={...dj,mpay:0};await rq('/api/db',{method:'POST',cookie:ckA,body:{op:'set',path:'sites/dp0001',data:{j:JSON.stringify(dj2),name:dj.name}}});
  r=await rq('/api/dpay',{host:H,method:'POST',body:{name:'Carla Lima',email:'carla@ex.com'}});ok('sem o pagamento online ligado o checkout é recusado',r.s===409,r.s);
  global.fetch=_f3;}
