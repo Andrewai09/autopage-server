@@ -32,9 +32,9 @@ const FREE_FMTS = ['landing', 'links', 'card', 'profile'];
 const ESS_FMTS = [...FREE_FMTS, 'catalog', 'menu', 'portfolio', 'presentation', 'invite', 'resume', 'pet', 'capture', 'sales'];
 // o que cada plano libera: fmts = formatos (null = todos), domain = domínio próprio, ai = usos de IA por dia
 const PLANS = {
-  free: { name: 'Básico (grátis)', maxSites: 1, ai: 10, fmts: FREE_FMTS, domain: false, integ: false, feat: ['Landing, Link na bio, Cartão e Perfil profissional', 'Painel com visitas e cliques', '10 usos de IA por dia'] },
-  basic: { name: 'Essencial', maxSites: 5, ai: 30, fmts: ESS_FMTS, domain: false, integ: false, feat: ['+ Catálogo Zap, Cardápio, Portfólio, Convite e outros', 'Painel de vendas (catálogo e cardápio)', '30 usos de IA por dia'] },
-  pro: { name: 'Pro', maxSites: 10, ai: 80, fmts: null, domain: true, integ: true, feat: ['Todos os formatos, incl. Loja com carrinho e Agendamento', 'Painel de vendas completo', 'Receber pelo Mercado Pago e frete Correios (Melhor Envio)', 'Domínio próprio', '80 usos de IA por dia'] },
+  free: { name: 'Básico (grátis)', maxSites: 1, ai: 10, fmts: FREE_FMTS, domain: false, integ: false, feat: ['Site do negócio, Link na bio, Cartão digital e Perfil profissional', 'Painel com visitas e cliques', '10 usos de IA por dia'] },
+  basic: { name: 'Essencial', maxSites: 5, ai: 30, fmts: ESS_FMTS, domain: false, integ: false, feat: ['+ Catálogo no WhatsApp, Cardápio, Portfólio, Convite e outros', 'Painel de vendas (catálogo e cardápio)', '30 usos de IA por dia'] },
+  pro: { name: 'Pro', maxSites: 10, ai: 80, fmts: null, domain: true, integ: true, feat: ['Todos os formatos, incl. Loja online e Agenda online', 'Painel de vendas completo', 'Receber pelo Mercado Pago e frete Correios (Melhor Envio)', 'Domínio próprio', '80 usos de IA por dia'] },
   premium: { name: 'Premium', maxSites: 15, ai: 200, fmts: null, domain: true, integ: true, feat: ['Tudo do Pro', 'Mais sites publicados', '200 usos de IA por dia'] }
 };
 // preços de lançamento (R$/30 dias), usados enquanto o admin não salvar os próprios

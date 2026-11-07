@@ -40,8 +40,8 @@ Tema, fonte e layout dos sites novos são fixos (padrão: claro, Plus Jakarta Sa
 | Plano | Sites | Formatos | Domínio próprio | IA/dia |
 |---|---|---|---|---|
 | Básico (grátis) | 1 | Landing, Link na bio, Cartão, Perfil profissional | não | 10 |
-| Essencial | 5 | + Catálogo Zap, Cardápio, Portfólio, Apresentação, Convite, Currículo, Pet, Captura | não | 30 |
-| Pro | 10 | todos (inclui Loja com carrinho e Agendamento) | sim | 80 |
+| Essencial | 5 | + Catálogo no WhatsApp, Cardápio, Portfólio, Apresentação, Convite, Currículo, Pet, Captura | não | 30 |
+| Pro | 10 | todos (inclui Loja online e Agenda online) | sim | 80 |
 | Premium | 15 | todos | sim | 200 |
 O painel de Vendas aparece para quem tem Catálogo, Cardápio ou Loja (a Loja só no Pro+). Os bloqueios são feitos no servidor (`403 format`, domínio `403`) e, na tela, os formatos pagos ficam com 🔒. Sites já publicados continuam funcionando. Tudo está definido em `PLANS` (`server.js`); o limite por cliente ainda pode ser ajustado na aba Clientes. A página `/planos` lista o que cada plano libera.
 
@@ -53,7 +53,7 @@ Disponível nos planos Pro e Premium. Cada cliente conecta **as próprias contas
 - Tokens ficam criptografados (AES-256-GCM, chave derivada de `SESSION_SECRET`) em `integ/<dono>` e nunca voltam ao navegador. **Defina `SESSION_SECRET` no Render** (e não troque depois, senão os tokens salvos deixam de abrir). Opcionais: `ME_CONTACT` (e-mail técnico enviado no User-Agent ao Melhor Envio), `ME_URL`/`MP_URL` para testes.
 
 ## Conta do comprador (login obrigatório para comprar)
-Nos sites de **Loja com carrinho, Catálogo Zap e Cardápio digital** hospedados, o comprador precisa entrar para finalizar o pedido (o servidor recusa pedidos sem login, `401 login`). Duas formas:
+Nos sites de **Loja online, Catálogo no WhatsApp e Cardápio digital** hospedados, o comprador precisa entrar para finalizar o pedido (o servidor recusa pedidos sem login, `401 login`). Duas formas:
 - **E-mail e senha**: cadastro na própria loja (senha de 8+ caracteres, guardada com scrypt, limite de tentativas por IP e por e-mail). Contas são separadas por loja.
 - **Google**: botão "Continuar com o Google" (aparece quando o Google está configurado). Fluxo por redirecionamento no domínio do app (`/auth/google/start` → `/auth/google/cb`), então funciona em qualquer subdomínio e domínio próprio sem cadastrar cada um no Google.
 Para ligar o Google: no Google Cloud Console crie um **ID do cliente OAuth** (tipo *Aplicativo da Web*), em **URIs de redirecionamento autorizados** coloque `https://app.SEUDOMINIO/auth/google/cb`, e defina no Render `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`. Sem essas variáveis o botão some e só o e-mail/senha funciona.
@@ -62,8 +62,8 @@ O login só vale para o site hospedado (no HTML baixado não há servidor, entã
 ### O que cada formato oferece (editor)
 | Formato | Login do comprador | Pagamento online (Mercado Pago) | Frete automático (Melhor Envio) |
 |---|---|---|---|
-| Loja com carrinho | sim | sim (no carrinho) | sim (CEP no carrinho) |
-| Catálogo Zap | sim | sim (botão "Pagar online" no produto) | não |
+| Loja online | sim | sim (no carrinho) | sim (CEP no carrinho) |
+| Catálogo no WhatsApp | sim | sim (botão "Pagar online" no produto) | não |
 | Cardápio digital | sim | sim (botão "Pagar online" no item) | não |
 | Agendamento | sim (para reservar horário) | não | não |
 | Demais formatos (landing, perfil, portfólio, apresentação, convite, link na bio, cartão, currículo, captura, pet) | não se aplica | não se aplica | não se aplica |
