@@ -174,7 +174,7 @@ async function main() {
     res.setHeader('Cache-Control', 'public, max-age=300'); res.setHeader('X-Content-Type-Options', 'nosniff'); res.type(o.type); res.send(o.buf);
   });
 
-  // ---- landing institucional (kattalo.online, www e /sobre)
+  // ---- landing do produto AutoPage.ai (autopage.<root> e /sobre no app). O domínio raiz fica livre para o site da Kattalo
   let LANDING_SRC = ''; try { LANDING_SRC = fs.readFileSync(path.join(__dirname, 'landing.html'), 'utf8'); } catch (e) { /* sem landing */ }
   const landingHtml = async () => {
     const appUrl = (process.env.APP_URL || ('https://' + APP_HOST)).replace(/\/$/, '');
@@ -196,7 +196,7 @@ async function main() {
 
   // ---- páginas
   app.get('/', async (req, res) => {
-    if (LANDING_SRC && (hostOf(req) === ROOT || hostOf(req) === 'www.' + ROOT)) return sendLanding(res);
+    if (LANDING_SRC && hostOf(req) === 'autopage.' + ROOT) return sendLanding(res);
     let k = kind(hostOf(req)), cdom = null;
     if (k.t === 'app' && hostOf(req) !== APP_HOST) { cdom = await X.siteByDomain(hostOf(req)); if (cdom) k = { t: 'site', domain: true }; }
     if (k.t === 'none') return res.status(404).type('text').send('Não encontrado');

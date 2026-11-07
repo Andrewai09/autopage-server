@@ -130,5 +130,5 @@ Recursos: cronômetro (reinicia para cada visitante, opcional), botão de compra
 - **Meus sites:** páginas de vendas mostram vendas pagas, receita, aguardando, estornos e e-mails de acesso que falharam.
 - **Correção:** o botão “Reenviar e-mail de confirmação” chamava por engano a função de restaurar versão (nome duplicado).
 
-## Landing institucional (nov/2026)
-`landing.html` é servida em `kattalo.online`, `www.kattalo.online` e `<app>/sobre` (CSP própria, cache 5 min). Os planos e preços vêm de `PLANS` e `config/plans` (só aparecem planos com preço > 0, além do grátis). Para ativar no domínio raiz, aponte o DNS de `kattalo.online` e `www` para o serviço no Render e adicione os dois como Custom Domain.
+## Landing do produto (nov/2026)
+`landing.html` apresenta o AutoPage.ai e é servida em `autopage.kattalo.online` e em `<app>/sobre` (CSP própria, cache 5 min). O domínio raiz `kattalo.online` e `www` ficam reservados para o futuro site da Kattalo (empresa de soluções digitais). Planos e preços vêm de `PLANS` e `config/plans`. Para ativar `autopage.kattalo.online`, adicione-o como Custom Domain no Render (o wildcard `*.kattalo.online` já cobre, se configurado).
