@@ -83,6 +83,25 @@ h2{font-size:clamp(26px,4.2vw,42px);line-height:1.12;letter-spacing:-.02em;font-
 .cr .gs{display:flex;align-items:center;gap:3cqw;background:#f0fdf4;border:1px solid #86efac;border-radius:2cqw;padding:2.6cqw 3cqw;margin-top:3cqw;text-align:left;font:700 3.6cqw system-ui;color:#166534}.cr .gs b{display:grid;place-items:center;width:10cqw;height:10cqw;border-radius:50%;background:#16a34a;color:#fff;font-size:5cqw}.md .bn{padding:4cqw}.md .cd{background:#fff;border:1px solid #0f172a14;box-shadow:0 2cqw 5cqw -3cqw #0f172a55}
 @media(max-width:900px){.sty{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:16px;padding:8px 20px 18px;margin:0 -20px;-webkit-overflow-scrolling:touch}.sx{flex:0 0 68%;max-width:290px;scroll-snap-align:center}.sty::-webkit-scrollbar{height:0}.sx>em{font-size:13px}}
 @media(prefers-reduced-motion:reduce){.md .bk div{animation:none}}
+
+.sx{position:relative;isolation:isolate}.sx:before{content:"";position:absolute;inset:6% -14% 16%;background:radial-gradient(closest-side,var(--au,#8b5cf6),transparent);opacity:.38;filter:blur(26px);z-index:-1;transition:opacity .4s}.sx:hover:before{opacity:.6}
+.sx:nth-child(1){--au:#22c55e}.sx:nth-child(2){--au:#0ea5e9}.sx:nth-child(3){--au:#8b5cf6}
+@media(min-width:901px){.sx:nth-child(2){transform:translateY(-16px)}}
+.sty .ph{border-color:#222b4d;box-shadow:0 30px 60px -30px #000,inset 0 0 0 1px #ffffff14}
+.sty .ph:before{content:"";position:absolute;z-index:6;top:6px;left:50%;width:26%;height:2.6%;transform:translateX(-50%);background:#05070f;border-radius:99px;box-shadow:0 0 0 1px #ffffff10}
+.sty .ph:after{content:"";position:absolute;z-index:6;inset:0;border-radius:inherit;background:linear-gradient(125deg,#ffffff1c 0%,transparent 28%);pointer-events:none}
+.pg .tb{position:relative;z-index:3;padding-top:9.5cqw}
+.scr{flex:1;animation:scr 18s ease-in-out infinite alternate;will-change:transform}.sx:hover .scr{animation-play-state:paused}
+@keyframes scr{0%,12%{transform:none}88%,100%{transform:translateY(var(--m))}}
+.pbx2{margin-top:3cqw;border-radius:3cqw;padding:4cqw;font-family:system-ui;text-align:center}.pbx2 small{display:block;font-size:3.4cqw;opacity:.8}.pbx2 b{display:block;font-size:11cqw;line-height:1.1;margin:1cqw 0 2cqw}
+.cr .pbx2{background:#fff;border:.5cqw dashed #15803d}.cr .pbx2 b{color:#15803d}.cr .pbx2 s{opacity:.6}
+.vs .pbx2{background:linear-gradient(160deg,#0f172a,#0b1224);border:1px solid #38bdf866;box-shadow:0 0 8cqw -3cqw #0ea5e9}.vs .pbx2 b{color:#38bdf8}
+.md .pbx2{background:#fff;border:.6cqw solid #6d28d9;box-shadow:0 5cqw 9cqw -5cqw #6d28d9;color:#0f172a;margin:0 4cqw}.md .pbx2 b{color:#6d28d9}.bt2.mb{background:linear-gradient(135deg,#2563eb,#6d28d9);color:#fff}
+.fq{display:flex;gap:2.4cqw;align-items:center;text-align:left;background:#fff;border:1px solid #0001;border-radius:2cqw;padding:2.8cqw 3cqw;margin-top:2cqw;font:600 3.5cqw system-ui}.fq i{font-style:normal;color:#16a34a;font-weight:800;font-size:5cqw}
+.fn2{margin:4cqw;border-radius:4cqw;padding:5cqw;background:linear-gradient(135deg,#2563eb,#6d28d9);color:#fff;font-family:system-ui;text-align:center}.fn2 b{display:block;font-size:6cqw;margin-bottom:2cqw}
+.vs .vd i{animation:pp 2s ease-in-out infinite}@keyframes pp{50%{box-shadow:0 0 0 3.4cqw #ffffff22}}
+.pg .bt2{position:relative;overflow:hidden}.pg .bt2:after{content:"";position:absolute;top:0;left:-70%;width:40%;height:100%;background:linear-gradient(100deg,transparent,#ffffff66,transparent);transform:skewX(-20deg);animation:sh 3.6s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.scr,.vs .vd i{animation:none}}
 .ck{list-style:none;padding:0;display:grid;gap:11px}.ck li{padding-left:34px;position:relative;font-size:15.5px}.ck li:before{content:"✓";position:absolute;left:0;top:1px;width:23px;height:23px;border-radius:50%;background:#34d39922;color:var(--ok);display:grid;place-items:center;font-weight:800;font-size:13px}
 .ft{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
 .ft .f{padding:22px}.ft .f i{font-style:normal;font-size:26px;display:block;margin-bottom:10px}
@@ -179,7 +198,7 @@ footer{border-top:1px solid var(--bd);padding:34px 0 40px;color:var(--mu);font-s
 </div>
 <div class="sty rv" role="group" aria-label="Os 3 estilos de página de vendas">
 <div class="sx"><div class="ph"><div class="pg cr">
-<div class="tb">🔥 A oferta termina em <b>23:59:41</b></div>
+<div class="tb">🔥 A oferta termina em <b class="tk">23:59:41</b></div><div class="scr" style="--m:-100cqw">
 <div class="bd"><span class="bg">OFERTA POR TEMPO LIMITADO</span>
 <h6>Aprenda <u>do zero ao resultado</u>, mesmo sem experiência</h6>
 <p class="it">Aulas diretas ao ponto, para você aplicar já na primeira semana.</p>
@@ -187,20 +206,23 @@ footer{border-top:1px solid var(--bd);padding:34px 0 40px;color:var(--mu);font-s
 <span class="bt2 gr">Quero garantir minha vaga →</span>
 <span class="sc">🛡️ Garantia incondicional de 7 dias</span>
 <div class="li"><i>✔</i>Aprenda no seu ritmo</div><div class="li"><i>✔</i>Materiais prontos para usar</div><div class="li"><i>✔</i>Suporte para tirar dúvidas</div><div class="li"><i>✔</i>Acesso por 1 ano</div><div class="gs"><b>7</b><span>dias de garantia total</span></div>
-</div></div></div><small>Carta de vendas</small><em>Texto direto, estilo clássico. Ótimo para tickets maiores.</em></div>
+<div class="pbx2"><small>De <s>R$ 197</s> por apenas</small><b>R$ 97</b><span class="bt2 gr">Comprar agora →</span></div>
+<div class="fq"><i>+</i>Como recebo o acesso?</div><div class="fq"><i>+</i>E se eu não gostar?</div><div class="fq"><i>+</i>Por quanto tempo tenho acesso?</div>
+</div></div></div></div><small>Carta de vendas</small><em>Texto direto, estilo clássico. Ótimo para tickets maiores.</em></div>
 
 <div class="sx"><div class="ph"><div class="pg vs">
-<div class="tb">🔥 A oferta termina em <b>23:59:41</b></div>
+<div class="tb">🔥 A oferta termina em <b class="tk">23:59:41</b></div><div class="scr" style="--m:-112cqw">
 <div class="bd"><span class="bg">ASSISTA ATÉ O FINAL</span>
 <h6>Aprenda do zero ao resultado, <span>passo a passo</span></h6>
 <div class="vd"><i>▶</i><em>02:47</em></div>
 <span class="bt2 bl">Quero garantir minha vaga →</span>
 <span class="sc">🔒 Pagamento seguro · 🛡️ 7 dias de garantia</span>
 <div class="cd"><i>✅</i>Aulas curtas e práticas</div><div class="cd"><i>⚡</i>Resultado na 1ª semana</div><div class="cd"><i>🎯</i>Materiais prontos</div><div class="cd"><i>🎁</i>Bônus: planilha e modelos</div><div class="cd"><i>🏆</i>Certificado de conclusão</div>
-</div></div></div><small>Vídeo (VSL)</small><em>Fundo escuro com o vídeo no centro. Ideal para vender explicando.</em></div>
+<div class="pbx2 d"><small>Acesso completo por apenas</small><b>R$ 97</b><span class="bt2 bl">Quero garantir minha vaga →</span><span class="sc">🔒 Pagamento seguro · 🛡️ 7 dias de garantia</span></div><div class="cd"><i>💬</i>Dúvidas? Fale no WhatsApp</div>
+</div></div></div></div><small>Vídeo (VSL)</small><em>Fundo escuro com o vídeo no centro. Ideal para vender explicando.</em></div>
 
 <div class="sx"><div class="ph"><div class="pg md">
-<div class="tb">🔥 A oferta termina em <b>23:59:41</b></div>
+<div class="tb">🔥 A oferta termina em <b class="tk">23:59:41</b></div><div class="scr" style="--m:-84cqw">
 <div class="nv"><b>Curso Foco</b><span>Quero garantir</span></div>
 <div class="hr"><span class="bg">OFERTA POR TEMPO LIMITADO</span>
 <h6>Aprenda do zero ao resultado, passo a passo</h6>
@@ -208,7 +230,9 @@ footer{border-top:1px solid var(--bd);padding:34px 0 40px;color:var(--mu);font-s
 <div class="pri w"><s>R$ 197</s><b>R$ 97</b></div>
 <div class="bk"><div><i>📘</i><b>Curso Foco</b><small>Material digital</small></div></div></div>
 <div class="bn"><div class="cd"><i>✅</i>Aulas curtas e práticas</div><div class="cd"><i>⚡</i>Resultado na 1ª semana</div><div class="cd"><i>🎯</i>Materiais prontos</div><div class="cd"><i>🛡️</i>7 dias de garantia</div></div>
-</div></div><small>Moderna</small><em>Capa do produto em destaque e visual de lançamento.</em></div>
+<div class="pbx2 m"><small>Oferta por tempo limitado</small><b>R$ 97</b><span class="bt2 mb">Comprar agora →</span></div>
+<div class="fn2"><b>Pronto para começar?</b><span class="bt2 wh">Quero garantir minha vaga →</span></div>
+</div></div></div><small>Moderna</small><em>Capa do produto em destaque e visual de lançamento.</em></div>
 </div>
 </div></section>
 
@@ -272,6 +296,7 @@ footer{border-top:1px solid var(--bd);padding:34px 0 40px;color:var(--mu);font-s
 (function(){var d=document,h=d.documentElement;d.getElementById('yr').textContent=new Date().getFullYear();
 var els=[].slice.call(d.querySelectorAll('.rv'));
 if(window.IntersectionObserver){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('on');io.unobserve(e.target)}})},{threshold:.08});els.forEach(function(e,i){e.style.transitionDelay=(i%4)*60+'ms';io.observe(e)})}else els.forEach(function(e){e.classList.add('on')});
+var tks=[].slice.call(d.querySelectorAll('.tk')),t0=Date.now(),pad=function(n){return(n<10?'0':'')+n};if(tks.length)setInterval(function(){var s=Math.max(0,86381-Math.floor((Date.now()-t0)/1000));var t=pad(Math.floor(s/3600))+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60);tks.forEach(function(e){e.textContent=t})},1000);
 var sp=d.getElementById('spg'),up=function(){var m=h.scrollHeight-innerHeight;sp.style.width=(m>0?Math.min(100,(window.scrollY||h.scrollTop)/m*100):0)+'%'};addEventListener('scroll',up,{passive:true});up();
 })();
 </script>
