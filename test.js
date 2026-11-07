@@ -90,6 +90,8 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  process.env.MP_ACCESS_TOKEN='TESTTOKEN';process.env.MP_URL='https://mp.test';const _ff=global.fetch;let lastPref=null,payAmt=null;
  global.fetch=async(u,o)=>{u=String(u);if(u==='https://mp.test/checkout/preferences'){lastPref=JSON.parse(o.body);return{ok:true,status:201,json:async()=>({id:'pref1',init_point:'https://mp.test/pay/abc'})}}
   const m=/^https:\/\/mp\.test\/v1\/payments\/(\d+)$/.exec(u);if(m){return{ok:true,status:200,json:async()=>({status:m[1]==='999'?'pending':'approved',external_reference:lastPref&&lastPref.external_reference,transaction_amount:payAmt})}}return _ff(u,o)};
+ r=await rq('/planos');ok('preços de lançamento ativos por padrão',!r.t.includes('Vendas ainda não'),r.s);
+ r=await rq('/api/admin/config',{method:'POST',cookie:ck,body:{prices:{}}});ok('admin pode zerar os preços (vendas fechadas)',r.s===200,r.t);
  r=await rq('/planos');ok('/planos sem preços mostra vendas fechadas',r.s===200&&r.t.includes('Vendas ainda não'),r.s);
  r=await rq('/api/admin/config',{method:'POST',cookie:ck,body:{prices:{basic:49.9,pro:99,free:10}}});ok('admin define preços (free ignora?)',r.s===200&&r.j.prices.basic===49.9&&r.j.prices.pro===99&&r.j.prices.free===10,r.t);
  r=await rq('/api/admin/config',{method:'POST',body:{prices:{basic:1}}});ok('config de preços exige admin',r.s===401,r.s);
@@ -351,7 +353,7 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  let c429=0;for(let i=0;i<10;i++){const x=await rq('/login',{method:'POST',raw:'password=x'+i});if(x.s===429)c429++}ok('bloqueio de força bruta no login',c429>0,c429);
  // delete
  r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'delete',path:'sites/abc123'}});r=await rq('/',{host:'pizzaria-do-ze.kattalo.online'});ok('site despublicado some do subdomínio',r.s===404);
- r=await rq('/',{host:'autopageai.kattalo.online'});ok('landing em autopageai.<root>',r.s===200&&/AutoPage/.test(r.t)&&!/\{\{APP\}\}/.test(r.t)&&/Começar grátis/.test(r.t)&&/Essencial/.test(r.t)&&/>Pro</.test(r.t)&&/Premium/.test(r.t)&&!/<!--PLANS-->/.test(r.t),r.s);
+ r=await rq('/',{host:'autopageai.kattalo.online'});ok('landing mostra os preços definidos pelo admin',/R\$ 49,90/.test(r.t)&&/R\$ 99,00/.test(r.t),r.t.slice(0,80));ok('landing em autopageai.<root>',r.s===200&&/AutoPage/.test(r.t)&&!/\{\{APP\}\}/.test(r.t)&&/Começar grátis/.test(r.t)&&/Essencial/.test(r.t)&&/>Pro</.test(r.t)&&/Premium/.test(r.t)&&!/<!--PLANS-->/.test(r.t),r.s);
  r=await rq('/',{host:'kattalo.online'});ok('domínio raiz não serve a landing do produto',!/Como funciona/.test(r.t),r.s);
  r=await rq('/sobre');ok('/sobre no app mostra landing',r.s===200&&/Como funciona/.test(r.t),r.s);
  r=await rq('/sobre',{host:'loja-da-maria.kattalo.online'});ok('/sobre em site de cliente não vaza landing',r.s===404,r.s);

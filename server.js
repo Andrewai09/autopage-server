@@ -37,6 +37,9 @@ const PLANS = {
   pro: { name: 'Pro', maxSites: 10, ai: 80, fmts: null, domain: true, integ: true, feat: ['Todos os formatos, incl. Loja com carrinho e Agendamento', 'Painel de vendas completo', 'Receber pelo Mercado Pago e frete Correios (Melhor Envio)', 'Domínio próprio', '80 usos de IA por dia'] },
   premium: { name: 'Premium', maxSites: 15, ai: 200, fmts: null, domain: true, integ: true, feat: ['Tudo do Pro', 'Mais sites publicados', '200 usos de IA por dia'] }
 };
+// preços de lançamento (R$/30 dias), usados enquanto o admin não salvar os próprios
+const DEFAULT_PRICES = { basic: 19.9, pro: 39.9, premium: 69.9 };
+const loadPrices = async (store) => { const c = await store.get('config/plans'); return c ? (c.prices || {}) : { ...DEFAULT_PRICES }; };
 const planOf = (u) => {
   const exp = !!(u.planUntil && u.planUntil < Date.now()), k = PLANS[u.plan] && !exp ? u.plan : 'free', p = PLANS[k];
   return { key: k, name: p.name, maxSites: (u.maxSites > 0 && !exp) ? u.maxSites : p.maxSites, ai: p.ai, fmts: p.fmts || null, domain: !!p.domain, integ: !!p.integ, feat: p.feat || [], until: u.planUntil || 0, expired: exp, wanted: exp ? u.plan : '' };
@@ -178,14 +181,15 @@ async function main() {
   let LANDING_SRC = ''; try { LANDING_SRC = fs.readFileSync(path.join(__dirname, 'landing.html'), 'utf8'); } catch (e) { /* sem landing */ }
   const landingHtml = async () => {
     const appUrl = (process.env.APP_URL || ('https://' + APP_HOST)).replace(/\/$/, '');
-    let prices = {}; try { prices = ((await store.get('config/plans')) || {}).prices || {}; } catch (e) { /* sem preços */ }
+    let prices = {}; try { prices = await loadPrices(store); } catch (e) { /* sem preços */ }
     const hot = PLANS.pro ? 'pro' : '';
     const cards = Object.entries(PLANS).map(([k, p]) => {
       const has = prices[k] > 0;
       const price = k === 'free' ? 'Grátis' : has ? 'R$ ' + (+prices[k]).toFixed(2).replace('.', ',') + ' <small>/mês</small>' : 'Consulte <small>valor em breve</small>';
+      const ideal = { free: 'Para começar e testar sem pagar', basic: 'Para pequenos negócios e criadores', pro: 'Para vender online de verdade', premium: 'Para agências e quem tem vários projetos' }[k] || '';
       const feat = ['Até ' + p.maxSites + (p.maxSites === 1 ? ' site publicado' : ' sites publicados')].concat(p.feat || []);
       const href = appUrl + (k !== 'free' && has ? '/planos' : '');
-      return '<div class="pc rv' + (k === hot ? ' hot' : '') + '">' + (k === hot ? '<span class="pb">Mais completo</span>' : '') + '<h3>' + esc(p.name) + '</h3><div class="pr">' + price + '</div><ul>' + feat.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><a class="btn ' + (k === hot ? 'p' : 'g') + '" href="' + href + '">' + (k === 'free' ? 'Começar grátis' : has ? 'Escolher ' + esc(p.name) : 'Quero o ' + esc(p.name)) + '</a></div>';
+      return '<div class="pc rv' + (k === hot ? ' hot' : '') + '">' + (k === hot ? '<span class="pb">Mais completo</span>' : '') + '<h3>' + esc(p.name) + '</h3>' + (ideal ? '<div class="id">' + esc(ideal) + '</div>' : '') + '<div class="pr">' + price + '</div><ul>' + feat.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><a class="btn ' + (k === hot ? 'p' : 'g') + '" href="' + href + '">' + (k === 'free' ? 'Começar grátis' : has ? 'Escolher ' + esc(p.name) : 'Quero o ' + esc(p.name)) + '</a></div>';
     }).join('');
     return LANDING_SRC.split('{{APP}}').join(appUrl).replace('<!--PLANS-->', cards);
   };
@@ -567,7 +571,7 @@ async function main() {
   // ---- vendas: planos + Mercado Pago (pagamento libera o acesso sozinho)
   const MPT = () => process.env.MP_ACCESS_TOKEN || '', MPU = () => process.env.MP_URL || 'https://api.mercadopago.com';
   const APP_URL = () => process.env.APP_URL || ('https://' + APP_HOST);
-  const getPrices = async () => ((await store.get('config/plans')) || {}).prices || {};
+  const getPrices = async () => loadPrices(store);
   const fmt = (n) => 'R$ ' + (+n).toFixed(2).replace('.', ',');
   let ordLock = Promise.resolve();
   const ordRun = (fn) => { const p = ordLock.then(fn, fn); ordLock = p.catch(() => {}); return p; };
