@@ -90,3 +90,11 @@ Defina `ME_TOKEN` no Render (token do **seu** Melhor Envio; `ME_SANDBOX=1` para 
 - **Confirmação de e-mail:** só ativa quando o e-mail está configurado (`RESEND_API_KEY` + `MAIL_FROM`). Clientes novos precisam confirmar para publicar sites; compradores novos precisam confirmar para finalizar pedidos/agendamentos (login com Google já conta como confirmado). Sem e-mail configurado, nada é bloqueado e “esqueci a senha” avisa que o envio está desligado.
 - **Termos de Uso e Política de Privacidade (LGPD):** `/termos` e `/privacidade`; cadastro exige o aceite. Variáveis opcionais: `LEGAL_NAME` (razão social/nome), `LEGAL_DOC` (CNPJ/CPF), `LEGAL_EMAIL` (contato/encarregado). **Os textos são um modelo: peça revisão de um advogado.**
 - **Alerta de queda:** `.github/workflows/uptime.yml` consulta `/healthz` a cada 5 minutos; se falhar, o GitHub envia e-mail (mantenha as notificações de Actions ligadas). Mude o endereço pela variável do repositório `UPTIME_URL`.
+
+
+## Vitrine (catálogo e loja com carrinho)
+
+- **Carrossel “Em destaque”:** mostra os produtos marcados com ⭐ no editor (até 10). Sem nenhum marcado, usa as promoções ou os primeiros disponíveis (precisa de 4+ produtos). Avança sozinho, pausa ao tocar/passar o mouse e respeita “reduzir movimento”.
+- **Preço “de/por”:** campo “De R$” no produto mostra o preço antigo riscado e a % de desconto (só exibição; o valor cobrado é sempre o preço atual).
+- **Filtros:** busca, categorias com contagem, ordenar (relevância, menor/maior preço, A–Z, só promoções), “só disponíveis”, contador e mensagem de “nada encontrado”.
+- **Planilha:** novas colunas “Preço de (riscado)” e “Destaque”. A aba Vendas ainda não edita esses dois campos.
