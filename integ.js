@@ -107,7 +107,7 @@ module.exports = function integ(c) {
   X.mpOn = async (st) => { if (!st.j.mpay) return false; const I = await getI(st.owner); return !!(I.mp && I.mp.tok); };
   X.mpPref = async (st, o, key) => {
     const I = await getI(st.owner), tok = I.mp && dec(I.mp.tok); if (!tok) return null;
-    const ap = appUrl(), body = { items: [{ title: ('Pedido #' + o.no + ' - ' + st.name).slice(0, 120), quantity: 1, currency_id: 'BRL', unit_price: o.total }], external_reference: st.id + ':' + key, notification_url: ap + '/api/mp/hook?s=' + st.id, payer: { name: o.name }, statement_descriptor: clean(st.name, 22).replace(/[^A-Za-z0-9 ]/g, '') || undefined };
+    const ap = appUrl(), body = { items: [{ title: ('Pedido #' + o.no + ' - ' + st.name).slice(0, 120), quantity: 1, currency_id: 'BRL', unit_price: o.total }], external_reference: st.id + ':' + key, notification_url: ap + '/api/mp/hook?s=' + st.id, payer: Object.assign({ name: o.name }, o.em ? { email: o.em } : {}), statement_descriptor: clean(st.name, 22).replace(/[^A-Za-z0-9 ]/g, '') || undefined };
     if (st.slug && c.ROOT && !/^http:/.test(ap)) { const base = 'https://' + st.slug + '.' + c.ROOT + '/'; body.back_urls = { success: base + '?pedido=' + o.no, pending: base + '?pedido=' + o.no, failure: base }; body.auto_return = 'approved'; }
     const r = await jf(MPU() + '/checkout/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: JSON.stringify(body) });
     if (!r.ok || !r.j) return null;
@@ -133,9 +133,54 @@ module.exports = function integ(c) {
       else if (stt === 'rejected' || stt === 'cancelled') pg = o.pg === 'pago' ? 'pago' : 'recusado';
       else if (stt === 'refunded' || stt === 'charged_back') pg = 'estornado';
       else if (o.pg !== 'pago') pg = 'aguardando';
-      if (pg !== o.pg || o.pgid !== pid) { o.pg = pg; o.pgid = pid; o.pgat = Date.now(); if (pg === 'pago' && o.st === 'novo') o.st = 'aceito'; await store.set('sorders/' + s + '/' + m[2], o); }
+      let dv = false; if (pg !== o.pg || o.pgid !== pid) { o.pg = pg; o.pgid = pid; o.pgat = Date.now(); if (pg === 'pago' && o.st === 'novo') o.st = 'aceito'; if (pg === 'pago' && o.kd && !o.sent) { o.sent = 1; dv = true; } await store.set('sorders/' + s + '/' + m[2], o); }
+      if (dv) deliver(sd, s, m[2], o).catch((e) => console.error('deliver', e.message));
       res.status(200).end();
     } catch (e) { console.error('mphook', e.message); res.status(200).end(); }
+  });
+
+
+  // ---------- checkout próprio da página de vendas: pedido no servidor, Mercado Pago do cliente e e-mail de acesso após aprovação
+  // O link de acesso fica em sdl/<site> (só no servidor): o JSON do site é público e não pode conter o produto pago.
+  const deliver = async (sd, s, key, o) => {
+    const j = JSON.parse(sd.j || '{}'), cf = (await store.get('sdl/' + s)) || {}, nm = clean(j.name, 80);
+    let r = { skipped: true };
+    if (X.mailOn()) r = await X.sendMail({ to: o.em, subject: 'Seu acesso: ' + nm, html: X.wrap('Pagamento confirmado', '<p>Olá, ' + X.esc(o.name) + '! Recebemos o pagamento de <b>' + X.esc(nm) + '</b>.</p>' + (cf.url ? '<p>Seu acesso:</p>' + X.btn(cf.url, 'Acessar agora') : '<p>O vendedor enviará o seu acesso em breve.</p>') + (cf.msg ? '<p>' + X.esc(cf.msg) + '</p>' : '') + (j.sle ? '<p style="color:#6b7280">Dúvidas: ' + X.esc(j.sle) + '</p>' : '')) });
+    const cur = await store.get('sorders/' + s + '/' + key); if (cur) { cur.mok = r && r.ok ? 1 : 0; await store.set('sorders/' + s + '/' + key, cur); }
+    const ow = sd.owner && sd.owner !== 'admin' ? await store.get('users/' + sd.owner) : null, to = ow ? ow.email : String(process.env.ADMIN_EMAIL || '').trim();
+    if (to && X.mailOn()) await X.sendMail({ to, ...X.mail.lead(nm, { n: o.name, c: o.em, m: 'Venda aprovada · R$ ' + Number(o.total).toFixed(2).replace('.', ',') + (r && r.ok ? ' · acesso enviado ao comprador' : ' · ATENÇÃO: o e-mail de acesso NÃO foi enviado, envie manualmente') }, appUrl() + '/') });
+  };
+  app.all('/api/dpay', async (req, res) => {
+    if (cors(req, res)) return;
+    if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
+    try {
+      if (limited('dp:' + ipOf(req), 10, 3600e3)) return res.status(429).json({ error: 'rate' });
+      const st = await siteOf(req), b = req.body || {};
+      if (!st || st.j.goal !== 'sales') return res.status(400).json({ error: 'bad' });
+      if (limited('dps:' + st.id, 400, 86400e3)) return res.status(429).json({ error: 'rate' });
+      const price = Math.round((Number(st.j.sp) || 0) * 100) / 100;
+      if (!(price > 0) || price > 999999) return res.status(409).json({ error: 'price' });
+      if (!(await X.mpOn(st))) return res.status(409).json({ error: 'pay' });
+      const em = clean(b.email, 120).toLowerCase(), nm = clean(b.name, 80);
+      if (!nm || !/^[^\s@<>"']{1,64}@[^\s@<>"']{1,120}\.[^\s@<>"']{2,20}$/.test(em)) return res.status(400).json({ error: 'bad' });
+      const ctr = (await store.get('sctr/' + st.id)) || { n: 0 }; ctr.n = (ctr.n || 0) + 1; await store.set('sctr/' + st.id, ctr);
+      const o = { no: ctr.n, items: [{ n: clean(st.j.name || st.name, 80), v: '', q: 1, p: price }], sub: price, d: 0, fee: 0, total: price, mode: 'digital', name: nm, em, kd: 1, pay: 'online', pg: 'aguardando', st: 'novo', at: Date.now() };
+      const key = Date.now().toString(36) + rid();
+      const pu = await X.mpPref(st, o, key).catch(() => null); if (!pu) return res.status(502).json({ error: 'pay' });
+      o.pgref = pu.id; await store.set('sorders/' + st.id + '/' + key, o);
+      if (Math.random() < 0.03) store.trim('sorders/' + st.id + '/', 5000).catch(() => {});
+      res.json({ ok: true, no: o.no, url: pu.url });
+    } catch (e) { console.error('dpay', e.message); res.status(500).json({ error: 'server' }); }
+  });
+  app.all('/api/dpay/cfg', async (req, res) => {
+    if (kind(hostOf(req)).t !== 'app' || !isAuth(req)) return res.status(401).json({ error: 'auth' });
+    const b = req.method === 'POST' ? (req.body || {}) : req.query, sid = String(b.site || '');
+    if (!ID.test(sid) || !(await wasMine(req, sid))) return res.status(403).json({ error: 'forbidden' });
+    if (req.method === 'POST') {
+      let u = String(b.url || '').trim(); if (u && !/^https:\/\/[^\s"'<>]{4,400}$/.test(u)) return res.status(400).json({ error: 'url' });
+      await store.set('sdl/' + sid, { url: u, msg: clean(b.msg, 400), at: Date.now() });
+    }
+    const cf = (await store.get('sdl/' + sid)) || {}; res.json({ url: cf.url || '', msg: cf.msg || '' });
   });
 
   // ---------- painel: conectar contas

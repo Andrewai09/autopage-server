@@ -252,7 +252,7 @@ async function main() {
       if (op === 'delete') {
         const m = /^(sites|events)\/([a-z0-9]{1,16})$/.exec(String(b.path)); if (!m) return res.status(400).json({ error: 'bad' });
         if (m[1] === 'events' && !adm) return res.status(403).json({ error: 'forbidden' });
-        if (m[1] === 'sites') { const d = await store.get('sites/' + m[2]); if (d && !adm && (d.owner || 'admin') !== req.u.id) return res.status(403).json({ error: 'forbidden' }); if (d && d.slug) await store.del('slug/' + d.slug); await store.del('sites/' + m[2]); }
+        if (m[1] === 'sites') { const d = await store.get('sites/' + m[2]); if (d && !adm && (d.owner || 'admin') !== req.u.id) return res.status(403).json({ error: 'forbidden' }); if (d && d.slug) await store.del('slug/' + d.slug); await store.del('sites/' + m[2]); if (d) await store.del('sdl/' + m[2]); }
         else await store.del('events/' + m[2]);
         return res.json({ ok: true });
       }

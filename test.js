@@ -304,6 +304,29 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/__og',{host:sl1+'.kattalo.online'});ok('/__og sem capa devolve 404',r.s===404,r.s);
  r=await rq('/__og');ok('/__og no domínio do painel devolve 404',r.s===404,r.s);
  }
+ // ---- checkout próprio da página de vendas (Mercado Pago do cliente + e-mail de acesso)
+ {const _f3=global.fetch;global.fetch=async(u,o)=>{if(String(u)==='https://mp.test/users/me')return{ok:true,status:200,json:async()=>({nickname:'ana_mp'}),text:async()=>'{"nickname":"ana_mp"}'};return _f3(u,o)};
+ r=await rq('/api/integrations/mp',{method:'POST',cookie:ckA,body:{token:'APP_USR-xxxxxxxxxxxxxxxxxxxxxxxx'}});ok('cliente Pro conecta o Mercado Pago',r.s===200&&r.j.mp&&r.j.mp.on===1,r.t);
+ const dj={name:'Curso DP',goal:'sales',sp:97,sd:197,mpay:1,sle:'oi@dp.com',phone:'+55 11 91234-5678'};
+ r=await rq('/api/db',{method:'POST',cookie:ckA,body:{op:'set',path:'sites/dp0001',data:{j:JSON.stringify(dj),name:dj.name}}});const sdp=r.j&&r.j.slug;ok('publica página de vendas com checkout',!!sdp,r.t);
+ const H=sdp+'.kattalo.online';
+ r=await rq('/api/dpay',{host:H,method:'POST',body:{name:'',email:'x'}});ok('checkout próprio valida nome e e-mail',r.s===400,r.s);
+ r=await rq('/api/dpay',{host:H,method:'POST',body:{name:'Carla Lima',email:'carla@ex.com',price:1,sp:1}});ok('checkout cria preferência com o preço do servidor (ignora preço do cliente)',r.s===200&&r.j.url==='https://mp.test/pay/x'&&xPref.items[0].unit_price===97&&xPref.payer.email==='carla@ex.com'&&/^dp0001:/.test(xPref.external_reference),r.t+JSON.stringify(xPref));
+ r=await rq('/api/dpay/cfg',{method:'POST',body:{site:'dp0001',url:'https://area.dp.com/acesso'}});ok('config de acesso exige login',r.s===401,r.s);
+ r=await rq('/api/dpay/cfg',{method:'POST',cookie:ckB,body:{site:'dp0001',url:'https://area.dp.com/acesso'}});ok('config de acesso só do dono do site',r.s===403,r.s);
+ r=await rq('/api/dpay/cfg',{method:'POST',cookie:ckA,body:{site:'dp0001',url:'javascript:alert(1)'}});ok('link de acesso só aceita https',r.s===400,r.t);
+ r=await rq('/api/dpay/cfg',{method:'POST',cookie:ckA,body:{site:'dp0001',url:'https://area.dp.com/acesso',msg:'Senha: 123'}});ok('dono salva link de acesso',r.s===200&&r.j.url==='https://area.dp.com/acesso',r.t);
+ r=await rq('/api/db',{host:H,method:'POST',body:{op:'get',path:'sites/dp0001'}});ok('link de acesso NÃO aparece no JSON público do site',r.s===200&&!r.t.includes('area.dp.com'),r.t.slice(0,200));
+ const n0=mails.length;xAmt=1;r=await rq('/api/mp/hook?s=dp0001&type=payment&data.id=321',{host:H,method:'POST'});await tick();await tick();
+ ok('pagamento com valor diferente não libera acesso',mails.length===n0,mails.length-n0);
+ xAmt=97;r=await rq('/api/mp/hook?s=dp0001&type=payment&data.id=322',{host:H,method:'POST'});await tick();await tick();await tick();
+ const am=mails.filter(m=>m.to[0]==='carla@ex.com'&&/Seu acesso/.test(m.subject)).pop();ok('pagamento aprovado envia o e-mail de acesso ao comprador',!!am&&am.html.includes('https://area.dp.com/acesso')&&am.html.includes('Senha: 123'),am&&am.html.slice(0,200));
+ ok('vendedor é avisado da venda',mails.some(m=>m.to[0]==='ana@ex.com'&&/Nova mensagem/.test(m.subject)&&m.html.includes('Venda aprovada')));
+ const n1=mails.filter(m=>/Seu acesso/.test(m.subject)).length;r=await rq('/api/mp/hook?s=dp0001&type=payment&data.id=322',{host:H,method:'POST'});await tick();await tick();
+ ok('webhook repetido não reenvia o acesso',mails.filter(m=>/Seu acesso/.test(m.subject)).length===n1);
+ const dj2={...dj,mpay:0};await rq('/api/db',{method:'POST',cookie:ckA,body:{op:'set',path:'sites/dp0001',data:{j:JSON.stringify(dj2),name:dj.name}}});
+ r=await rq('/api/dpay',{host:H,method:'POST',body:{name:'Carla Lima',email:'carla@ex.com'}});ok('sem o pagamento online ligado o checkout é recusado',r.s===409,r.s);
+ global.fetch=_f3;}
  global.fetch=_f2;delete process.env.RESEND_API_KEY;
  // páginas legais + saúde + headers
  r=await rq('/privacidade');ok('política de privacidade',r.s===200&&r.t.includes('Política'));
