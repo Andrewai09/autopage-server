@@ -131,4 +131,4 @@ Recursos: cronômetro (reinicia para cada visitante, opcional), botão de compra
 - **Correção:** o botão “Reenviar e-mail de confirmação” chamava por engano a função de restaurar versão (nome duplicado).
 
 ## Landing do produto (nov/2026)
-`landing.html` apresenta o AutoPage.ai e é servida em `autopage.kattalo.online` e em `<app>/sobre` (CSP própria, cache 5 min). O domínio raiz `kattalo.online` e `www` ficam reservados para o futuro site da Kattalo (empresa de soluções digitais). Planos e preços vêm de `PLANS` e `config/plans`. Para ativar `autopage.kattalo.online`, adicione-o como Custom Domain no Render (o wildcard `*.kattalo.online` já cobre, se configurado).
+`landing.html` apresenta o AutoPage.ai e é servida em `autopageai.kattalo.online` (e `autopage.`) e em `<app>/sobre` (CSP própria, cache 5 min). O domínio raiz `kattalo.online` e `www` ficam reservados para o futuro site da Kattalo (empresa de soluções digitais). Planos e preços vêm de `PLANS` e `config/plans`. Para ativar `autopageai.kattalo.online`, adicione-o como Custom Domain no Render (o wildcard `*.kattalo.online` já cobre, se configurado).

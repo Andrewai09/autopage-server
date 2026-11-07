@@ -16,7 +16,7 @@ const AI_DAILY = +process.env.AI_DAILY_LIMIT || 300;
 const META_ID = process.env.META_APP_ID || '';
 const META_SECRET = process.env.META_APP_SECRET || '';
 const GRAPH = 'https://graph.facebook.com/' + (process.env.META_GRAPH_VERSION || 'v21.0');
-const RESERVED = new Set(['app', 'www', 'api', 'admin', 'mail', 'ftp', 'cpanel', 'webmail', 'painel', 'login', 'static', 'assets', 'autopage', 'sites', 'superdelivery', 'thefull', 'adv', 'arrematekids', ...String(process.env.RESERVED_SUBS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean)]);
+const RESERVED = new Set(['app', 'www', 'api', 'admin', 'mail', 'ftp', 'cpanel', 'webmail', 'painel', 'login', 'static', 'assets', 'autopage', 'autopageai', 'sites', 'superdelivery', 'thefull', 'adv', 'arrematekids', ...String(process.env.RESERVED_SUBS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean)]);
 const APP_HTML = fs.readFileSync(path.join(__dirname, 'public', 'app.html'), 'utf8');
 const SHIM = fs.readFileSync(path.join(__dirname, 'public', 'shim.js'), 'utf8');
 const RENDER = require('./render'); RENDER.init(APP_HTML);
@@ -174,7 +174,7 @@ async function main() {
     res.setHeader('Cache-Control', 'public, max-age=300'); res.setHeader('X-Content-Type-Options', 'nosniff'); res.type(o.type); res.send(o.buf);
   });
 
-  // ---- landing do produto AutoPage.ai (autopage.<root> e /sobre no app). O domínio raiz fica livre para o site da Kattalo
+  // ---- landing do produto AutoPage.ai (autopageai.<root> e /sobre no app). O domínio raiz fica livre para o site da Kattalo
   let LANDING_SRC = ''; try { LANDING_SRC = fs.readFileSync(path.join(__dirname, 'landing.html'), 'utf8'); } catch (e) { /* sem landing */ }
   const landingHtml = async () => {
     const appUrl = (process.env.APP_URL || ('https://' + APP_HOST)).replace(/\/$/, '');
@@ -196,7 +196,7 @@ async function main() {
 
   // ---- páginas
   app.get('/', async (req, res) => {
-    if (LANDING_SRC && hostOf(req) === 'autopage.' + ROOT) return sendLanding(res);
+    if (LANDING_SRC && (hostOf(req) === 'autopageai.' + ROOT || hostOf(req) === 'autopage.' + ROOT)) return sendLanding(res);
     let k = kind(hostOf(req)), cdom = null;
     if (k.t === 'app' && hostOf(req) !== APP_HOST) { cdom = await X.siteByDomain(hostOf(req)); if (cdom) k = { t: 'site', domain: true }; }
     if (k.t === 'none') return res.status(404).type('text').send('Não encontrado');

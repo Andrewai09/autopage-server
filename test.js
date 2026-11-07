@@ -351,7 +351,7 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  let c429=0;for(let i=0;i<10;i++){const x=await rq('/login',{method:'POST',raw:'password=x'+i});if(x.s===429)c429++}ok('bloqueio de força bruta no login',c429>0,c429);
  // delete
  r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'delete',path:'sites/abc123'}});r=await rq('/',{host:'pizzaria-do-ze.kattalo.online'});ok('site despublicado some do subdomínio',r.s===404);
- r=await rq('/',{host:'autopage.kattalo.online'});ok('landing em autopage.<root>',r.s===200&&/AutoPage/.test(r.t)&&!/\{\{APP\}\}/.test(r.t)&&/Começar grátis/.test(r.t)&&!/<!--PLANS-->/.test(r.t),r.s);
+ r=await rq('/',{host:'autopageai.kattalo.online'});ok('landing em autopageai.<root>',r.s===200&&/AutoPage/.test(r.t)&&!/\{\{APP\}\}/.test(r.t)&&/Começar grátis/.test(r.t)&&!/<!--PLANS-->/.test(r.t),r.s);
  r=await rq('/',{host:'kattalo.online'});ok('domínio raiz não serve a landing do produto',!/Como funciona/.test(r.t),r.s);
  r=await rq('/sobre');ok('/sobre no app mostra landing',r.s===200&&/Como funciona/.test(r.t),r.s);
  r=await rq('/sobre',{host:'loja-da-maria.kattalo.online'});ok('/sobre em site de cliente não vaza landing',r.s===404,r.s);
