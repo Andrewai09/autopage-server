@@ -28,7 +28,7 @@ const cookies = (req) => Object.fromEntries(String(req.headers.cookie || '').spl
 const isAdmin = (req) => !!(req.u && req.u.role === 'admin');
 const isAuth = (req) => !!req.u;
 const FREE_FMTS = ['landing', 'links', 'card', 'profile'];
-const ESS_FMTS = [...FREE_FMTS, 'catalog', 'menu', 'portfolio', 'presentation', 'invite', 'resume', 'pet', 'capture'];
+const ESS_FMTS = [...FREE_FMTS, 'catalog', 'menu', 'portfolio', 'presentation', 'invite', 'resume', 'pet', 'capture', 'sales'];
 // o que cada plano libera: fmts = formatos (null = todos), domain = domínio próprio, ai = usos de IA por dia
 const PLANS = {
   free: { name: 'Básico (grátis)', maxSites: 1, ai: 10, fmts: FREE_FMTS, domain: false, integ: false, feat: ['Landing, Link na bio, Cartão e Perfil profissional', 'Painel com visitas e cliques', '10 usos de IA por dia'] },

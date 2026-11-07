@@ -98,3 +98,14 @@ Defina `ME_TOKEN` no Render (token do **seu** Melhor Envio; `ME_SANDBOX=1` para 
 - **Preço “de/por”:** campo “De R$” no produto mostra o preço antigo riscado e a % de desconto (só exibição; o valor cobrado é sempre o preço atual).
 - **Filtros:** busca, categorias com contagem, ordenar (relevância, menor/maior preço, A–Z, só promoções), “só disponíveis”, contador e mensagem de “nada encontrado”.
 - **Planilha:** novas colunas “Preço de (riscado)” e “Destaque”. A aba Vendas ainda não edita esses dois campos.
+
+
+## Página de vendas (produto digital / fundo de funil)
+
+Formato `sales` (planos Essencial, Pro e Premium). Três estilos, com prévia real lado a lado (botão “Comparar os 3 estilos”, que abre sozinho na primeira vez):
+
+- **Carta de vendas:** texto longo e direto, fundo claro, destaque amarelo, botão verde.
+- **Vídeo (VSL):** fundo escuro, player do YouTube no centro (carrega só ao clicar, via youtube-nocookie).
+- **Moderna:** capa do produto em destaque, cartões de benefícios e visual de lançamento.
+
+Recursos: cronômetro (reinicia para cada visitante, opcional), botão de compra fixo ao rolar, preço de/por com % de economia, parcelamento, garantia, bônus, módulos em sanfona, depoimentos, FAQ e botão final. O botão leva ao link de compra (Hotmart, Kiwify, Eduzz, Mercado Pago…) ou, sem link, ao WhatsApp. Textos de exemplo vêm preenchidos para trocar; depoimentos **não** vêm de exemplo (só os reais do cliente).

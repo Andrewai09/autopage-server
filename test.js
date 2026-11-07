@@ -56,6 +56,7 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/api/me',{cookie:ck2});ok('/api/me do cliente',r.s===200&&r.j.role==='client'&&r.j.plan.maxSites===1&&r.j.tmp===true,r.t);
  r=await rq('/api/admin/overview',{cookie:ck2});ok('cliente não acessa painel admin',r.s===401,r.s);
  r=await rq('/api/db',{method:'POST',cookie:ck2,body:{op:'set',path:'sites/fmt001',data:{j:JSON.stringify({name:'Loja',goal:'ecommerce',items:[]}),name:'Loja'}}});ok('plano Básico grátis bloqueia formato pago (loja)',r.s===403&&r.j.error==='format',r.t);
+ r=await rq('/api/db',{method:'POST',cookie:ck2,body:{op:'set',path:'sites/vend02',data:{j:JSON.stringify({name:'Curso',goal:'sales'}),name:'Curso'}}});ok('plano grátis não publica página de vendas',r.s===403&&r.j.error==='format',r.t);
  r=await rq('/api/me',{cookie:ck2});ok('/api/me lista os formatos do plano grátis',Array.isArray(r.j.plan.fmts)&&r.j.plan.fmts.includes('landing')&&!r.j.plan.fmts.includes('ecommerce'),r.t);
  r=await rq('/api/domain',{method:'POST',cookie:ck2,body:{site:'fmt001',domain:'meusite.com.br'}});ok('domínio próprio bloqueado fora do Pro/Premium',r.s===403&&/Pro/.test(r.j.error||''),r.t);
  r=await rq('/api/me',{cookie:ck2});ok('/api/me traz recursos do plano',r.j.plan.domain===false&&r.j.plan.feat.length>0,r.t);
@@ -290,6 +291,9 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/api/buyer/login',{method:'POST',body:{email:'bia@ex.com',password:'NovaSenha456'},host:H});ok('comprador entra com a nova senha',r.s===200,r.t);}
  r=await rq('/termos');ok('termos de uso',r.s===200&&r.t.includes('Termos de Uso')&&r.t.includes('LGPD')===false&&r.t.includes('Política de Privacidade'));
  r=await rq('/privacidade');ok('privacidade cita LGPD, direitos e contato',r.s===200&&r.t.includes('LGPD')&&r.t.includes('art. 18')&&r.t.includes('mailto:'));
+ // ---- página de vendas
+ {const sj={name:'Curso Foco',goal:'sales',sl:'video',sp:97,sd:197,sg:7,st:24,sk:'https://pay.exemplo.com/foco',sv:'https://youtu.be/dQw4w9WgXcQ',sb:'Aprenda rápido\nAplique já',sm:'Fundamentos | Base\nPrática | Exercícios',faq:'Como recebo? | Por e-mail',tests:'Ana: ótimo',slogan:'Domine o foco em 7 dias',color:'#0ea5e9',phone:'+55 11 91234-5678'};
+ r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/vend01',data:{j:JSON.stringify(sj),name:sj.name}}});const sl1=r.j&&r.j.slug;ok('publica página de vendas',!!sl1,r.t);r=await rq('/',{host:sl1+'.kattalo.online'});ok('página de vendas é servida no subdomínio',r.s===200&&r.t.includes('__SITE_ID'),r.s);}
  global.fetch=_f2;delete process.env.RESEND_API_KEY;
  // páginas legais + saúde + headers
  r=await rq('/privacidade');ok('política de privacidade',r.s===200&&r.t.includes('Política'));
