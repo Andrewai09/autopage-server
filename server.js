@@ -675,6 +675,7 @@ async function main() {
   });
 
   X.routes({ app, kind, hostOf, ipOf, limited, isAdmin, isAuth, ID, PLANS, planOf, pwHash, pwCheck, mkToken, EMAIL, needAdmin, allSites, canSite, appUrl: APP_URL });
+  require('./release')({ app, needAdmin, X, limited, ipOf });
   // migração única: padrão visual fixo (tema claro, fonte Plus Jakarta Sans, layout dividido) em todos os sites já publicados; guarda os valores antigos em config/migr_visual1
   async function migrateVisual() {
     try {

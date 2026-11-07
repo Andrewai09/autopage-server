@@ -132,3 +132,6 @@ Recursos: cronômetro (reinicia para cada visitante, opcional), botão de compra
 
 ## Landing do produto (nov/2026)
 `landing.html` apresenta o AutoPage.ai e é servida em `autopageai.kattalo.online` (e `autopage.`) e em `<app>/sobre` (CSP própria, cache 5 min). O domínio raiz `kattalo.online` e `www` ficam reservados para o futuro site da Kattalo (empresa de soluções digitais). Planos e preços vêm de `PLANS` e `config/plans`. Para ativar `autopageai.kattalo.online`, adicione-o como Custom Domain no Render (o wildcard `*.kattalo.online` já cobre, se configurado).
+
+## Versões da plataforma e deploy automático (admin)
+Painel do administrador → Clientes → "Versões da plataforma" (`release.js`). Lista os deploys do Render (filtro por data, horário de Brasília), permite **voltar para uma versão anterior** (faz backup de dados antes), **publicar a última versão agora** e **ligar/desligar o deploy automático** do serviço. Exige a variável `RENDER_API_KEY` (chave criada em Render → Account Settings → API Keys); `RENDER_SERVICE_ID` o Render já define. Todas as rotas são só de admin, pedem confirmação e registram na auditoria. Observação: ao voltar uma versão, o próprio Render desativa o deploy automático; reative pelo painel quando quiser.

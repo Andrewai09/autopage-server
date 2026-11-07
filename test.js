@@ -356,5 +356,35 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/sobre');ok('/sobre no app mostra landing',r.s===200&&/Como funciona/.test(r.t),r.s);
  r=await rq('/sobre',{host:'loja-da-maria.kattalo.online'});ok('/sobre em site de cliente não vaza landing',r.s===404,r.s);
  r=await rq('/');ok('app continua pedindo login',r.s===200&&!/Como funciona/.test(r.t),r.s);
+ // ---- versões da plataforma (Render stub)
+ {const _fr=global.fetch,calls=[];let autoNow='yes';
+ process.env.RENDER_API_URL='https://render.test';
+ const dep=(id,st,msg,at)=>({deploy:{id,status:st,trigger:'new_commit',createdAt:at,finishedAt:at,commit:{id:'abcdef1234',message:msg+'\n\ncorpo'}}});
+ global.fetch=async(u,o={})=>{u=String(u);if(!u.startsWith('https://render.test'))return _fr(u,o);calls.push([o.method||'GET',u,o.body||'']);const J=(s,j)=>({status:s,ok:s<300,text:async()=>JSON.stringify(j)});
+  if(/\/deploys\?/.test(u)&&(o.method||'GET')==='GET')return J(200,[dep('dep-live0001','live','Nova landing','2026-11-07T11:00:00Z'),dep('dep-old00002','deactivated','Checkout próprio','2026-11-06T10:00:00Z'),dep('dep-fail0003','build_failed','Erro','2026-11-05T10:00:00Z')]);
+  if(/\/rollback$/.test(u))return J(202,{id:'dep-new00004'});
+  if(/\/deploys$/.test(u)&&o.method==='POST')return J(201,{id:'dep-man00005'});
+  if(o.method==='PATCH'){autoNow=JSON.parse(o.body).autoDeploy;return J(200,{autoDeploy:autoNow})}
+  return J(200,{autoDeploy:autoNow})};
+ let r=await rq('/api/admin/release',{cookie:ck});ok('versões: sem chave do Render avisa que não está configurado',r.s===200&&r.j.configured===false,r.t);
+ process.env.RENDER_API_KEY='rk_test';process.env.RENDER_SERVICE_ID='srv-test123';
+ r=await rq('/api/admin/release');ok('versões exigem admin (sem login 401)',r.s===401,r.s);
+ r=await rq('/api/admin/release',{cookie:ckB});ok('versões não abrem para cliente',r.s===401,r.s);
+ r=await rq('/api/admin/release?from=2026-11-06&to=2026-11-07',{cookie:ck});ok('lista versões com estado e deploy automático',r.s===200&&r.j.configured&&r.j.items.length===3&&r.j.current==='dep-live0001'&&r.j.auto===true&&r.j.items[0].msg==='Nova landing',r.t);
+ ok('filtro de data vai para o Render em horário de Brasília',calls.some(c=>/createdAfter=2026-11-06T03%3A00%3A00Z/.test(c[1])&&/createdBefore=2026-11-08T03%3A00%3A00Z/.test(c[1])),JSON.stringify(calls.slice(0,2)));
+ r=await rq('/api/admin/release?from=lixo',{cookie:ck});ok('data inválida é ignorada',r.s===200&&!calls.slice(-2).some(c=>/lixo/.test(c[1])),r.s);
+ r=await rq('/api/admin/release/rollback',{method:'POST',cookie:ck,body:{deployId:'dep-old00002'}});ok('voltar versão exige confirmação',r.s===400,r.t);
+ r=await rq('/api/admin/release/rollback',{method:'POST',cookie:ck,body:{deployId:'../x',confirm:true}});ok('voltar versão rejeita id inválido',r.s===400,r.t);
+ r=await rq('/api/admin/release/rollback',{method:'POST',cookie:ck,body:{deployId:'dep-zzzz9999',confirm:true}});ok('voltar versão rejeita id fora do histórico',r.s===404,r.t);
+ r=await rq('/api/admin/release/rollback',{method:'POST',cookie:ck,body:{deployId:'dep-fail0003',confirm:true}});ok('não volta para versão que falhou',r.s===400,r.t);
+ r=await rq('/api/admin/release/rollback',{method:'POST',cookie:ck,body:{deployId:'dep-live0001',confirm:true}});ok('não volta para a que já está no ar',r.s===400,r.t);
+ r=await rq('/api/admin/release/rollback',{method:'POST',cookie:ckB,body:{deployId:'dep-old00002',confirm:true}});ok('cliente não volta versão',r.s===401,r.s);
+ r=await rq('/api/admin/release/rollback',{method:'POST',cookie:ck,body:{deployId:'dep-old00002',confirm:true}});ok('admin volta para versão anterior',r.s===200&&calls.some(c=>c[0]==='POST'&&/\/rollback$/.test(c[1])&&/dep-old00002/.test(c[2])),r.t);
+ r=await rq('/api/admin/release/auto',{method:'POST',cookie:ck,body:{on:false,confirm:true}});ok('desliga deploy automático',r.s===200&&r.j.auto===false&&calls.some(c=>c[0]==='PATCH'&&/"no"/.test(c[2])),r.t);
+ r=await rq('/api/admin/release',{cookie:ck});ok('estado reflete deploy automático desligado',r.j.auto===false,r.t);
+ r=await rq('/api/admin/release/auto',{method:'POST',cookie:ck,body:{on:true}});ok('alterar deploy automático exige confirmação',r.s===400,r.s);
+ r=await rq('/api/admin/release/deploy',{method:'POST',cookie:ck,body:{confirm:true}});ok('publica última versão manualmente',r.s===200&&calls.some(c=>c[0]==='POST'&&/\/deploys$/.test(c[1])),r.t);
+ r=await rq('/api/admin/audit',{cookie:ck});ok('ações de versão ficam na auditoria',/release\.rollback/.test(r.t)&&/release\.auto_off/.test(r.t)&&!/rk_test/.test(r.t),r.t.slice(0,200));
+ global.fetch=_fr;delete process.env.RENDER_API_KEY;delete process.env.RENDER_SERVICE_ID;delete process.env.RENDER_API_URL;}
  console.log('\nRESULTADO',pass,'/',pass+fail);srv.close();process.exit(fail?1:0);
 })().catch(e=>{console.error('ERRO',e);process.exit(2)});
