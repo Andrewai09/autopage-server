@@ -109,3 +109,13 @@ Formato `sales` (planos Essencial, Pro e Premium). Três estilos, com prévia re
 - **Moderna:** capa do produto em destaque, cartões de benefícios e visual de lançamento.
 
 Recursos: cronômetro (reinicia para cada visitante, opcional), botão de compra fixo ao rolar, preço de/por com % de economia, parcelamento, garantia, bônus, módulos em sanfona, depoimentos, FAQ e botão final. O botão leva ao link de compra (Hotmart, Kiwify, Eduzz, Mercado Pago…) ou, sem link, ao WhatsApp. Textos de exemplo vêm preenchidos para trocar; depoimentos **não** vêm de exemplo (só os reais do cliente).
+
+### Página de vendas: medição, prévia e conformidade
+
+- **Renderização:** no site publicado a página de vendas abre como documento próprio (não mais dentro de iframe), então `localStorage` (cronômetro, consentimento) e pixels funcionam. A prévia do editor continua em iframe isolado e **não** dispara pixels nem registra visitas.
+- **Prévia de link / SEO:** o servidor lê os dados do site e coloca `title`, `description`, `og:*` e `twitter:*` no `<head>` (todos os formatos). A capa em data-URL é servida em `/__og`. O corpo da página ainda é montado no navegador; buscadores que executam JavaScript (Google) indexam, rastreadores simples só veem o `<head>`.
+- **Medição:** visitas e cliques próprios (sem cookies) em “Meus sites”; Pixel da Meta, GA4, Google Ads (tag) e TikTok por ID validado, **somente após aceite** do aviso de cookies; `utm_*`, `fbclid`, `gclid`, `ttclid` da visita são repassados ao link de compra. A conversão de compra precisa ser configurada na plataforma do link de compra.
+- **Urgência:** cronômetro por visitante ou **prazo fixo** (mostra “Oferta encerrada” ao fim); botão atrasado após o play (estilo Vídeo, YouTube ou Vimeo).
+- **Conteúdo:** gerar textos com IA (só a partir da descrição do produto, sem depoimentos nem resultados inventados), editor em linhas (benefícios, módulos, bônus, FAQ, depoimentos), prints/resultados com zoom (campo de galeria), mockup do produto quando não há capa, ordem e visibilidade das seções.
+- **Rodapé legal:** razão social, CNPJ/CPF, e-mail, links de Termos e Privacidade do **vendedor**, aviso de resultados (padrão quando há depoimentos/prints) e selo editável. Os modelos `/termos` e `/privacidade` da plataforma são para os clientes do AutoPage, não para a loja do vendedor.
+- **Sem checkout próprio:** o pagamento e a entrega do acesso continuam na plataforma do link de compra.

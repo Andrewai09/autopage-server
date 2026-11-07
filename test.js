@@ -293,7 +293,17 @@ const rq=(path,{host='app.kattalo.online',method='GET',body,cookie,raw,ct}={})=>
  r=await rq('/privacidade');ok('privacidade cita LGPD, direitos e contato',r.s===200&&r.t.includes('LGPD')&&r.t.includes('art. 18')&&r.t.includes('mailto:'));
  // ---- página de vendas
  {const sj={name:'Curso Foco',goal:'sales',sl:'video',sp:97,sd:197,sg:7,st:24,sk:'https://pay.exemplo.com/foco',sv:'https://youtu.be/dQw4w9WgXcQ',sb:'Aprenda rápido\nAplique já',sm:'Fundamentos | Base\nPrática | Exercícios',faq:'Como recebo? | Por e-mail',tests:'Ana: ótimo',slogan:'Domine o foco em 7 dias',color:'#0ea5e9',phone:'+55 11 91234-5678'};
- r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/vend01',data:{j:JSON.stringify(sj),name:sj.name}}});const sl1=r.j&&r.j.slug;ok('publica página de vendas',!!sl1,r.t);r=await rq('/',{host:sl1+'.kattalo.online'});ok('página de vendas é servida no subdomínio',r.s===200&&r.t.includes('__SITE_ID'),r.s);}
+ r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/vend01',data:{j:JSON.stringify(sj),name:sj.name}}});const sl1=r.j&&r.j.slug;ok('publica página de vendas',!!sl1,r.t);r=await rq('/',{host:sl1+'.kattalo.online'});ok('página de vendas é servida no subdomínio',r.s===200&&r.t.includes('__SITE_ID'),r.s);
+ const px='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+ const sj2={name:'Curso <img src=x onerror=alert(1)> "Foco"',goal:'sales',ss:'Sub & "aspas" <b>',cover:px,sp:10,phone:'+55 11 91234-5678'};
+ r=await rq('/api/db',{method:'POST',cookie:ck,body:{op:'set',path:'sites/vend03',data:{j:JSON.stringify(sj2),name:'Curso Foco 2'}}});const sl3=r.j&&r.j.slug;
+ r=await rq('/',{host:sl3+'.kattalo.online'});const hd=(r.t.split('</head>')[0]||'');
+ ok('prévia: og:title, og:description e og:image no HTML servido',hd.includes('property="og:title"')&&hd.includes('property="og:description"')&&hd.includes('property="og:image" content="https://'+sl3+'.kattalo.online/__og"'),hd.slice(-300));
+ ok('prévia: nome e descrição vêm escapados (sem tag injetada)',!hd.includes('<img src=x')&&hd.includes('&lt;img')&&hd.includes('&amp; &quot;aspas&quot;'));
+ r=await rq('/__og',{host:sl3+'.kattalo.online'});ok('imagem de prévia (/__og) serve a capa como imagem',r.s===200&&String(r.h.get('content-type')).includes('image/png')&&r.h.get('x-content-type-options')==='nosniff',r.s);
+ r=await rq('/__og',{host:sl1+'.kattalo.online'});ok('/__og sem capa devolve 404',r.s===404,r.s);
+ r=await rq('/__og');ok('/__og no domínio do painel devolve 404',r.s===404,r.s);
+ }
  global.fetch=_f2;delete process.env.RESEND_API_KEY;
  // páginas legais + saúde + headers
  r=await rq('/privacidade');ok('política de privacidade',r.s===200&&r.t.includes('Política'));

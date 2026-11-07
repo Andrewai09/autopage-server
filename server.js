@@ -104,13 +104,15 @@ async function main() {
 
   // página (~300 KB): monta uma vez por variante e serve comprimida (gzip) quando o navegador aceita
   const zlib = require('zlib'), PG = new Map();
-  const page = (req, res, extra) => {
-    let e = PG.get(extra);
+  const page = (req, res, extra, head) => {
+    const ck = head ? extra + '\u0000' + head : extra;
+    let e = PG.get(ck);
     if (!e) {
-      const html = APP_HTML.replace('<script>', '<script>' + extra + SHIM + '</script><script>');
+      let html = APP_HTML.replace('<script>', '<script>' + extra + SHIM + '</script><script>');
+      if (head) html = html.replace(/<title>[^<]*<\/title>/, '').replace('</head>', () => head + '</head>');
       e = { raw: Buffer.from(html), gz: zlib.gzipSync(html, { level: 6 }) };
       if (PG.size >= 300) PG.delete(PG.keys().next().value);
-      PG.set(extra, e);
+      PG.set(ck, e);
     }
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Vary', 'Accept-Encoding');
@@ -149,6 +151,28 @@ async function main() {
   });
   app.post('/logout', (req, res) => { res.setHeader('Set-Cookie', 'ap_s=; HttpOnly; Path=/; Max-Age=0'); res.redirect('/'); });
 
+  // prévia de link (WhatsApp/Facebook/Google) e SEO: o servidor lê os dados do site e põe as tags no <head>
+  const hEsc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  const ogData = (c) => { const m = /^data:image\/(png|jpe?g|webp|gif);base64,([A-Za-z0-9+\/=]+)$/.exec(String(c || '')); return m ? { type: 'image/' + m[1].replace('jpg', 'jpeg'), buf: Buffer.from(m[2], 'base64') } : null; };
+  const siteHead = (sj, host) => {
+    try {
+      const name = String(sj.name || '').slice(0, 90); if (!name) return '';
+      const raw = String((sj.goal === 'sales' ? (sj.ss || sj.slogan) : (sj.slogan || sj.about)) || sj.about || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 200);
+      const cv = String(sj.cover || sj.logo || '');
+      const img = /^https:\/\/[^\s"'<>]+$/.test(cv) ? cv : (ogData(cv) ? 'https://' + host + '/__og' : '');
+      return '<title>' + hEsc(name) + '</title><meta name="description" content="' + hEsc(raw) + '"><meta property="og:type" content="website"><meta property="og:title" content="' + hEsc(name) + '"><meta property="og:description" content="' + hEsc(raw) + '"><meta property="og:url" content="https://' + hEsc(host) + '/">' + (img ? '<meta property="og:image" content="' + hEsc(img) + '"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="' + hEsc(img) + '">' : '<meta name="twitter:card" content="summary">') + '<meta name="twitter:title" content="' + hEsc(name) + '">';
+    } catch (e) { return ''; }
+  };
+  app.get('/__og', async (req, res) => {
+    let k = kind(hostOf(req)), cdom = null;
+    if (k.t === 'app' && hostOf(req) !== APP_HOST) { cdom = await X.siteByDomain(hostOf(req)); if (cdom) k = { t: 'site' }; }
+    if (k.t !== 'site') return res.status(404).end();
+    const ptr = cdom ? { id: cdom.site } : await store.get('slug/' + k.slug); if (!ptr) return res.status(404).end();
+    const sd = await store.get('sites/' + ptr.id); let sj = {}; try { sj = JSON.parse((sd && sd.j) || '{}'); } catch (e) { /* vazio */ }
+    const o = ogData(sj.cover) || ogData(sj.logo); if (!o) return res.status(404).end();
+    res.setHeader('Cache-Control', 'public, max-age=300'); res.setHeader('X-Content-Type-Options', 'nosniff'); res.type(o.type); res.send(o.buf);
+  });
+
   // ---- páginas
   app.get('/', async (req, res) => {
     let k = kind(hostOf(req)), cdom = null;
@@ -162,7 +186,13 @@ async function main() {
     }
     const ptr = cdom ? { id: cdom.site } : await store.get('slug/' + k.slug);
     if (!ptr) return res.status(404).type('html').send('<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><body style="font:16px system-ui;display:grid;place-items:center;min-height:100vh;margin:0"><p>Site não encontrado.</p>');
+    let head = '';
     try {
+      if (true) {
+        const sd0 = await store.get('sites/' + ptr.id);
+        const sj0 = sd0 && JSON.parse(sd0.j || '{}');
+        if (sj0) head = siteHead(sj0, hostOf(req));
+      }
       if (!/[?&]nr=1/.test(req.url || '')) {
         const sd = await store.get('sites/' + ptr.id);
         const sj = sd && JSON.parse(sd.j || '{}');
@@ -172,7 +202,7 @@ async function main() {
         }
       }
     } catch (e) { /* segue para a página normal */ }
-    return page(req, res, cfg({ site: true }) + 'window.__SITE_ID=' + JSON.stringify(ptr.id) + ';');
+    return page(req, res, cfg({ site: true }) + 'window.__SITE_ID=' + JSON.stringify(ptr.id) + ';', head);
   });
 
   // ---- "banco" (mesma interface que o app usa no Claude)
