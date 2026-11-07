@@ -129,3 +129,6 @@ Recursos: cronômetro (reinicia para cada visitante, opcional), botão de compra
 - **Teste A/B de headline:** campo “Headline alternativa”; metade dos visitantes vê a B (guardado no navegador); visitas e cliques por variante aparecem em “Meus sites”. Sem teste de significância estatística.
 - **Meus sites:** páginas de vendas mostram vendas pagas, receita, aguardando, estornos e e-mails de acesso que falharam.
 - **Correção:** o botão “Reenviar e-mail de confirmação” chamava por engano a função de restaurar versão (nome duplicado).
+
+## Landing institucional (nov/2026)
+`landing.html` é servida em `kattalo.online`, `www.kattalo.online` e `<app>/sobre` (CSP própria, cache 5 min). Os planos e preços vêm de `PLANS` e `config/plans` (só aparecem planos com preço > 0, além do grátis). Para ativar no domínio raiz, aponte o DNS de `kattalo.online` e `www` para o serviço no Render e adicione os dois como Custom Domain.

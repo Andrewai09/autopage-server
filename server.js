@@ -174,8 +174,29 @@ async function main() {
     res.setHeader('Cache-Control', 'public, max-age=300'); res.setHeader('X-Content-Type-Options', 'nosniff'); res.type(o.type); res.send(o.buf);
   });
 
+  // ---- landing institucional (kattalo.online, www e /sobre)
+  let LANDING_SRC = ''; try { LANDING_SRC = fs.readFileSync(path.join(__dirname, 'landing.html'), 'utf8'); } catch (e) { /* sem landing */ }
+  const landingHtml = async () => {
+    const appUrl = (process.env.APP_URL || ('https://' + APP_HOST)).replace(/\/$/, '');
+    let prices = {}; try { prices = ((await store.get('config/plans')) || {}).prices || {}; } catch (e) { /* sem preços */ }
+    const hot = PLANS.pro && prices.pro > 0 ? 'pro' : (PLANS.basic && prices.basic > 0 ? 'basic' : '');
+    const cards = Object.entries(PLANS).filter(([k]) => k === 'free' || prices[k] > 0).map(([k, p]) => {
+      const price = k === 'free' ? 'Grátis' : 'R$ ' + (+prices[k]).toFixed(2).replace('.', ',') + ' <small>/mês</small>';
+      const feat = ['Até ' + p.maxSites + (p.maxSites === 1 ? ' site publicado' : ' sites publicados')].concat(p.feat || []);
+      return '<div class="pc rv' + (k === hot ? ' hot' : '') + '"><h3>' + esc(p.name) + '</h3><div class="pr">' + price + '</div><ul>' + feat.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><a class="btn ' + (k === hot ? 'p' : 'g') + '" href="' + appUrl + (k === 'free' ? '' : '/planos') + '">' + (k === 'free' ? 'Começar grátis' : 'Escolher ' + esc(p.name)) + '</a></div>';
+    }).join('');
+    return LANDING_SRC.split('{{APP}}').join(appUrl).replace('<!--PLANS-->', cards);
+  };
+  const sendLanding = async (res) => {
+    res.setHeader('Content-Security-Policy', "default-src 'none'; img-src data: https:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.type('html').send(await landingHtml());
+  };
+  app.get('/sobre', async (req, res) => { if (!LANDING_SRC || kind(hostOf(req)).t !== 'app') return res.status(404).end(); return sendLanding(res); });
+
   // ---- páginas
   app.get('/', async (req, res) => {
+    if (LANDING_SRC && (hostOf(req) === ROOT || hostOf(req) === 'www.' + ROOT)) return sendLanding(res);
     let k = kind(hostOf(req)), cdom = null;
     if (k.t === 'app' && hostOf(req) !== APP_HOST) { cdom = await X.siteByDomain(hostOf(req)); if (cdom) k = { t: 'site', domain: true }; }
     if (k.t === 'none') return res.status(404).type('text').send('Não encontrado');
